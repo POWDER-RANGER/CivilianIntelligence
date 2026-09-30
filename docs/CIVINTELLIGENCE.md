@@ -12,19 +12,18 @@ CIVINTELLIGENCE unifies five previously separate projects (plus the OSINT Framew
 
 | Pillar | Role | Source |
 |--------|------|--------|
-| **📚 Catalog** | Living, browsable index of civic intelligence sources — the OSINT Framework interaction model applied to government oversight instead of people-hunting | This repo (`src/data/catalog.ts`) |
-| **🏛️ Desks** | Movement, Oversight, Finance, Privacy, Field Toolkit — raw sources turned into readable, severity-tagged intelligence | This repo (`src/routes/`) |
-| **🛡️ Veil** | Live dashboard: metrics, signals, Federal Register feed with connectivity status | This repo (`/veil`) |
-| **🗼 Watchtower** | Map-first civic monitoring, anomaly detection, citizen reports | [civwatch-watchtower](https://github.com/POWDER-RANGER/civwatch-watchtower) — merging in |
-| **📡 Cell Titan** | Defensive RF observability: federated Android sensors, cryptographic evidence chain | [civwatch-cell-titan](https://github.com/POWDER-RANGER/civwatch-cell-titan) — merging in |
-| **💰 Finance desk** | Contributions, PACs, dark money, lobbying (LD-2/LD-203), official trades, contracts | ✅ Landed in this repo; deep modules merge after Phase 1 |
+| **Framework catalog** | Living, browsable index of civic intelligence sources — the OSINT Framework interaction model applied to government oversight instead of people-hunting | This repo (`src/data/catalog.ts`) |
+| **Desks** | Movement, Oversight, Finance, Privacy, Field Toolkit — raw sources turned into readable, severity-tagged intelligence | This repo (`src/routes/`) |
+| **Veil** | Live briefing: metrics, signals, Federal Register feed with connectivity status | This repo (`/veil`) |
+| **Watchtower** | Map-first civic monitoring, anomaly detection, citizen reports | [civwatch-watchtower](https://github.com/POWDER-RANGER/civwatch-watchtower) — merging in |
+| **Cell Titan** | Defensive RF observability: federated Android sensors, cryptographic evidence chain | [civwatch-cell-titan](https://github.com/POWDER-RANGER/civwatch-cell-titan) — merging in |
+| **Finance desk** | PAC and party money, dark money, LD-2/LD-203 lobbying, official trades, contract awards, state money | ✅ Landed in this repo (`/finance`); deep modules merge after Phase 1 |
 
 ## Related Projects Being Consolidated
 
 - [CIVWATCH](https://github.com/POWDER-RANGER/CIVWATCH) — parent platform: backend + ML Docker stack, finance modules, ops docs. Execute its PR0/PR1 cleanup (START_HERE.md) before merging.
 - [civwatch-watchtower](https://github.com/POWDER-RANGER/civwatch-watchtower) — the oversight pillar (map dashboard, pipelines, citizen reports).
-- [civwatch-cell-titan](https://github.com/POWDER-RANGER/civwatch-cell-titan) — the sensor layer (ADB telemetry,
- evidence chain).
+- [civwatch-cell-titan](https://github.com/POWDER-RANGER/civwatch-cell-titan) — the sensor layer (ADB telemetry, evidence chain).
 - [civwatch-powder-ranger](https://github.com/POWDER-RANGER/civwatch-powder-ranger) — community positioning; its README becomes the public identity.
 - [osintframework.com](https://osintframework.com/) — methodology reference for the catalog structure.
 - [CIVWATCH site](https://powder-ranger.github.io/CIVWATCH/) — live demo page; repoints here once consolidated.
@@ -38,8 +37,8 @@ CIVINTELLIGENCE unifies five previously separate projects (plus the OSINT Framew
 
 ## Documents
 
-- [ARCHITECTURE](./docs/CIVINTELLIGENCE_ARCHITECTURE.md) — unified system design and data flow
-- [CONSOLIDATION_PLAN](./docs/CIVINTELLIGENCE_CONSOLIDATION_PLAN.md) — phased plan merging the source repos into this project
+- [Unified architecture](./CIVINTELLIGENCE_ARCHITECTURE.md) — system design and data flow
+- [Consolidation plan](./CIVINTELLIGENCE_CONSOLIDATION_PLAN.md) — phased plan merging the source repos into this project
 
 ## License
 

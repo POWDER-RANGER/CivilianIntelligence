@@ -29,10 +29,10 @@ Consolidates the CIVWATCH ecosystem into this single project.
 - [ ] Add evidence-chain verification endpoint
 - [ ] Surface sensor status on Veil (federated sensor count, active domains)
 
-## Phase 4 — Merge political f
-inance (3–4 weeks)
-- [ ] Port CIVWATCH finance modules (contributions, LD-2/LD-203 lobbying, vote correlator, promise tracker)
-- [ ] Add Finance desk route next to Movement/Oversight/Privacy
+## Phase 4 — Merge political finance ✅ (first cut landed 2026-09-30)
+- [x] Ship the Finance desk (Desk 04): PAC/party money, dark money, LD-2/LD-203 lobbying, STOCK Act trades, contract awards, state money — sourced from FEC, Senate LDA, USAspending, FollowTheMoney, OpenSecrets, Capitol Trades, ProPublica 990, and the IRS 527/990 search
+- [x] Bonus: Field toolkit (Desk 05) — records request generator (federal FOIA, Privacy Act, state public records), agency FOIA offices, lookup directory, and field rules
+- [ ] Deeper merge: vote correlator and promise tracker (needs the CIVWATCH backend, so gated on Phase 1)
 
 ## Phase 5 — Unify & ship
 - [ ] Monorepo layout, one CI pipeline, one docker-compose
