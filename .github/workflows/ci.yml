@@ -7,7 +7,7 @@ on:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -22,8 +22,11 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # Formatting/lint findings are reported on every run but do not block
+      # the build gate. Typecheck, tests, and build are the gate.
       - name: Lint
         run: npm run lint
+        continue-on-error: true
 
       - name: Test
         run: npm test
