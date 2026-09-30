@@ -2,7 +2,7 @@
 
 **The unified civilian intelligence platform.**
 
-One project consolidating the entire CIVWATCH ecosystem: a browsable civic source catalog, intelligence desks, a live dashboard, and (merging in) map-based oversight and defensive RF sensing.
+One project consolidating the entire CIVWATCH ecosystem: a browsable civic source catalog, five intelligence desks, a live dashboard, and (merging in) map-based oversight and defensive RF sensing.
 
 > Transparency is not optional.
 
@@ -10,12 +10,15 @@ One project consolidating the entire CIVWATCH ecosystem: a browsable civic sourc
 
 | Pillar | Role | Status |
 |--------|------|--------|
-| **📚 Catalog** | Living index of civic intelligence sources — the OSINT Framework interaction model applied to government oversight (tree, search, per-node notes, source markers) | ✅ Live |
-| **🏛️ Desks** | Movement, Oversight, Privacy — raw sources turned into readable, severity-tagged intelligence | ✅ Live |
-| **🛡️ Veil** | Live dashboard: metrics, signals, Federal Register feed with connectivity status | ✅ Live |
+| **📚 Framework** | Living index of civic intelligence sources — the OSINT Framework interaction model applied to government oversight (tree, search, per-node notes, source markers) | ✅ Live |
+| **🏛️ Movement desk** | Executive calendars, Congress floor/hearings, live Federal Register feed | ✅ Live |
+| **🔍 Oversight desk** | IG reports, GAO, FOIA releases, STOCK Act trades, lobbying registrations — severity-tagged | ✅ Live |
+| **💰 Finance desk** | PAC money, dark money, lobbying, official trades, contracts, state money — read from the filings | ✅ Live |
+| **👁️ Privacy desk** | Surveillance system tracker with a public-record path for every system | ✅ Live |
+| **🛠️ Field toolkit** | Records request generator (FOIA / Privacy Act / state), agency FOIA offices, lookups, field rules | ✅ Live |
+| **🛡️ Veil** | Live briefing: metrics, signals, Federal Register feed with connectivity status | ✅ Live |
 | **🗼 Watchtower** | Map-first civic monitoring, anomaly detection, citizen reports | 🟡 Merging in ([civwatch-watchtower](https://github.com/POWDER-RANGER/civwatch-watchtower)) |
 | **📡 Cell Titan** | Defensive RF observability: federated Android sensors, cryptographic evidence chain | 🟡 Merging in ([civwatch-cell-titan](https://github.com/POWDER-RANGER/civwatch-cell-titan)) |
-| **💰 Political Finance** | Contributions, PACs, dark money, lobbying (LD-2/LD-203), voting record correlation | 🟡 Merging in ([CIVWATCH](https://github.com/POWDER-RANGER/CIVWATCH)) |
 
 ## Core Principles
 

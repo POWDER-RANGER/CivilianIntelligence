@@ -4,7 +4,7 @@ import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import appCss from "../styles.css?url";
 
-const APP_NAME = "CIVWATCH";
+const APP_NAME = "CIVINTELLIGENCE";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -15,7 +15,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "Civilian government intelligence framework — public access to government movement, oversight, and privacy invasion.",
+          "Civilian intelligence platform — public access to government movement, oversight, money in politics, privacy systems, and the tools to request records.",
       },
       { name: "theme-color", content: "#09090b" },
     ],

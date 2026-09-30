@@ -11,7 +11,9 @@ const NAV = [
   { to: "/", label: "Framework", hint: "Directory" },
   { to: "/movement", label: "Movement", hint: "Where government is" },
   { to: "/oversight", label: "Oversight", hint: "Money, ethics, FOIA" },
+  { to: "/finance", label: "Finance", hint: "Money in politics" },
   { to: "/privacy", label: "Privacy", hint: "How you are watched" },
+  { to: "/toolkit", label: "Toolkit", hint: "Request and verify" },
   { to: "/veil", label: "VEIL", hint: "Briefing" },
 ] as const;
 
@@ -45,7 +47,8 @@ export function AppShell({
             <span className="flex size-7 items-center justify-center rounded-sm border border-border">
               <Eye className="size-3.5 text-steel" strokeWidth={1.75} />
             </span>
-            <span className="font-display text-xl leading-none tracking-tight">CIVWATCH</span>
+            <span className="font-display text-xl leading-none tracking-tight">CIVINTELLIGENCE</span>
+
           </Link>
 
           <nav className="ml-4 hidden items-center gap-1 lg:flex">
@@ -77,7 +80,7 @@ export function AppShell({
               onBlur={() => setTimeout(() => setFocused(false), 180)}
               placeholder="Search the framework"
               className="h-9 border-border bg-card pl-9"
-              aria-label="Search CIVWATCH"
+              aria-label="Search CIVINTELLIGENCE"
             />
             {focused && hits.length > 0 && (
               <div className="absolute right-0 top-[calc(100%+6px)] z-50 w-full overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
