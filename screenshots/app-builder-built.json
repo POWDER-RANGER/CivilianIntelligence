@@ -1,0 +1,38 @@
+{
+  "url": "http://127.0.0.1:8081/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "CIVWATCH",
+      "hasCanvas": false,
+      "bodyTextLen": 858,
+      "bodyTextHash": "51e53ce27d69fa171d0699c8e2f8a414463b6da7118d483e955eff57a236b4ab",
+      "bodyTextPrefix": "CIVWATCH Framework Movement Oversight Privacy VEIL UNCLASSIFIED ",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "CIVWATCH",
+      "hasCanvas": false,
+      "bodyTextLen": 759,
+      "bodyTextHash": "2c0a1c795a6ce980e32f17287904d6af2ca4c60a8d8920328db6c7bdad07dbe9",
+      "bodyTextPrefix": "CIVWATCH UNCLASSIFIED // PUBLIC RECORDS // CIVILIAN ACCESS CIVIL",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-built.json",
+  "divergesFromBaseline": false,
+  "baselineReasons": []
+}
