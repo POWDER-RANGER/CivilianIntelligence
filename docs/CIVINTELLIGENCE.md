@@ -13,17 +13,18 @@ CIVINTELLIGENCE unifies five previously separate projects (plus the OSINT Framew
 | Pillar | Role | Source |
 |--------|------|--------|
 | **📚 Catalog** | Living, browsable index of civic intelligence sources — the OSINT Framework interaction model applied to government oversight instead of people-hunting | This repo (`src/data/catalog.ts`) |
-| **🏛️ Desks** | Movement, Oversight, Privacy — raw sources turned into readable, severity-tagged intelligence | This repo (`src/routes/`) |
+| **🏛️ Desks** | Movement, Oversight, Finance, Privacy, Field Toolkit — raw sources turned into readable, severity-tagged intelligence | This repo (`src/routes/`) |
 | **🛡️ Veil** | Live dashboard: metrics, signals, Federal Register feed with connectivity status | This repo (`/veil`) |
 | **🗼 Watchtower** | Map-first civic monitoring, anomaly detection, citizen reports | [civwatch-watchtower](https://github.com/POWDER-RANGER/civwatch-watchtower) — merging in |
 | **📡 Cell Titan** | Defensive RF observability: federated Android sensors, cryptographic evidence chain | [civwatch-cell-titan](https://github.com/POWDER-RANGER/civwatch-cell-titan) — merging in |
-| **💰 Political Finance** | Contributions, PACs, dark money, lobbying (LD-2/LD-203), voting record correlation | [CIVWATCH](https://github.com/POWDER-RANGER/CIVWATCH) — merging in |
+| **💰 Finance desk** | Contributions, PACs, dark money, lobbying (LD-2/LD-203), official trades, contracts | ✅ Landed in this repo; deep modules merge after Phase 1 |
 
 ## Related Projects Being Consolidated
 
 - [CIVWATCH](https://github.com/POWDER-RANGER/CIVWATCH) — parent platform: backend + ML Docker stack, finance modules, ops docs. Execute its PR0/PR1 cleanup (START_HERE.md) before merging.
 - [civwatch-watchtower](https://github.com/POWDER-RANGER/civwatch-watchtower) — the oversight pillar (map dashboard, pipelines, citizen reports).
-- [civwatch-cell-titan](https://github.com/POWDER-RANGER/civwatch-cell-titan) — the sensor layer (ADB telemetry, evidence chain).
+- [civwatch-cell-titan](https://github.com/POWDER-RANGER/civwatch-cell-titan) — the sensor layer (ADB telemetry,
+ evidence chain).
 - [civwatch-powder-ranger](https://github.com/POWDER-RANGER/civwatch-powder-ranger) — community positioning; its README becomes the public identity.
 - [osintframework.com](https://osintframework.com/) — methodology reference for the catalog structure.
 - [CIVWATCH site](https://powder-ranger.github.io/CIVWATCH/) — live demo page; repoints here once consolidated.

@@ -29,7 +29,8 @@ Consolidates the CIVWATCH ecosystem into this single project.
 - [ ] Add evidence-chain verification endpoint
 - [ ] Surface sensor status on Veil (federated sensor count, active domains)
 
-## Phase 4 — Merge political finance (3–4 weeks)
+## Phase 4 — Merge political f
+inance (3–4 weeks)
 - [ ] Port CIVWATCH finance modules (contributions, LD-2/LD-203 lobbying, vote correlator, promise tracker)
 - [ ] Add Finance desk route next to Movement/Oversight/Privacy
 
