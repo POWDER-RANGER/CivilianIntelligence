@@ -5,6 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { VEIL_METRICS, VEIL_SIGNALS, MOVEMENT_EVENTS, OVERSIGHT_ITEMS, PRIVACY_SYSTEMS } from "@/data/desks";
 import { getRegisterFeed, type RegisterDoc } from "@/lib/feeds";
+import {
+  getCivintAlerts,
+  getCivintAwards,
+  formatUsd,
+  type CivintAlert,
+  type CivintAward,
+} from "@/lib/civint-feeds";
 import { FRAMEWORK } from "@/data/catalog";
 import { countLeaves } from "@/lib/intel";
 import { cn } from "@/lib/utils";
@@ -17,9 +24,20 @@ function pillarVariant(p: (typeof VEIL_SIGNALS)[number]["pillar"]) {
   return "live" as const;
 }
 
+function severityVariant(s: string) {
+  const lower = s.toLowerCase();
+  if (lower === "extreme" || lower === "severe") return "danger" as const;
+  if (lower === "moderate") return "warn" as const;
+  return "outline" as const;
+}
+
 function VeilPage() {
   const [register, setRegister] = useState<RegisterDoc[]>([]);
   const [live, setLive] = useState(false);
+  const [nwsAlerts, setNwsAlerts] = useState<CivintAlert[]>([]);
+  const [awards, setAwards] = useState<CivintAward[]>([]);
+  const [civintLive, setCivintLive] = useState(false);
+
   const sources = countLeaves(FRAMEWORK);
   const liveMovement = MOVEMENT_EVENTS.filter((e) => e.status === "live").length;
   const alerts = OVERSIGHT_ITEMS.filter((i) => i.severity === "alert").length;
@@ -31,6 +49,12 @@ function VeilPage() {
       if (cancelled) return;
       setRegister(res.results.slice(0, 5));
       setLive(res.ok);
+    });
+    void Promise.all([getCivintAlerts(), getCivintAwards()]).then(([a, w]) => {
+      if (cancelled) return;
+      setNwsAlerts(a.slice(0, 6));
+      setAwards(w.slice(0, 5));
+      setCivintLive(a.length > 0 || w.length > 0);
     });
     return () => {
       cancelled = true;
@@ -51,7 +75,12 @@ function VeilPage() {
               from public record.
             </p>
           </div>
-          <Badge variant={live ? "live" : "outline"}>{live ? "Register live" : "Register standby"}</Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant={live ? "live" : "outline"}>{live ? "Register live" : "Register standby"}</Badge>
+            <Badge variant={civintLive ? "live" : "outline"}>
+              {civintLive ? "CIVINT live" : "CIVINT standby"}
+            </Badge>
+          </div>
         </div>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -67,6 +96,60 @@ function VeilPage() {
             </div>
           ))}
         </div>
+
+        {(nwsAlerts.length > 0 || awards.length > 0) && (
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            {nwsAlerts.length > 0 && (
+              <section className="rounded-xl border border-border bg-card">
+                <header className="border-b border-border px-5 py-3 flex items-center justify-between">
+                  <div>
+                    <h2 className="font-display text-xl">NWS active alerts</h2>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">IA · IL · MO — from civint_ingest</p>
+                  </div>
+                  <Badge variant="live">{nwsAlerts.length}</Badge>
+                </header>
+                <ul className="max-h-64 overflow-y-auto">
+                  {nwsAlerts.map((a) => (
+                    <li key={a.id} className="border-b border-border last:border-b-0 px-5 py-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-medium leading-snug">{a.event}</p>
+                        <Badge variant={severityVariant(a.severity)}>{a.severity}</Badge>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{a.headline}</p>
+                      <p className="mt-1 font-mono text-[10px] text-muted-foreground">{a.area?.split(";")[0]}</p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {awards.length > 0 && (
+              <section className="rounded-xl border border-border bg-card">
+                <header className="border-b border-border px-5 py-3 flex items-center justify-between">
+                  <div>
+                    <h2 className="font-display text-xl">Surveillance awards</h2>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">Flock Safety / ALPR — USAspending</p>
+                  </div>
+                  <Badge variant="warn">{awards.length}</Badge>
+                </header>
+                <ul className="max-h-64 overflow-y-auto">
+                  {awards.map((w) => (
+                    <li key={`${w.award_id}-${w.term}`} className="border-b border-border last:border-b-0 px-5 py-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-medium leading-snug">{w.recipient}</p>
+                        <Badge variant="steel">{formatUsd(w.amount)}</Badge>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">{w.agency}</p>
+                      <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+                        {w.start_date} · {w.award_group} · term: {w.term}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </div>
+        )}
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
           <section className="rounded-xl border border-border bg-card">
@@ -134,6 +217,9 @@ function VeilPage() {
                 <Button asChild size="sm" variant="outline">
                   <Link to="/privacy">Privacy atlas</Link>
                 </Button>
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/finance">Finance desk</Link>
+                </Button>
               </div>
             </div>
           </section>
@@ -142,7 +228,8 @@ function VeilPage() {
         <p className={cn("mt-8 max-w-3xl text-xs leading-relaxed text-muted-foreground")}>
           CIVWATCH indexes publicly available government records, official portals, and investigative reporting. It
           does not access classified systems, non-public databases, or private accounts. Briefing cards are
-          reconstructions from public calendars and reporting patterns, labeled as such.
+          reconstructions from public calendars and reporting patterns, labeled as such. Live NWS and USAspending
+          panels are produced by the keyless civint_ingest pipeline.
         </p>
       </div>
     </AppShell>
