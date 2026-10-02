@@ -10,14 +10,21 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as FinanceRouteImport } from './routes/finance'
 import { Route as MovementRouteImport } from './routes/movement'
 import { Route as OversightRouteImport } from './routes/oversight'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ToolkitRouteImport } from './routes/toolkit'
 import { Route as VeilRouteImport } from './routes/veil'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FinanceRoute = FinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MovementRoute = MovementRouteImport.update({
@@ -35,6 +42,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ToolkitRoute = ToolkitRouteImport.update({
+  id: '/toolkit',
+  path: '/toolkit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VeilRoute = VeilRouteImport.update({
   id: '/veil',
   path: '/veil',
@@ -43,39 +55,69 @@ const VeilRoute = VeilRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/finance': typeof FinanceRoute
   '/movement': typeof MovementRoute
   '/oversight': typeof OversightRoute
   '/privacy': typeof PrivacyRoute
+  '/toolkit': typeof ToolkitRoute
   '/veil': typeof VeilRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/finance': typeof FinanceRoute
   '/movement': typeof MovementRoute
   '/oversight': typeof OversightRoute
   '/privacy': typeof PrivacyRoute
+  '/toolkit': typeof ToolkitRoute
   '/veil': typeof VeilRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/finance': typeof FinanceRoute
   '/movement': typeof MovementRoute
   '/oversight': typeof OversightRoute
   '/privacy': typeof PrivacyRoute
+  '/toolkit': typeof ToolkitRoute
   '/veil': typeof VeilRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/movement' | '/oversight' | '/privacy' | '/veil'
+  fullPaths:
+    | '/'
+    | '/finance'
+    | '/movement'
+    | '/oversight'
+    | '/privacy'
+    | '/toolkit'
+    | '/veil'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/movement' | '/oversight' | '/privacy' | '/veil'
-  id: '__root__' | '/' | '/movement' | '/oversight' | '/privacy' | '/veil'
+  to:
+    | '/'
+    | '/finance'
+    | '/movement'
+    | '/oversight'
+    | '/privacy'
+    | '/toolkit'
+    | '/veil'
+  id:
+    | '__root__'
+    | '/'
+    | '/finance'
+    | '/movement'
+    | '/oversight'
+    | '/privacy'
+    | '/toolkit'
+    | '/veil'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  FinanceRoute: typeof FinanceRoute
   MovementRoute: typeof MovementRoute
   OversightRoute: typeof OversightRoute
   PrivacyRoute: typeof PrivacyRoute
+  ToolkitRoute: typeof ToolkitRoute
   VeilRoute: typeof VeilRoute
 }
 
@@ -86,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/finance': {
+      id: '/finance'
+      path: '/finance'
+      fullPath: '/finance'
+      preLoaderRoute: typeof FinanceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/movement': {
@@ -109,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/toolkit': {
+      id: '/toolkit'
+      path: '/toolkit'
+      fullPath: '/toolkit'
+      preLoaderRoute: typeof ToolkitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/veil': {
       id: '/veil'
       path: '/veil'
@@ -121,9 +177,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  FinanceRoute: FinanceRoute,
   MovementRoute: MovementRoute,
   OversightRoute: OversightRoute,
   PrivacyRoute: PrivacyRoute,
+  ToolkitRoute: ToolkitRoute,
   VeilRoute: VeilRoute,
 }
 export const routeTree = rootRouteImport
