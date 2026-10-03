@@ -17,8 +17,8 @@ One project consolidating the CIVWATCH ecosystem: a browsable civic source catal
 | **Privacy desk** | Surveillance system tracker with a public-record path for every system — plus mapped ALPR points from OpenStreetMap | Live |
 | **Field toolkit** | Records request generator (FOIA / Privacy Act / state), agency FOIA offices, field rules | Live |
 | **Veil** | Executive brief: metrics, signals, Federal Register, NWS alerts, surveillance awards | Live |
-| **Watchtower** | Map-first civic monitoring, anomaly detection, citizen reports | Merging in ([civwatch-watchtower](https://github.com/POWDER-RANGER/civwatch-watchtower)) |
-| **Cell Titan** | Defensive RF observability: federated Android sensors, cryptographic evidence chain | Merging in ([civwatch-cell-titan](https://github.com/POWDER-RANGER/civwatch-cell-titan)) |
+| **Watchtower** | Map-first civic oversight: features/reports API, CIVINT soft-proxy, situational dashboard | Operational baseline ([civwatch-watchtower](https://github.com/POWDER-RANGER/civwatch-watchtower)) |
+| **Cell Titan** | Defensive RF observability: demo telemetry, hash-chained evidence, optional ADB sensors | Operational baseline ([civwatch-cell-titan](https://github.com/POWDER-RANGER/civwatch-cell-titan)) |
 
 ## Core principles
 
@@ -51,7 +51,6 @@ python civint_ingest.py usaspending --max-pages 3
 # optional ALPR map points from a Geofabrik extract:
 # python civint_ingest.py osm --pbf iowa-latest.osm.pbf
 
-# Copy dashboard JSON into the static tree (or let the nightly workflow do it):
 mkdir -p ../public/civint
 cp civint_data/alerts.json civint_data/awards.json ../public/civint/ 2>/dev/null || true
 ```
@@ -77,6 +76,13 @@ Nightly publish is defined in [`.github/workflows/ingest.yml`](./.github/workflo
 | **AlprPanel** (operator counts, extract age) | `/privacy` | OSM ALPR snapshot via ingest |
 
 Loaders live in [`src/lib/civint-feeds.ts`](./src/lib/civint-feeds.ts). They fail soft (empty UI) when snapshots are missing, so the rest of the desk stays usable.
+
+## Sister pillars (run separately)
+
+| Repo | Start |
+|------|-------|
+| [civwatch-watchtower](https://github.com/POWDER-RANGER/civwatch-watchtower) | `pnpm install && pnpm dev:server` → `:3000` |
+| [civwatch-cell-titan](https://github.com/POWDER-RANGER/civwatch-cell-titan) | `./launch.sh` → `:8000` |
 
 ## Documentation
 
