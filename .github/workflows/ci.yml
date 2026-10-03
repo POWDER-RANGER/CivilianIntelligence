@@ -22,8 +22,6 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      # Formatting/lint findings are reported on every run but do not block
-      # the build gate. Typecheck, tests, and build are the gate.
       - name: Lint
         run: npm run lint
         continue-on-error: true
@@ -33,3 +31,17 @@ jobs:
 
       - name: Build (dev mode)
         run: npm run build:dev
+
+  ingest:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ingest/requirements*.txt
+      - name: Install
+        run: pip install -r ingest/requirements.txt pytest
+      - name: Test ingest
+        run: python -m pytest ingest -q
