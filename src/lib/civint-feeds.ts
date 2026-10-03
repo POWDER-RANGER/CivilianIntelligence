@@ -22,13 +22,17 @@ export type CivintAlert = {
 };
 
 export type CivintAward = {
+  /** USAspending generated_internal_id; unique per award in awards.json. */
+  internal_id: string;
   award_id: string;
-  term: string;
   recipient: string;
   amount: number;
   agency: string;
   start_date: string;
   award_group: string;
+  /** Search terms / match modes that surfaced this award (provenance). */
+  terms: string[];
+  matched_by: string[];
   fetched: string;
 };
 
@@ -58,13 +62,47 @@ export async function getCivintAlerts(): Promise<CivintAlert[]> {
 }
 
 export async function getCivintAwards(): Promise<CivintAward[]> {
-  const data = await softJson<CivintAward[]>("/awards.json");
-  return data ?? [];
+  const data = await softJson<unknown>("/awards.json");
+  return normalizeAwards(data);
 }
 
-export async function getCivintAlpr(): Promise<CivintAlprNode[]> {
-  const data = await softJson<{ elements?: CivintAlprNode[] }>("/alpr_overpass.json");
-  return data?.elements ?? [];
+/**
+ * Accepts the current shape and the pre-audit shape (one row per term, no internal_id/terms), de-dupes by
+ * award, and sorts by amount so a consumer's "top N" is meaningful. Rows that are not objects are dropped.
+ */
+export function normalizeAwards(data: unknown): CivintAward[] {
+  if (!Array.isArray(data)) return [];
+  const byId = new Map<string, CivintAward>();
+  for (const raw of data) {
+    if (!raw || typeof raw !== "object") continue;
+    const r = raw as Record<string, unknown>;
+    const awardId = String(r.award_id ?? "");
+    const id = String(r.internal_id ?? awardId);
+    if (!id) continue;
+    const terms = Array.isArray(r.terms) ? r.terms.map(String) : r.term ? [String(r.term)] : [];
+    const matchedBy = Array.isArray(r.matched_by) ? r.matched_by.map(String) : r.matched_by ? [String(r.matched_by)] : [];
+    const amount = typeof r.amount === "number" && Number.isFinite(r.amount) ? r.amount : 0;
+    const prev = byId.get(id);
+    if (prev) {
+      prev.terms = [...new Set([...prev.terms, ...terms])].sort();
+      prev.matched_by = [...new Set([...prev.matched_by, ...matchedBy])].sort();
+      prev.amount = Math.max(prev.amount, amount);
+      continue;
+    }
+    byId.set(id, {
+      internal_id: id,
+      award_id: awardId,
+      recipient: String(r.recipient ?? ""),
+      amount,
+      agency: String(r.agency ?? ""),
+      start_date: String(r.start_date ?? ""),
+      award_group: String(r.award_group ?? ""),
+      terms: [...new Set(terms)].sort(),
+      matched_by: [...new Set(matchedBy)].sort(),
+      fetched: String(r.fetched ?? ""),
+    });
+  }
+  return [...byId.values()].sort((a, b) => b.amount - a.amount);
 }
 
 /** Format a USD amount for display cards. */
