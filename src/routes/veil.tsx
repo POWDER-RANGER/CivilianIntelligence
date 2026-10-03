@@ -134,14 +134,14 @@ function VeilPage() {
                 </header>
                 <ul className="max-h-64 overflow-y-auto">
                   {awards.map((w) => (
-                    <li key={`${w.award_id}-${w.term}`} className="border-b border-border last:border-b-0 px-5 py-3">
+                    <li key={w.internal_id} className="border-b border-border last:border-b-0 px-5 py-3">
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm font-medium leading-snug">{w.recipient}</p>
                         <Badge variant="steel">{formatUsd(w.amount)}</Badge>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">{w.agency}</p>
                       <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-                        {w.start_date} · {w.award_group} · term: {w.term}
+                        {w.start_date} · {w.award_group} · {w.terms.join(", ")}
                       </p>
                     </li>
                   ))}
