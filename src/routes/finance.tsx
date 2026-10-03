@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AwardsPanel } from "@/components/civint/awards-panel";
 import { FINANCE_ITEMS, FINANCE_KINDS, FINANCE_METRICS, FINANCE_SOURCES, type FinanceItem, type FinanceKind } from "@/data/finance";
 
 export const Route = createFileRoute("/finance")({ component: FinancePage });
@@ -81,6 +82,8 @@ function FinancePage() {
             </a>
           ))}
         </div>
+
+        <AwardsPanel />
 
         <h2 className="mt-10 font-display text-2xl">Primary sources</h2>
         <p className="mt-1 text-sm text-muted-foreground">

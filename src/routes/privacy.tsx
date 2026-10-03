@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AlprPanel } from "@/components/civint/alpr-panel";
 import { PRIVACY_SYSTEMS, type PrivacySystem } from "@/data/desks";
 
 export const Route = createFileRoute("/privacy")({ component: PrivacyPage });
@@ -106,6 +107,8 @@ function PrivacyPage() {
             );
           })}
         </div>
+
+        <AlprPanel />
 
         <div className="mt-8 rounded-xl border border-border bg-card p-5">
           <h2 className="font-display text-2xl">Request your own file</h2>
