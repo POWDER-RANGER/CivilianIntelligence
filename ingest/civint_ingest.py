@@ -57,8 +57,9 @@ def connect():
     con.executescript("""
     CREATE TABLE IF NOT EXISTS alerts(id TEXT PRIMARY KEY, event TEXT, severity TEXT, area TEXT,
         onset TEXT, ends TEXT, headline TEXT, fetched TEXT);
-    CREATE TABLE IF NOT EXISTS awards(award_id TEXT, term TEXT, recipient TEXT, amount REAL, agency TEXT,
-        start_date TEXT, award_group TEXT, fetched TEXT, PRIMARY KEY(award_id, term));
+    CREATE TABLE IF NOT EXISTS awards(internal_id TEXT, award_id TEXT, term TEXT, matched_by TEXT,
+        recipient TEXT, amount REAL, agency TEXT, start_date TEXT, award_group TEXT, fetched TEXT,
+        PRIMARY KEY(internal_id, term, matched_by));
     CREATE TABLE IF NOT EXISTS points(osm_id INTEGER PRIMARY KEY, lat REAL, lon REAL, tags TEXT, fetched TEXT);
     """)
     return con
@@ -91,7 +92,8 @@ def nws(states=("IA", "IL", "MO")):
 
 
 # ---------------------------------------------------------------- USAspending
-def usaspending(terms=("Flock Safety", "license plate reader"), start="2021-10-01", end=None, max_pages=5):
+def usaspending(terms=("Flock Safety", "Flock Group", "license plate reader"), start="2021-10-01",
+                end=None, max_pages=5):
     """Federal awards only. Local city contracts with vendors mostly will not appear here."""
     end = end or date.today().isoformat()
     con = connect()
@@ -101,7 +103,8 @@ def usaspending(terms=("Flock Safety", "license plate reader"), start="2021-10-0
                 for page in range(1, max_pages + 1):
                     body = {"filters": {filt: [term], "award_type_codes": codes,
                                         "time_period": [{"start_date": start, "end_date": end}]},
-                            "fields": ["Award ID", "Recipient Name", "Award Amount", "Awarding Agency", "Start Date"],
+                            "fields": ["Award ID", "generated_internal_id", "Recipient Name", "Award Amount",
+                                       "Awarding Agency", "Start Date"],
                             "page": page, "limit": 100, "sort": "Award Amount", "order": "desc"}
                     r = requests.post(USA_URL, json=body, timeout=60)
                     if not r.ok:
@@ -110,8 +113,9 @@ def usaspending(terms=("Flock Safety", "license plate reader"), start="2021-10-0
                     j = r.json()
                     with con:
                         for x in j.get("results", []):
-                            con.execute("INSERT OR REPLACE INTO awards VALUES (?,?,?,?,?,?,?,?)",
-                                        (x.get("Award ID"), term, x.get("Recipient Name"), x.get("Award Amount"),
+                            con.execute("INSERT OR REPLACE INTO awards VALUES (?,?,?,?,?,?,?,?,?,?)",
+                                        (x.get("generated_internal_id"), x.get("Award ID"), term, filt,
+                                         x.get("Recipient Name"), x.get("Award Amount"),
                                          x.get("Awarding Agency"), x.get("Start Date"), group, now()))
                     if not j.get("page_metadata", {}).get("hasNext"):
                         break
@@ -120,6 +124,19 @@ def usaspending(terms=("Flock Safety", "license plate reader"), start="2021-10-0
 
 
 # ---------------------------------------------------------------- OSM ALPR points
+def _extract_ts(path):
+    """Extract timestamp for a .osm.pbf: the replication header if present, else the file mtime."""
+    try:
+        import osmium.io
+        ts = osmium.io.Reader(str(path), osmium.osm.osm_entity_bits.NOTHING).header().get(
+            "osmosis_replication_timestamp")
+        if ts:
+            return ts if isinstance(ts, str) else ts.isoformat()
+    except Exception:
+        pass
+    return datetime.fromtimestamp(Path(path).stat().st_mtime, timezone.utc).isoformat(timespec="seconds")
+
+
 def osm(pbfs):
     """Filter local Geofabrik .osm.pbf extracts for ALPR nodes; write Overpass-style JSON for the dashboard."""
     try:
@@ -131,7 +148,7 @@ def osm(pbfs):
     class Handler(osmium.SimpleHandler):
         def node(self, n):
             tags = {t.k: t.v for t in n.tags}
-            if tags.get("man_made") == "surveillance" and tags.get("surveillance:type") == "ALPR" \
+            if tags.get("man_made") == "surveillance" and tags.get("surveillance:type", "").upper() == "ALPR" \
                     and n.location.valid():
                 pts[n.id] = (n.location.lat, n.location.lon, tags)
 
@@ -143,9 +160,11 @@ def osm(pbfs):
         for i, (lat, lon, tags) in pts.items():
             con.execute("INSERT OR REPLACE INTO points VALUES (?,?,?,?,?)", (i, lat, lon, json.dumps(tags), now()))
     elements = [{"type": "node", "id": i, "lat": lat, "lon": lon, "tags": tags} for i, (lat, lon, tags) in pts.items()]
-    (OUT / "alpr_overpass.json").write_text(
-        json.dumps({"version": 0.6, "generator": "civint_ingest", "elements": elements}), encoding="utf-8")
-    print("osm: ALPR points ->", len(elements), "(import OUT/alpr_overpass.json in the dashboard)")
+    asof = min(_extract_ts(f) for f in pbfs)  # the oldest extract governs the snapshot's freshness label
+    (OUT / "alpr_overpass.json").write_text(json.dumps({
+        "version": 0.6, "generator": "civint_ingest",
+        "osm3s": {"timestamp_osm_base": asof}, "elements": elements}), encoding="utf-8")
+    print("osm: ALPR points ->", len(elements), f"(extract as of {asof}; import OUT/alpr_overpass.json in the dashboard)")
 
 
 # ---------------------------------------------------------------- quote verifier
@@ -158,10 +177,17 @@ def norm(s):
     return re.sub(r"\s+", " ", s).strip().lower()
 
 
+def contains(t, q):
+    """True if normalized quote q occurs in normalized text t, ignoring hyphens (PDF line breaks)."""
+    return q in t or q.replace("-", "") in t.replace("-", "")
+
+
 def _parse(output):
     if isinstance(output, dict):
         return output
-    s = re.sub(r"^```(?:json)?|```$", "", (output or "").strip(), flags=re.M).strip()
+    if not isinstance(output, str):
+        raise TypeError("output must be a dict or JSON string")
+    s = re.sub(r"^```(?:json)?|```$", "", output.strip(), flags=re.M).strip()
     return json.loads(s)
 
 
@@ -175,7 +201,7 @@ def verify_chunk(output, page, text):
             continue
         attrs = dict(e.get("attrs") or {})
         for k in ("amount", "date"):  # kept only if the exact string is on the page
-            if attrs.get(k) is not None and norm(str(attrs[k])) not in t:
+            if attrs.get(k) is not None and not contains(t, norm(str(attrs[k]))):
                 attrs[k] = None
         ents[norm(e["name"])] = {"id": f"{e['type'].lower()}:{norm(e['name'])}", "type": e["type"],
                                  "name": e["name"], "pages": [page], "attrs": attrs}
@@ -191,7 +217,7 @@ def verify_chunk(output, page, text):
             reason = "quote_too_long"
         elif len(q) < 12:
             reason = "quote_too_short"
-        elif q not in t:
+        elif not contains(t, q):
             reason = "quote_not_found"
         elif s not in q and d not in q:  # heuristic: the quote itself must name at least one endpoint
             reason = "quote_mentions_no_endpoint"
@@ -213,19 +239,33 @@ def verify(chunks_path, out_name="relations.json"):
     for c in chunks:
         try:
             out = _parse(c["output"])
-        except (ValueError, TypeError):
+            if not isinstance(out, dict):
+                raise ValueError("not an object")
+        except (ValueError, TypeError, KeyError):
             failures += 1
             continue
         es, rs, rj = verify_chunk(out, c["page"], c["text"])
         for e in es:
-            if e["id"] in entities:
-                entities[e["id"]]["pages"] = sorted(set(entities[e["id"]]["pages"] + e["pages"]))
-            else:
-                entities[e["id"]] = e
+            cur = entities.setdefault(e["id"], e)
+            if cur is not e:
+                cur["pages"] = sorted(set(cur["pages"] + e["pages"]))
+                for k, v in e["attrs"].items():
+                    if cur["attrs"].get(k) is None and v is not None:
+                        cur["attrs"][k] = v
+        for r in rs:
+            r["file"], r["sha256"] = c.get("file"), c.get("sha256")
         relations += rs
         rejected += rj
-    first = chunks[0] if chunks else {}
-    result = {"source": {"file": first.get("file"), "sha256": first.get("sha256")},
+    seen, uniq = set(), []
+    for r in relations:
+        k = (r["source"], r["target"], r["type"], norm(r["quote"]), r["sha256"])
+        if k not in seen:
+            seen.add(k)
+            uniq.append(r)
+    relations = uniq
+    sources = [{"file": f, "sha256": s} for f, s in
+               sorted({(c.get("file"), c.get("sha256") or "") for c in chunks if c.get("file")})]
+    result = {"sources": sources,
               "entities": list(entities.values()), "relations": relations,
               "stats": {"chunks": len(chunks), "parse_failures": failures,
                         "rejected_relations": sum(1 for r in rejected if "source" in r["item"]),
@@ -244,7 +284,7 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("nws"); p.add_argument("--states", nargs="+", default=["IA", "IL", "MO"])
     p = sub.add_parser("usaspending")
-    p.add_argument("--terms", nargs="+", default=["Flock Safety", "license plate reader"])
+    p.add_argument("--terms", nargs="+", default=["Flock Safety", "Flock Group", "license plate reader"])
     p.add_argument("--start", default="2021-10-01"); p.add_argument("--end"); p.add_argument("--max-pages", type=int, default=5)
     p = sub.add_parser("osm"); p.add_argument("--pbf", nargs="+", required=True)
     p = sub.add_parser("verify"); p.add_argument("--chunks", required=True)
@@ -259,13 +299,20 @@ def main():
     elif a.cmd == "verify":
         verify(a.chunks)
     else:
+        failed = []
         for step in (nws, usaspending):
             try:
                 step()
             except Exception as ex:  # one failing source must not stop the rest
+                failed.append(step.__name__)
                 print(f"daily: {step.__name__} failed: {ex}", file=sys.stderr)
         if os.environ.get("CIVINT_PBF"):
-            osm(os.environ["CIVINT_PBF"].split(os.pathsep))
+            try:
+                osm(os.environ["CIVINT_PBF"].split(os.pathsep))
+            except Exception as ex:
+                failed.append("osm")
+                print(f"daily: osm failed: {ex}", file=sys.stderr)
+        sys.exit(1 if failed else 0)
 
 
 if __name__ == "__main__":
