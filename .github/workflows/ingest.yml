@@ -1,27 +1,30 @@
 name: CIVINT ingest
 
 # Nightly keyless pull of NWS alerts + USAspending awards.
-# Publishes dashboard-ready JSON into public/civint/ on this branch so the
-# Veil loaders (/civint/alerts.json, /civint/awards.json) stay live.
+# Publishes dashboard-ready JSON into public/civint/ so the Veil loaders
+# (/civint/alerts.json, /civint/awards.json) stay live. Scheduled workflows only run
+# from the default branch, so nothing happens until this file is merged.
 #
-# Required repo variable (Settings → Variables):
-#   NWS_USER_AGENT   e.g. "CIVINT (contact: you@real-address)"
-#
-# Optional:
-#   CIVINT_STATES    space-separated, default "IA IL MO"
-#   CIVINT_TERMS     space-separated search terms for USAspending
+# Repo variables (Settings -> Secrets and variables -> Actions -> Variables):
+#   NWS_USER_AGENT   e.g. "CIVINT (contact: you@real-address)"   (NWS skipped with a warning if unset)
+#   CIVINT_STATES    optional, space-separated, default "IA IL MO"
 
 on:
   schedule:
-    - cron: "15 6 * * *"   # 06:15 UTC daily
+    - cron: "15 6 * * *" # 06:15 UTC daily
   workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: civint-ingest
+  cancel-in-progress: false
+
 jobs:
   ingest:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -35,29 +38,32 @@ jobs:
         run: pip install -r ingest/requirements.txt
 
       - name: Run NWS + USAspending
+        id: run
         env:
           NWS_USER_AGENT: ${{ vars.NWS_USER_AGENT }}
+          CIVINT_STATES: ${{ vars.CIVINT_STATES }}
           CIVINT_OUT: civint_data
         run: |
-          set -euo pipefail
-          if [ -z "${NWS_USER_AGENT:-}" ]; then
-            echo "NWS_USER_AGENT repo variable is not set — skipping NWS, running USAspending only"
-            python ingest/civint_ingest.py usaspending --max-pages 3 || true
+          # Each source runs even if the other fails; the job is failed at the end so it is visible.
+          status=0
+          if [ -n "${NWS_USER_AGENT:-}" ]; then
+            python ingest/civint_ingest.py nws --states ${CIVINT_STATES:-IA IL MO} || status=1
           else
-            STATES="${{ vars.CIVINT_STATES }}"
-            STATES="${STATES:-IA IL MO}"
-            python ingest/civint_ingest.py nws --states $STATES
-            python ingest/civint_ingest.py usaspending --max-pages 3
+            echo "::warning::NWS_USER_AGENT repo variable is not set; skipping NWS"
           fi
+          python ingest/civint_ingest.py usaspending --max-pages 3 || status=1
+          echo "status=$status" >> "$GITHUB_OUTPUT"
 
       - name: Publish to public/civint
         run: |
           mkdir -p public/civint
-          cp -f civint_data/alerts.json public/civint/ 2>/dev/null || echo "[]" > public/civint/alerts.json
-          cp -f civint_data/awards.json public/civint/ 2>/dev/null || echo "[]" > public/civint/awards.json
+          # Copy only what this run produced. Never overwrite the last good snapshot with an empty one.
+          for f in alerts awards; do
+            if [ -f "civint_data/$f.json" ]; then cp -f "civint_data/$f.json" public/civint/; fi
+          done
           ls -la public/civint/
 
-      - name: Commit & push if changed
+      - name: Commit and push if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -67,4 +73,11 @@ jobs:
             exit 0
           fi
           git commit -m "data(civint): nightly NWS + USAspending snapshot $(date -u +%Y-%m-%d)"
+          git pull --rebase --autostash
           git push
+
+      - name: Fail the run if any source failed
+        if: steps.run.outputs.status != '0'
+        run: |
+          echo "::error::One or more ingest sources failed; partial data (if any) was published."
+          exit 1
