@@ -2,7 +2,7 @@
 
 **The unified civilian intelligence platform.**
 
-One project consolidating the entire CIVWATCH ecosystem: a browsable civic source catalog, five intelligence desks, a live dashboard, and (merging in) map-based oversight and defensive RF sensing.
+One project consolidating the CIVWATCH ecosystem: a browsable civic source catalog, intelligence desks, a live dashboard, and keyless data pipelines that keep public-record feeds current.
 
 > Transparency is not optional.
 
@@ -10,32 +10,84 @@ One project consolidating the entire CIVWATCH ecosystem: a browsable civic sourc
 
 | Pillar | Role | Status |
 |--------|------|--------|
-| **📚 Framework** | Living index of civic intelligence sources — the OSINT Framework interaction model applied to government oversight (tree, search, per-node notes, source markers) | ✅ Live |
-| **🏛️ Movement desk** | Executive calendars, Congress floor/hearings, live Federal Register feed | ✅ Live |
-| **🔍 Oversight desk** | IG reports, GAO, FOIA releases, STOCK Act trades, lobbying registrations — severity-tagged | ✅ Live |
-| **💰 Finance desk** | PAC money, dark money, lobbying, official trades, contracts, state money — read from the filings | ✅ Live |
-| **👁️ Privacy desk** | Surveillance system tracker with a public-record path for every system | ✅ Live |
-| **🛠️ Field toolkit** | Records request generator (FOIA / Privacy Act / state), agency FOIA offices, lookups, field rules | ✅ Live |
-| **🛡️ Veil** | Live briefing: metrics, signals, Federal Register feed with connectivity status | ✅ Live |
-| **🗼 Watchtower** | Map-first civic monitoring, anomaly detection, citizen reports | 🟡 Merging in ([civwatch-watchtower](https://github.com/POWDER-RANGER/civwatch-watchtower)) |
-| **📡 Cell Titan** | Defensive RF observability: federated Android sensors, cryptographic evidence chain | 🟡 Merging in ([civwatch-cell-titan](https://github.com/POWDER-RANGER/civwatch-cell-titan)) |
+| **Framework** | Living index of civic intelligence sources — tree, search, per-node notes, source markers | Live |
+| **Movement desk** | Executive calendars, Congress floor/hearings, live Federal Register feed | Live |
+| **Oversight desk** | IG reports, GAO, FOIA releases, STOCK Act trades, lobbying — severity-tagged | Live |
+| **Finance desk** | PAC money, dark money, lobbying, official trades, contracts — plus live federal surveillance awards from USAspending | Live |
+| **Privacy desk** | Surveillance system tracker with a public-record path for every system — plus mapped ALPR points from OpenStreetMap | Live |
+| **Field toolkit** | Records request generator (FOIA / Privacy Act / state), agency FOIA offices, field rules | Live |
+| **Veil** | Executive brief: metrics, signals, Federal Register, NWS alerts, surveillance awards | Live |
+| **Watchtower** | Map-first civic monitoring, anomaly detection, citizen reports | Merging in ([civwatch-watchtower](https://github.com/POWDER-RANGER/civwatch-watchtower)) |
+| **Cell Titan** | Defensive RF observability: federated Android sensors, cryptographic evidence chain | Merging in ([civwatch-cell-titan](https://github.com/POWDER-RANGER/civwatch-cell-titan)) |
 
-## Core Principles
+## Core principles
 
 - Public-interest first. Neutral analysis over political spin.
 - Evidence-based reporting — every claim traceable to a primary source.
 - Transparent scoring and traceable context.
 - **Defensive only.** Protecting citizens from surveillance and abuse — never targeting individuals.
+- **Keyless where possible.** The CIVINT ingest pipeline uses only public APIs (NWS, USAspending, OSM extracts). No vendor API keys.
+
+## Quick start
+
+```bash
+npm ci
+npm run dev          # http://localhost:8080
+npm run typecheck
+npm test
+npm run build:dev
+```
+
+### CIVINT ingest (keyless data)
+
+```bash
+cd ingest
+pip install -r requirements-dev.txt   # requests; add osmium for OSM
+
+export NWS_USER_AGENT="CIVINT (contact: you@real-address)"
+
+python civint_ingest.py nws
+python civint_ingest.py usaspending --max-pages 3
+# optional ALPR map points from a Geofabrik extract:
+# python civint_ingest.py osm --pbf iowa-latest.osm.pbf
+
+# Copy dashboard JSON into the static tree (or let the nightly workflow do it):
+mkdir -p ../public/civint
+cp civint_data/alerts.json civint_data/awards.json ../public/civint/ 2>/dev/null || true
+```
+
+Outputs land in `civint_data/` (gitignored) and are published to `public/civint/` for the app:
+
+| File | Desk / consumer |
+|------|-----------------|
+| `alerts.json` | Veil — NWS active alerts (IA / IL / MO by default) |
+| `awards.json` | Veil + Finance — federal awards matching Flock / ALPR terms |
+| `alpr_overpass.json` | Privacy — mapped license-plate-reader nodes (OSM) |
+
+Full pipeline notes: [`ingest/README.md`](./ingest/README.md).
+
+Nightly publish is defined in [`.github/workflows/ingest.yml`](./.github/workflows/ingest.yml). Set the Actions variable **`NWS_USER_AGENT`** before the scheduled job will call NWS.
+
+## Live panels
+
+| Component | Route | Source |
+|-----------|-------|--------|
+| NWS alerts + surveillance awards | `/veil` | `getCivintAlerts` / `getCivintAwards` |
+| **AwardsPanel** (federal, match-strength badges, USAspending links) | `/finance` | USAspending via ingest |
+| **AlprPanel** (operator counts, extract age) | `/privacy` | OSM ALPR snapshot via ingest |
+
+Loaders live in [`src/lib/civint-feeds.ts`](./src/lib/civint-feeds.ts). They fail soft (empty UI) when snapshots are missing, so the rest of the desk stays usable.
 
 ## Documentation
 
-- [CIVINTELLIGENCE charter](./docs/CIVINTELLIGENCE.md) — what the unified platform is and each repo's role
+- [CIVINTELLIGENCE charter](./docs/CIVINTELLIGENCE.md) — what the unified platform is
 - [Unified architecture](./docs/CIVINTELLIGENCE_ARCHITECTURE.md) — system design and data flow
 - [Consolidation plan](./docs/CIVINTELLIGENCE_CONSOLIDATION_PLAN.md) — phased merge of the source repos
+- [Ingest pipeline](./ingest/README.md) — NWS, USAspending, OSM ALPR, quote verifier
 
-## Tech Stack
+## Tech stack
 
-React 19 · TanStack Start/Router/Query · Tailwind v4 · Radix UI · Vite
+React 19 · TanStack Start / Router / Query · Tailwind v4 · Radix UI · Vite · Python 3.12 (ingest)
 
 ## License
 
