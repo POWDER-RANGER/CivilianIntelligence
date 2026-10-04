@@ -14,6 +14,8 @@ const NAV = [
   { to: "/finance", label: "Finance", hint: "Money in politics" },
   { to: "/privacy", label: "Privacy", hint: "How you are watched" },
   { to: "/toolkit", label: "Toolkit", hint: "Request and verify" },
+  { to: "/watchtower", label: "Watchtower", hint: "Map oversight" },
+  { to: "/titan", label: "Cell Titan", hint: "RF evidence" },
   { to: "/veil", label: "VEIL", hint: "Briefing" },
 ] as const;
 
