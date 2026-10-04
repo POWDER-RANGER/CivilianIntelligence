@@ -6,7 +6,7 @@ export type PillarStatus = {
   id: PillarId;
   label: string;
   status: "online" | "degraded" | "unconfigured";
-  url: string | null;
+  configured: boolean;
   checkedAt: string;
   latencyMs: number | null;
   service: string | null;
@@ -54,7 +54,7 @@ async function probe(config: PillarConfig): Promise<PillarStatus> {
       id: config.id,
       label: config.label,
       status: "unconfigured",
-      url: null,
+      configured: false,
       checkedAt,
       latencyMs: null,
       service: null,
@@ -81,7 +81,7 @@ async function probe(config: PillarConfig): Promise<PillarStatus> {
       id: config.id,
       label: config.label,
       status: res.ok ? "online" : "degraded",
-      url: config.baseUrl,
+      configured: true,
       checkedAt,
       latencyMs,
       service: typeof body.service === "string" ? body.service : null,
