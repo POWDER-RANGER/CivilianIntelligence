@@ -15,6 +15,7 @@ import {
 import { FRAMEWORK } from "@/data/catalog";
 import { countLeaves } from "@/lib/intel";
 import { cn } from "@/lib/utils";
+import { getPillarStatus, type PillarStatus } from "@/lib/pillars";
 
 export const Route = createFileRoute("/veil")({ component: VeilPage });
 
@@ -31,12 +32,19 @@ function severityVariant(s: string) {
   return "outline" as const;
 }
 
+function pillarVariant(s: PillarStatus["status"]) {
+  if (s === "online") return "live" as const;
+  if (s === "degraded") return "warn" as const;
+  return "outline" as const;
+}
+
 function VeilPage() {
   const [register, setRegister] = useState<RegisterDoc[]>([]);
   const [live, setLive] = useState(false);
   const [nwsAlerts, setNwsAlerts] = useState<CivintAlert[]>([]);
   const [awards, setAwards] = useState<CivintAward[]>([]);
   const [civintLive, setCivintLive] = useState(false);
+  const [pillars, setPillars] = useState<PillarStatus[]>([]);
 
   const sources = countLeaves(FRAMEWORK);
   const liveMovement = MOVEMENT_EVENTS.filter((e) => e.status === "live").length;
@@ -55,6 +63,9 @@ function VeilPage() {
       setNwsAlerts(a.slice(0, 6));
       setAwards(w.slice(0, 5));
       setCivintLive(a.length > 0 || w.length > 0);
+    });
+    void getPillarStatus().then((items) => {
+      if (!cancelled) setPillars(items);
     });
     return () => {
       cancelled = true;
@@ -82,6 +93,39 @@ function VeilPage() {
             </Badge>
           </div>
         </div>
+
+        <section className="mt-6 rounded-xl border border-border bg-card p-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Integration spine</p>
+              <h2 className="mt-1 font-display text-2xl">Pillar bridge</h2>
+              <p className="mt-1 text-xs text-muted-foreground">Server-side health probes for Watchtower and Cell Titan.</p>
+            </div>
+            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">topology hidden from browser</span>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {(pillars.length ? pillars : ([
+              { id: "watchtower", label: "Watchtower", status: "unconfigured" },
+              { id: "cell-titan", label: "Cell Titan", status: "unconfigured" },
+            ] as PillarStatus[])).map((p) => (
+              <div key={p.id} className="rounded-lg border border-border p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-medium">{p.label}</p>
+                    <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+                      {p.version ? "v" + p.version : "endpoint not configured"}{p.latencyMs != null ? " · " + p.latencyMs + "ms" : ""}
+                    </p>
+                  </div>
+                  <Badge variant={pillarVariant(p.status)}>{p.status}</Badge>
+                </div>
+                <div className="mt-3 flex gap-3 text-[11px]">
+                  <a href={p.id === "watchtower" ? "https://github.com/POWDER-RANGER/civwatch-watchtower" : "https://github.com/POWDER-RANGER/civwatch-cell-titan"} target="_blank" rel="noreferrer" className="text-steel hover:underline">Repository</a>
+                  {p.service && <span className="text-muted-foreground">{p.service}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
