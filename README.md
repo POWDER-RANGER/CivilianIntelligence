@@ -1,104 +1,116 @@
 # CIVINTELLIGENCE
 
-**The unified civilian intelligence platform.**
+**The unified civilian intelligence platform and CIVWATCH system of record.**
 
-One project consolidating the CIVWATCH ecosystem: a browsable civic source catalog, intelligence desks, a live dashboard, and keyless data pipelines that keep public-record feeds current.
+CIVINTELLIGENCE is the central public-interest application for the CIVWATCH ecosystem: civic source discovery, intelligence desks, Veil executive briefing, keyless public-record ingestion, and the integration boundary for specialized pillars.
 
 > Transparency is not optional.
 
-## Pillars
+## System of record
 
-| Pillar | Role | Status |
-|--------|------|--------|
-| **Framework** | Living index of civic intelligence sources — tree, search, per-node notes, source markers | Live |
-| **Movement desk** | Executive calendars, Congress floor/hearings, live Federal Register feed | Live |
-| **Oversight desk** | IG reports, GAO, FOIA releases, STOCK Act trades, lobbying — severity-tagged | Live |
-| **Finance desk** | PAC money, dark money, lobbying, official trades, contracts — plus live federal surveillance awards from USAspending | Live |
-| **Privacy desk** | Surveillance system tracker with a public-record path for every system — plus mapped ALPR points from OpenStreetMap | Live |
-| **Field toolkit** | Records request generator (FOIA / Privacy Act / state), agency FOIA offices, field rules | Live |
-| **Veil** | Executive brief: metrics, signals, Federal Register, NWS alerts, surveillance awards | Live |
-| **Watchtower** | Map-first civic oversight: features/reports API, CIVINT soft-proxy, situational dashboard | Operational baseline ([civwatch-watchtower](https://github.com/POWDER-RANGER/civwatch-watchtower)) |
-| **Cell Titan** | Defensive RF observability: demo telemetry, hash-chained evidence, optional ADB sensors | Operational baseline ([civwatch-cell-titan](https://github.com/POWDER-RANGER/civwatch-cell-titan)) |
+**CivilianIntelligence is the hub.** Other CIVWATCH repositories remain independently runnable, but production integration flows terminate here rather than creating a second application center of gravity.
+
+| Repository | Canonical role | Status |
+|---|---|---|
+| [CivilianIntelligence](https://github.com/POWDER-RANGER/CivilianIntelligence) | Unified application, desks, Veil, ingest, integration contract | **System of record** |
+| [civwatch-watchtower](https://github.com/POWDER-RANGER/civwatch-watchtower) | Map-first civic oversight, features, reports | Specialized pillar |
+| [civwatch-cell-titan](https://github.com/POWDER-RANGER/civwatch-cell-titan) | Defensive RF telemetry and evidence | Specialized pillar |
+| [civwatch-app](https://github.com/POWDER-RANGER/civwatch-app) | Flutter multi-platform operator client | Client |
+| [CIVWATCH](https://github.com/POWDER-RANGER/CIVWATCH) | Legacy backend/ML/ingest/operations source material | Migration source |
+| [civwatch-v3](https://github.com/POWDER-RANGER/civwatch-v3) | Earlier RF dashboard/reference implementation | Predecessor |
+| [civwatch-ruby-gem](https://github.com/POWDER-RANGER/civwatch-ruby-gem) | Ruby integration/package scaffold | Extension scaffold |
+| [civwatch-powder-ranger](https://github.com/POWDER-RANGER/civwatch-powder-ranger) | Community and documentation home | Community |
+
+## Current pillars
+
+| Pillar | Role |
+|---|---|
+| **Framework** | Living civic intelligence source catalog |
+| **Movement** | Government movement, calendars, hearings, Federal Register |
+| **Oversight** | IG, GAO, FOIA, STOCK Act, lobbying, accountability |
+| **Finance** | Political finance, contracts, public federal awards |
+| **Privacy** | Surveillance-system transparency and public-record paths |
+| **Toolkit** | FOIA / Privacy Act / state request workflows |
+| **Veil** | Executive public-record briefing |
+| **Watchtower** | Geospatial oversight and report/feature surface |
+| **Cell Titan** | Defensive RF telemetry and verifiable evidence |
 
 ## Core principles
 
-- Public-interest first. Neutral analysis over political spin.
-- Evidence-based reporting — every claim traceable to a primary source.
-- Transparent scoring and traceable context.
-- **Defensive only.** Protecting citizens from surveillance and abuse — never targeting individuals.
-- **Keyless where possible.** The CIVINT ingest pipeline uses only public APIs (NWS, USAspending, OSM extracts). No vendor API keys.
+- Public-interest first; neutral analysis over political spin.
+- Evidence before inference; sources stay traceable.
+- Transparent scoring and explicit context.
+- **Defensive only.** No individual targeting.
+- Public data first and keyless where possible.
+- Demo, snapshot, live, and unavailable states remain distinguishable.
 
 ## Quick start
 
-```bash
+~~~bash
 npm ci
-npm run dev          # http://localhost:8080
+npm run dev
 npm run typecheck
 npm test
 npm run build:dev
-```
+~~~
 
-### CIVINT ingest (keyless data)
+## Public-data ingest
 
-```bash
+The ingest pipeline publishes dashboard-ready snapshots under public/civint.
+
+~~~bash
 cd ingest
-pip install -r requirements-dev.txt   # requests; add osmium for OSM
+pip install -r requirements-dev.txt
 
-export NWS_USER_AGENT="CIVINT (contact: you@real-address)"
+export NWS_USER_AGENT="CIVINT (contact: your-address@example.com)"
 
 python civint_ingest.py nws
 python civint_ingest.py usaspending --max-pages 3
-# optional ALPR map points from a Geofabrik extract:
+# Optional OSM/ALPR extraction:
 # python civint_ingest.py osm --pbf iowa-latest.osm.pbf
+~~~
 
-mkdir -p ../public/civint
-cp civint_data/alerts.json civint_data/awards.json ../public/civint/ 2>/dev/null || true
-```
+Primary outputs:
 
-Outputs land in `civint_data/` (gitignored) and are published to `public/civint/` for the app:
+| File | Consumers |
+|---|---|
+| alerts.json | Veil / alert surfaces |
+| awards.json | Veil / Finance |
+| alpr_overpass.json | Privacy / Watchtower |
 
-| File | Desk / consumer |
-|------|-----------------|
-| `alerts.json` | Veil — NWS active alerts (IA / IL / MO by default) |
-| `awards.json` | Veil + Finance — federal awards matching Flock / ALPR terms |
-| `alpr_overpass.json` | Privacy — mapped license-plate-reader nodes (OSM) |
+See [ingest/README.md](./ingest/README.md).
 
-Full pipeline notes: [`ingest/README.md`](./ingest/README.md).
+## Pillar bridge
 
-### Pillar bridge
+CIVINTELLIGENCE probes specialized services server-side:
 
-The unified hub can server-side probe Watchtower and Cell Titan. For production, configure `WATCHTOWER_BASE_URL` and `CELL_TITAN_BASE_URL`; configure `CELL_TITAN_API_TOKEN` when the hub needs authenticated Titan telemetry/evidence. Upstream URLs and tokens stay server-side.
+- WATCHTOWER_BASE_URL — Watchtower API base
+- CELL_TITAN_BASE_URL — Cell Titan API base
+- CELL_TITAN_API_TOKEN — optional server-side bearer credential for protected Titan reads
 
-Nightly publish is defined in [`.github/workflows/ingest.yml`](./.github/workflows/ingest.yml). Set the Actions variable **`NWS_USER_AGENT`** before the scheduled job will call NWS.
+Production deployments should configure service URLs explicitly. Internal topology and credentials stay server-side.
 
-## Live panels
+Integrated hub routes:
 
-| Component | Route | Source |
-|-----------|-------|--------|
-| NWS alerts + surveillance awards | `/veil` | `getCivintAlerts` / `getCivintAwards` |
-| **AwardsPanel** (federal, match-strength badges, USAspending links) | `/finance` | USAspending via ingest |
-| **AlprPanel** (operator counts, extract age) | `/privacy` | OSM ALPR snapshot via ingest |
+- /watchtower
+- /titan
+- /veil
 
-Loaders live in [`src/lib/civint-feeds.ts`](./src/lib/civint-feeds.ts). They fail soft (empty UI) when snapshots are missing, so the rest of the desk stays usable.
+## Integration contract
 
-## Sister pillars (run separately)
+See [docs/CROSS_REPO_INTEGRATION.md](./docs/CROSS_REPO_INTEGRATION.md) for ownership, health contracts, security boundaries, evidence/provenance, and release gates.
 
-| Repo | Start |
-|------|-------|
-| [civwatch-watchtower](https://github.com/POWDER-RANGER/civwatch-watchtower) | `pnpm install && pnpm dev:server` → `:3000` |
-| [civwatch-cell-titan](https://github.com/POWDER-RANGER/civwatch-cell-titan) | `./launch.sh` → `:8000` |
+## Acceptance status
+
+Integration changes are staged on the integration/spine-2026-10 branch and opened as a draft PR. The ecosystem is **not declared production-ready solely because code exists**; repository CI, tests, builds, and security gates must pass before release.
 
 ## Documentation
 
-- [CIVINTELLIGENCE charter](./docs/CIVINTELLIGENCE.md) — what the unified platform is
-- [Unified architecture](./docs/CIVINTELLIGENCE_ARCHITECTURE.md) — system design and data flow
-- [Consolidation plan](./docs/CIVINTELLIGENCE_CONSOLIDATION_PLAN.md) — phased merge of the source repos
-- [Cross-repo integration contract](./docs/CROSS_REPO_INTEGRATION.md) — runtime rails, health contracts, evidence, and release gates
-- [Ingest pipeline](./ingest/README.md) — NWS, USAspending, OSM ALPR, quote verifier
-
-## Tech stack
-
-React 19 · TanStack Start / Router / Query · Tailwind v4 · Radix UI · Vite · Python 3.12 (ingest)
+- [CIVINTELLIGENCE charter](./docs/CIVINTELLIGENCE.md)
+- [Unified architecture](./docs/CIVINTELLIGENCE_ARCHITECTURE.md)
+- [Consolidation plan](./docs/CIVINTELLIGENCE_CONSOLIDATION_PLAN.md)
+- [Cross-repo integration contract](./docs/CROSS_REPO_INTEGRATION.md)
+- [Ingest pipeline](./ingest/README.md)
 
 ## License
 
