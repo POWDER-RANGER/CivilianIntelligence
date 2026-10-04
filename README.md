@@ -102,7 +102,9 @@ See [docs/CROSS_REPO_INTEGRATION.md](./docs/CROSS_REPO_INTEGRATION.md) for owner
 
 ## Acceptance status
 
-Integration changes are staged on the integration/spine-2026-10 branch and opened as a draft PR. The ecosystem is **not declared production-ready solely because code exists**; repository CI, tests, builds, and security gates must pass before release.
+**Merged core, pending CI/CD validation.** The eight-repository integration spine has been merged into the primary codebases. Automated validation is currently blocked by a reproducible GitHub Actions setup/logging failure in which jobs are created but terminate before reporting executable steps. No production-readiness claim is made until CI, tests, builds, and security gates execute and pass.
+
+Incident record: [docs/CI_RUNNER_INCIDENT_2026-10-04.md](./docs/CI_RUNNER_INCIDENT_2026-10-04.md).
 
 ## Documentation
 
@@ -110,6 +112,7 @@ Integration changes are staged on the integration/spine-2026-10 branch and opene
 - [Unified architecture](./docs/CIVINTELLIGENCE_ARCHITECTURE.md)
 - [Consolidation plan](./docs/CIVINTELLIGENCE_CONSOLIDATION_PLAN.md)
 - [Cross-repo integration contract](./docs/CROSS_REPO_INTEGRATION.md)
+- [CI runner incident](./docs/CI_RUNNER_INCIDENT_2026-10-04.md)
 - [Ingest pipeline](./ingest/README.md)
 
 ## License
