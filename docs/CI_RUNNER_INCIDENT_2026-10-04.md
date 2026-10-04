@@ -63,6 +63,12 @@ The workflow then runs `pnpm install` and typecheck.
 
 No shared YAML defect explains both failures, and neither repository reaches an application step before failing.
 
+## Platform status check
+
+At the time of this incident review, GitHub Status reports **Actions operational** and no unresolved Actions incident. GitHub's history records a resolved **October 1, 2026 Actions Job Delays** incident involving degraded performance for some hosted runners due to throttling in an upstream Azure dependency. The current repository evidence therefore indicates a reproducible job-level problem but does not prove that today's failures are the same incident.
+
+Status reference: https://www.githubstatus.com/
+
 ## Current technical conclusion
 
 **Do not rewrite the workflow definitions solely to address this incident.**
@@ -71,9 +77,15 @@ The reproducible evidence is consistent with a runner/job provisioning or workfl
 
 The next trustworthy milestone is a run that records the setup phase and at least the first checkout/setup step. Only then should application-level CI failures be interpreted.
 
-## Escalation evidence
+## Escalation
 
-Provide GitHub Support the repository names, run IDs, job IDs, approximate four-second runtime, zero-step observation, and `BlobNotFound` log retrieval failure.
+Central tracking issue: https://github.com/POWDER-RANGER/CivilianIntelligence/issues/4
+
+Watchtower tracking issue: https://github.com/POWDER-RANGER/civwatch-watchtower/issues/3
+
+GitHub Support: https://support.github.com/contact
+
+Provide Support the repository names, run IDs, job IDs, approximate four-second runtime, zero-step observation, and `BlobNotFound` log retrieval failure. Ask them to inspect hosted-runner/job-service state, runner-pool assignment, repository/account limits, permissions/environments, and log artifact creation for the cited jobs.
 
 ## Release posture
 
