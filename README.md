@@ -65,6 +65,10 @@ Outputs land in `civint_data/` (gitignored) and are published to `public/civint/
 
 Full pipeline notes: [`ingest/README.md`](./ingest/README.md).
 
+### Pillar bridge
+
+The unified hub can server-side probe Watchtower and Cell Titan. For production, configure `WATCHTOWER_BASE_URL` and `CELL_TITAN_BASE_URL`; configure `CELL_TITAN_API_TOKEN` when the hub needs authenticated Titan telemetry/evidence. Upstream URLs and tokens stay server-side.
+
 Nightly publish is defined in [`.github/workflows/ingest.yml`](./.github/workflows/ingest.yml). Set the Actions variable **`NWS_USER_AGENT`** before the scheduled job will call NWS.
 
 ## Live panels
@@ -89,6 +93,7 @@ Loaders live in [`src/lib/civint-feeds.ts`](./src/lib/civint-feeds.ts). They fai
 - [CIVINTELLIGENCE charter](./docs/CIVINTELLIGENCE.md) — what the unified platform is
 - [Unified architecture](./docs/CIVINTELLIGENCE_ARCHITECTURE.md) — system design and data flow
 - [Consolidation plan](./docs/CIVINTELLIGENCE_CONSOLIDATION_PLAN.md) — phased merge of the source repos
+- [Cross-repo integration contract](./docs/CROSS_REPO_INTEGRATION.md) — runtime rails, health contracts, evidence, and release gates
 - [Ingest pipeline](./ingest/README.md) — NWS, USAspending, OSM ALPR, quote verifier
 
 ## Tech stack
