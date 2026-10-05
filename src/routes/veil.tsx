@@ -8,9 +8,11 @@ import { getRegisterFeed, type RegisterDoc } from "@/lib/feeds";
 import {
   getCivintAlerts,
   getCivintAwards,
+  getCivintSources,
   formatUsd,
   type CivintAlert,
   type CivintAward,
+  type CivintSource,
 } from "@/lib/civint-feeds";
 import { FRAMEWORK } from "@/data/catalog";
 import { countLeaves } from "@/lib/intel";
@@ -45,6 +47,7 @@ function VeilPage() {
   const [awards, setAwards] = useState<CivintAward[]>([]);
   const [civintLive, setCivintLive] = useState(false);
   const [pillars, setPillars] = useState<PillarStatus[]>([]);
+  const [sources, setSources] = useState<CivintSource[]>([]);
 
   const sources = countLeaves(FRAMEWORK);
   const liveMovement = MOVEMENT_EVENTS.filter((e) => e.status === "live").length;
@@ -66,6 +69,9 @@ function VeilPage() {
     });
     void getPillarStatus().then((items) => {
       if (!cancelled) setPillars(items);
+    });
+    void getCivintSources().then((items) => {
+      if (!cancelled) setSources(items);
     });
     return () => {
       cancelled = true;
@@ -126,6 +132,36 @@ function VeilPage() {
             ))}
           </div>
         </section>
+
+        {sources.length > 0 && (
+          <section className="mt-6 rounded-xl border border-border bg-card p-5">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Federated source network</p>
+                <h2 className="mt-1 font-display text-2xl">Use what already exists</h2>
+                <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
+                  CIVINT connects established public datasets and community tools instead of cloning their databases.
+                  Machine-readable inputs are distinguished from evidence/reference sources.
+                </p>
+              </div>
+              <Badge variant="live">{sources.filter((x) => x.status === "active").length} active</Badge>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {sources.slice(0, 12).map((source) => (
+                <a
+                  key={source.id}
+                  href={source.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-full border border-border px-3 py-1.5 text-[11px] text-muted-foreground hover:text-foreground"
+                  title={source.scope ?? source.integration}
+                >
+                  {source.name} · {source.integration}
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
