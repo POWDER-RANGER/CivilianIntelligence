@@ -60,7 +60,7 @@ function TitanPage() {
 
         <div className="mt-6 flex flex-wrap gap-2">
           {observationState && (
-            <Badge variant={observationState === "live" ? "live" : observationState === "demo" ? "warn" : "outline"}>
+            <Badge variant={observationState === "live" ? "live" : observationState === "snapshot" ? "warn" : "outline"}>
               observations: {observationState}
             </Badge>
           )}
