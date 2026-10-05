@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { createFileRoute } from "@tanstack/react-router";
 import { ExternalLink, Library, Search, ShieldCheck, X, Loader2, FileText } from "lucide-react";
 
@@ -134,7 +135,6 @@ function ReadingRoomPage() {
   const [readerLoading, setReaderLoading] = useState(false);
   const [readerError, setReaderError] = useState("");
   const [libraryQuery, setLibraryQuery] = useState("");
-  const [readerHistory, setReaderHistory] = useState<string[]>([]);
   function resetReader() {
     setReaderUrl(null); setReader(null); setReaderPdf(null); setReaderError(""); setReaderLoading(false);
   }
@@ -150,7 +150,6 @@ function ReadingRoomPage() {
   }, [libraryQuery]);
   async function openInside(url: string) {
     setReaderUrl(url); setReader(null); setReaderPdf(null); setReaderError("");
-    setReaderHistory((history) => [url, ...history.filter((item) => item !== url)].slice(0, 5));
     if (/\.pdf(?:[?#]|$)/i.test(url)) {
       setReaderPdf("/api/civint/reading-room/source?url="+encodeURIComponent(url));
       return;
