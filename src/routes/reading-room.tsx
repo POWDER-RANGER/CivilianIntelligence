@@ -224,13 +224,7 @@ function ReadingRoomPage() {
           </div>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {CIA_COLLECTIONS.map((collection) => (
-              <a
-                key={collection.title}
-                href={collection.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group rounded-xl border border-border bg-card p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md"
-              >
+              <button type="button" onClick={() => void openInside(collection.url)} className="group w-full text-left rounded-xl border border-border bg-card p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md">
                 <div className="flex items-start justify-between gap-4">
                   <div className="rounded-lg bg-muted p-2"><Library className="size-4 text-primary" /></div>
                   <FileText className="size-4 text-muted-foreground transition group-hover:text-foreground" />
