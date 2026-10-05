@@ -75,6 +75,7 @@ Titan owns sensor/evidence behavior:
 
 - `GET /api/health`
 - `GET /api/telemetry/recent`
+- `GET /api/observations` — authenticated user-device observation envelope
 - `GET /api/evidence/verify`
 - `GET /api/evidence/tail`
 - privileged writes under bearer-token control
