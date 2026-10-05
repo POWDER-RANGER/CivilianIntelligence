@@ -21,6 +21,10 @@ jobs:
     if: github.event.action == 'opened' || github.event.action == 'reopened' || github.event.action == 'synchronize'
     runs-on: ubuntu-latest
     steps:
+      - name: Set branch expiration
+        id: expiration
+        run: echo "expires_at=$(date -u --date '+14 days' +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
+
       - name: Get branch name
         id: branch_name
         uses: tj-actions/branch-names@v8
@@ -32,13 +36,7 @@ jobs:
           project_id: ${{ vars.NEON_PROJECT_ID }}
           branch_name: preview/pr-${{ github.event.number }}-${{ steps.branch_name.outputs.current_branch }}
           api_key: ${{ secrets.NEON_API_KEY }}
-          expires_at: ${{ env.EXPIRES_AT }}
-        env:
-          EXPIRES_AT: ${{ steps.expiration.outputs.expires_at }}
-
-      - name: Set branch expiration
-        id: expiration
-        run: echo "expires_at=$(date -u --date '+14 days' +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
+          expires_at: ${{ steps.expiration.outputs.expires_at }}
 
       - name: Checkout
         uses: actions/checkout@v4
