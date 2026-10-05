@@ -1,0 +1,42 @@
+name: Repair Node lockfile
+
+on:
+  push:
+    branches:
+      - deploy/render-public-web
+
+permissions:
+  contents: write
+
+jobs:
+  lockfile:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout production branch
+        uses: actions/checkout@v5
+        with:
+          ref: deploy/render-public-web
+          fetch-depth: 0
+
+      - name: Use Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22.23.3"
+          cache: npm
+
+      - name: Regenerate and validate lockfile
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Commit regenerated lockfile
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "package-lock.json already consistent"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "fix: regenerate npm lockfile for Render"
+          git push origin HEAD:deploy/render-public-web
