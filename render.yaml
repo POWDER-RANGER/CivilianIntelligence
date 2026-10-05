@@ -3,7 +3,10 @@ services:
     name: civintelligence
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build
+    # The repository lockfile is currently inconsistent with package.json.
+    # Use npm install here to resolve the dependency graph at deploy time;
+    # restore npm ci once a regenerated package-lock.json is committed.
+    buildCommand: npm install && npm run build
     startCommand: npm start
     healthCheckPath: /
     autoDeploy: true
