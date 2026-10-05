@@ -235,11 +235,10 @@ export async function searchIndexedRecords(
   sql?: Sql,
 ): Promise<RecordSearchResult[]> {
   const db = sql ?? await getSql();
-  await syncSourceRegistry(db);
-
   const clauses: string[] = [];
   const params: unknown[] = [];
   let queryParam: number | null = null;
+  let identifierParam: number | null = null;
 
   if (filters.query?.trim()) {
     queryParam = params.push(filters.query.trim());
@@ -253,7 +252,8 @@ export async function searchIndexedRecords(
   }
 
   if (filters.identifier?.trim()) {
-    const p = params.push(filters.identifier.trim());
+    identifierParam = params.push(filters.identifier.trim());
+    const p = identifierParam;
     clauses.push([
       "exists (select 1 from jsonb_array_elements_text(r.identifiers) value",
       "where lower(value) = lower($" + p + "))",
@@ -288,9 +288,18 @@ export async function searchIndexedRecords(
   const limit = Math.min(Math.max(filters.limit ?? 25, 1), 100);
   const limitParam = params.push(limit);
 
-  const exactExpr = queryParam
-    ? "exists (select 1 from jsonb_array_elements_text(r.identifiers) value where lower(value) = lower($" + queryParam + "))"
-    : "false";
+  const exactExprParts = [];
+  if (queryParam) {
+    exactExprParts.push(
+      "exists (select 1 from jsonb_array_elements_text(r.identifiers) value where lower(value) = lower($" + queryParam + "))",
+    );
+  }
+  if (identifierParam) {
+    exactExprParts.push(
+      "exists (select 1 from jsonb_array_elements_text(r.identifiers) value where lower(value) = lower($" + identifierParam + "))",
+    );
+  }
+  const exactExpr = exactExprParts.length ? "(" + exactExprParts.join(" or ") + ")" : "false";
   const textExpr = queryParam
     ? "r.tsv @@ websearch_to_tsquery('english', $" + queryParam + ")"
     : "false";
@@ -319,8 +328,6 @@ export async function getRecordDossier(
   sql?: Sql,
 ): Promise<RecordDossier | null> {
   const db = sql ?? await getSql();
-  await syncSourceRegistry(db);
-
   const records = await db.query<Record<string, unknown>>(
     "select r.*, s.name as source_name from records r join source_registry s on s.id = r.source_id where r.id = $1",
     [id],
