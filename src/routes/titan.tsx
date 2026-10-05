@@ -56,6 +56,13 @@ function TitanPage() {
           </div>
         )}
 
+        <div className="mt-6 flex flex-wrap gap-2">
+          {/* State reflects the authenticated Titan observation envelope, not an interception conclusion. */}
+          <Badge variant="outline">owner: user device</Badge>
+          {evidenceOk === true && <Badge variant="live">evidence verified</Badge>}
+          {evidenceOk === false && <Badge variant="danger">evidence broken</Badge>}
+        </div>
+
         <div className="mt-6 grid gap-3 sm:grid-cols-4">
           <div className="rounded-xl border border-border bg-card p-5">
             <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">API</p>
