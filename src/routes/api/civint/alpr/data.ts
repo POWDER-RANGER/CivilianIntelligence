@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { upsertIndexedRecord } from "@/lib/record-index";
 
 const UPSTREAM = "https://flocklocations.com/api/cameras/export?format=geojson";
 
@@ -32,6 +33,31 @@ function normalizeFeature(feature: any, index: number): Camera | null {
   };
 }
 
+async function indexFeatures(features: Camera[]) {
+  let indexed = 0;
+  for (let start = 0; start < features.length; start += 20) {
+    const batch = features.slice(start, start + 20);
+    const results = await Promise.allSettled(batch.map(async (feature) => {
+      await upsertIndexedRecord({
+        sourceId: "alpr-flocklocations",
+        sourceRecordId: feature.id,
+        kind: "alpr-observation",
+        title: "Flock Locations camera report " + feature.id,
+        identifiers: [feature.id],
+        entities: [feature.type, feature.mounted_on].filter((value): value is string => Boolean(value)),
+        sourceUrl: "https://flocklocations.com/",
+        retrievalMethod: "feed",
+        adapterVersion: "flocklocations-geojson-v1",
+        rawContent: JSON.stringify(feature),
+        hashBasis: "observation",
+      });
+      return true;
+    }));
+    indexed += results.filter((result) => result.status === "fulfilled").length;
+  }
+  return indexed;
+}
+
 export const Route = createFileRoute("/api/civint/alpr/data")({
   server: {
     handlers: {
@@ -43,7 +69,7 @@ export const Route = createFileRoute("/api/civint/alpr/data")({
           });
           if (!upstream.ok) {
             return Response.json(
-              { state: "unavailable", error: `Upstream returned ${upstream.status}`, features: [] },
+              { state: "unavailable", error: "Upstream returned " + upstream.status, features: [] },
               { status: 502, headers: { "Cache-Control": "public, max-age=60" } },
             );
           }
@@ -51,6 +77,16 @@ export const Route = createFileRoute("/api/civint/alpr/data")({
           const features = (payload.features ?? [])
             .map(normalizeFeature)
             .filter((x): x is Camera => x !== null);
+
+          let indexState: "indexed" | "partial" | "unavailable" = "unavailable";
+          let indexed = 0;
+          try {
+            indexed = await indexFeatures(features);
+            indexState = indexed === features.length ? "indexed" : indexed > 0 ? "partial" : "unavailable";
+          } catch {
+            indexState = "unavailable";
+          }
+
           return Response.json(
             {
               state: "live",
@@ -61,6 +97,7 @@ export const Route = createFileRoute("/api/civint/alpr/data")({
                 method: "server-side public GeoJSON ingestion",
               },
               count: features.length,
+              civint_index: { attempted: true, indexed, state: indexState },
               features,
             },
             {
