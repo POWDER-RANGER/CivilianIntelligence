@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LocateFixed, MapPin, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "@tanstack/react-router";
 
 type Camera = {
   id: string;
@@ -97,6 +98,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
   const [hasCoordinatesOnly, setHasCoordinatesOnly] = useState(true);
   const [nearbyOnly, setNearbyOnly] = useState(false);
   const [locationUsed, setLocationUsed] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
   const filteredRef = useRef<Camera[]>([]);
 
   const filtered = useMemo(() => {
@@ -129,41 +131,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
       })
       .catch(async (error) => {
         if (error?.name === "AbortError") throw error;
-        // Direct public-feed fallback keeps the atlas useful if the Render
-        // server cannot reach the upstream source. The source is public and
-        // does not receive device location from this request.
-        const response = await fetch("https://flocklocations.com/api/cameras/export?format=geojson", {
-          headers: { Accept: "application/geo+json, application/json" },
-          cache: "no-store",
-          signal: controller.signal,
-        });
-        if (!response.ok) throw new Error("Public feed unavailable");
-        const payload = await response.json() as { features?: any[] };
-        const features = (payload.features ?? []).map((feature: any, index: number) => {
-          const coords = feature?.geometry?.coordinates;
-          if (!Array.isArray(coords) || coords.length < 2) return null;
-          const longitude = Number(coords[0]);
-          const latitude = Number(coords[1]);
-          if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
-          const p = feature?.properties ?? {};
-          return {
-            id: String(p.id ?? p.camera_id ?? index),
-            latitude,
-            longitude,
-            type: p.type ? String(p.type) : null,
-            mounted_on: p.mounted_on ? String(p.mounted_on) : null,
-            reported_at: p.reported_at ? String(p.reported_at) : null,
-            verified: Boolean(p.verified ?? p.verification_status === "verified"),
-            source: "flock-locations",
-          } satisfies Camera;
-        }).filter(Boolean) as Camera[];
-        return {
-          state: features.length ? "live" : "degraded",
-          generated_at: new Date().toISOString(),
-          source: { name: "Flock Locations public camera reports", method: "direct public GeoJSON fallback" },
-          count: features.length,
-          features,
-        } satisfies Feed;
+        throw error;
       })
       .then(setFeed)
       .catch((error) => {
@@ -200,7 +168,8 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     map.addControl(new maplibregl.ScaleControl({ maxWidth: 120, unit: "imperial" }), "bottom-right");
 
-    map.on("load", () => {
+      map.on("load", () => {
+        setMapReady(true);
       map.addSource("cameras", {
         type: "geojson",
         data: featureCollection(filteredRef.current),
@@ -295,7 +264,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
       map.on("mouseleave", "camera-clusters", () => { map.getCanvas().style.cursor = ""; });
       map.on("mouseenter", "camera-points", () => { map.getCanvas().style.cursor = "pointer"; });
       map.on("mouseleave", "camera-points", () => { map.getCanvas().style.cursor = ""; });
-    });
+      });
 
     mapRef.current = map;
     }).catch(() => undefined);
@@ -314,10 +283,10 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
   }, [filtered]);
 
   useEffect(() => {
-    if (!location || !mapRef.current || locationUsed) return;
+    if (!location || !mapRef.current || !mapReady || locationUsed) return;
     mapRef.current.flyTo({ center: [location.longitude, location.latitude], zoom: 10.5, duration: 900, essential: true });
     setLocationUsed(true);
-  }, [location, locationUsed]);
+  }, [location, mapReady, locationUsed]);
 
   const centerOnLocation = () => {
     if (!location || !mapRef.current) return;
@@ -372,9 +341,9 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
           <p className="mt-1 text-xs text-muted-foreground">The source is not represented with fake pins. Try national view, the Record Index, Privacy desk, or FOIA tools when available.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button type="button" onClick={() => { setNearbyOnly(false); mapRef.current?.flyTo({ center: NATIONAL, zoom: 3.1, duration: 700 }); }} className="rounded-lg border border-border bg-background px-3 py-2 text-xs hover:bg-muted">Browse national reports</button>
-            <button type="button" className="rounded-lg border border-border bg-background px-3 py-2 text-xs hover:bg-muted">Open Privacy desk</button>
-            <button type="button" className="rounded-lg border border-border bg-background px-3 py-2 text-xs hover:bg-muted">Draft FOIA</button>
-            <button type="button" className="rounded-lg border border-border bg-background px-3 py-2 text-xs hover:bg-muted">Search Record Index</button>
+            <Link to="/privacy" className="rounded-lg border border-border bg-background px-3 py-2 text-xs hover:bg-muted">Open Privacy desk</Link>
+            <Link to="/toolkit" className="rounded-lg border border-border bg-background px-3 py-2 text-xs hover:bg-muted">Draft FOIA</Link>
+            <Link to="/records" className="rounded-lg border border-border bg-background px-3 py-2 text-xs hover:bg-muted">Search Record Index</Link>
           </div>
         </div>
       )}
