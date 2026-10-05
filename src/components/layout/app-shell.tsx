@@ -18,6 +18,7 @@ const NAV = [
   { to: "/veil", label: "VEIL", hint: "Briefing" },
   { to: "/movement", label: "Movement", hint: "Government activity" },
   { to: "/oversight", label: "Oversight", hint: "Money, ethics & FOIA" },
+  { to: "/reading-room", label: "Reading Room", hint: "Declassified records" },
 ] as const;
 
 export function AppShell({
