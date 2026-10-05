@@ -75,6 +75,18 @@ export const SOURCES: SourceDefinition[] = [
     nativeSurface: "Oversight / FOIA",
   },
   {
+    id: "cia-reading-room",
+    name: "CIA Electronic Reading Room",
+    category: "oversight",
+    endpoint: "https://www.cia.gov/readingroom/",
+    healthcheckUrl: "https://www.cia.gov/readingroom/",
+    accessMethod: "Curated public index + official deep links",
+    license: "Public federal records; source terms apply",
+    attribution: "Central Intelligence Agency",
+    cadence: "Agency-maintained collection",
+    nativeSurface: "Reading Room / Declassified Libraries",
+  },
+  {
     id: "federal-register",
     name: "Federal Register",
     category: "regulatory",
