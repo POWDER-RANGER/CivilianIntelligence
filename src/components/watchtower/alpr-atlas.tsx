@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LocateFixed, MapPin, Search, ZoomIn, ZoomOut } from "lucide-react";
+import maplibregl, { type GeoJSONSource, type Map } from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
+import { LocateFixed, MapPin, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 type Camera = {
@@ -10,380 +12,363 @@ type Camera = {
   mounted_on: string | null;
   reported_at: string | null;
   verified: boolean;
+  source?: string;
 };
 
 type Feed = {
   state: "live" | "unavailable" | "degraded" | "awaiting_feed" | "caching";
-  cache_age_seconds?: number;
-  error_class?: "timeout" | "upstream" | "schema" | "empty";
   generated_at: string | null;
   source: { name: string; method: string };
   count: number;
+  cache_age_seconds?: number;
+  error_class?: "timeout" | "upstream" | "schema" | "empty";
   features: Camera[];
 };
 
 type Location = { latitude: number; longitude: number };
-type Cluster = { x: number; y: number; cameras: Camera[] };
 
-const BOUNDS = { minLon: -125, maxLon: -66, minLat: 24, maxLat: 50 };
-const W = 1000;
-const H = 500;
+const NATIONAL: [number, number] = [-96, 38];
+const MAX_ZOOM = 16;
+const MIN_ZOOM = 3;
 
-function project(camera: Camera, width = W, height = H, bounds = BOUNDS) {
-  const x = ((camera.longitude - bounds.minLon) / (bounds.maxLon - bounds.minLon)) * width;
-  const y = height - ((camera.latitude - bounds.minLat) / (bounds.maxLat - bounds.minLat)) * height;
-  return { x, y };
+function statusText(feed: Feed | null, loading: boolean) {
+  if (loading) return ["caching", "Checking the public source."] as const;
+  if (!feed) return ["unavailable", "No feed response was received."] as const;
+  if (feed.state === "unavailable") return ["unavailable", "The public source could not be reached. No pins are fabricated."] as const;
+  if (feed.state === "degraded") return ["degraded", "Showing the last successful cache while the upstream source is degraded."] as const;
+  if (!feed.count) return ["awaiting feed", "The adapter is reachable, but no public observations are available yet."] as const;
+  return ["live", "Sourced observations; not proof of current operation."] as const;
 }
 
-function clusterCameras(cameras: Camera[], zoom: number): Cluster[] {
-  const cell = zoom < 2 ? 34 : zoom < 3 ? 26 : zoom < 4 ? 18 : zoom < 5 ? 12 : 7;
-  const buckets = new Map<string, Cluster>();
-
-  for (const camera of cameras) {
-    const p = project(camera);
-    const key = `${Math.floor(p.x / cell)}:${Math.floor(p.y / cell)}`;
-    const existing = buckets.get(key);
-    if (existing) {
-      existing.cameras.push(camera);
-    } else {
-      buckets.set(key, { x: p.x, y: p.y, cameras: [camera] });
-    }
-  }
-
-  for (const cluster of buckets.values()) {
-    if (cluster.cameras.length > 1) {
-      const total = cluster.cameras.length;
-      cluster.x = cluster.cameras.reduce((sum, camera) => sum + project(camera).x, 0) / total;
-      cluster.y = cluster.cameras.reduce((sum, camera) => sum + project(camera).y, 0) / total;
-    }
-  }
-
-  return [...buckets.values()];
+function featureCollection(cameras: Camera[]) {
+  return {
+    type: "FeatureCollection" as const,
+    features: cameras.map((camera) => ({
+      type: "Feature" as const,
+      geometry: { type: "Point" as const, coordinates: [camera.longitude, camera.latitude] },
+      properties: {
+        id: camera.id,
+        type: camera.type ?? "ALPR camera",
+        mounted_on: camera.mounted_on ?? "Not reported",
+        reported_at: camera.reported_at ?? "Not reported",
+        verified: camera.verified ? 1 : 0,
+      },
+    })),
+  };
 }
 
 export function AlprAtlas({ location }: { location?: Location | null }) {
+  const mapNode = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<Map | null>(null);
   const [feed, setFeed] = useState<Feed | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Camera | null>(null);
   const [query, setQuery] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [zoom, setZoom] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const drag = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch("/api/civint/alpr/data", {
-      headers: { Accept: "application/json" },
-      cache: "force-cache",
-      signal: controller.signal,
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error("Feed unavailable");
-        return r.json() as Promise<Feed>;
-      })
-      .then(setFeed)
-      .finally(() => setLoading(false))
-      .catch((error) => {
-        if (error?.name !== "AbortError") {
-          setFeed({
-            state: "unavailable",
-            generated_at: null,
-            source: { name: "CIVINT upstream", method: "unavailable" },
-            count: 0,
-            features: [],
-          });
-        }
-      });
-    return () => controller.abort();
-  }, []);
+  const [hasCoordinatesOnly, setHasCoordinatesOnly] = useState(true);
+  const [nearbyOnly, setNearbyOnly] = useState(false);
+  const [locationUsed, setLocationUsed] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return (feed?.features ?? []).filter((camera) => {
+      if (hasCoordinatesOnly && (!Number.isFinite(camera.latitude) || !Number.isFinite(camera.longitude))) return false;
       if (verifiedOnly && !camera.verified) return false;
+      if (nearbyOnly && location) {
+        const latDelta = Math.abs(camera.latitude - location.latitude);
+        const lonDelta = Math.abs(camera.longitude - location.longitude);
+        if (latDelta > 0.7 || lonDelta > 0.9) return false;
+      }
       if (!q) return true;
       return [camera.type, camera.mounted_on, camera.id, `${camera.latitude},${camera.longitude}`]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(q));
     });
-  }, [feed, query, verifiedOnly]);
+  }, [feed, query, verifiedOnly, hasCoordinatesOnly, nearbyOnly, location]);
 
-  const clusters = useMemo(() => clusterCameras(filtered, zoom), [filtered, zoom]);
   const verifiedCount = useMemo(() => filtered.filter((camera) => camera.verified).length, [filtered]);
-
-  const centerOn = (target: Location, targetZoom = 4) => {
-    const p = project({
-      id: "location",
-      latitude: target.latitude,
-      longitude: target.longitude,
-      type: null,
-      mounted_on: null,
-      reported_at: null,
-      verified: false,
-    });
-    setZoom(targetZoom);
-    setOffset({
-      x: W / 2 - targetZoom * p.x,
-      y: H / 2 - targetZoom * p.y,
-    });
-  };
+  const [status, explanation] = statusText(feed, loading);
 
   useEffect(() => {
-    if (location) centerOn(location, 4);
-  }, [location]);
+    const controller = new AbortController();
+    fetch("/api/civint/alpr/data", { headers: { Accept: "application/json" }, cache: "force-cache", signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("Feed unavailable");
+        return response.json() as Promise<Feed>;
+      })
+      .then(setFeed)
+      .catch((error) => {
+        if (error?.name !== "AbortError") setFeed({
+          state: "unavailable",
+          generated_at: null,
+          source: { name: "CIVINT upstream", method: "unavailable" },
+          count: 0,
+          features: [],
+        });
+      })
+      .finally(() => setLoading(false));
+    return () => controller.abort();
+  }, []);
 
-  const locateCamera = location ? project({
-    id: "location",
-    latitude: location.latitude,
-    longitude: location.longitude,
-    type: null,
-    mounted_on: null,
-    reported_at: null,
-    verified: false,
-  }) : null;
+  useEffect(() => {
+    if (!mapNode.current || mapRef.current) return;
 
-  const mapTransform = `translate(${offset.x} ${offset.y}) scale(${zoom})`;
+    const map = new maplibregl.Map({
+      container: mapNode.current,
+      center: NATIONAL,
+      zoom: 3.1,
+      minZoom: MIN_ZOOM,
+      maxZoom: MAX_ZOOM,
+      maxBounds: [[-130, 18], [-60, 56]],
+      attributionControl: true,
+      cooperativeGestures: true,
+      style: {
+        version: 8,
+        sources: {
+          "osm-raster": {
+            type: "raster",
+            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+            tileSize: 256,
+            attribution: "© OpenStreetMap contributors",
+          },
+        },
+        layers: [
+          { id: "background", type: "background", paint: { "background-color": "#0b1016" } },
+          { id: "osm", type: "raster", source: "osm-raster", paint: { "raster-opacity": 0.42, "raster-saturation": -0.55, "raster-contrast": 0.15 } },
+        ],
+      },
+    });
 
-  const statusLabel = loading ? "caching" : feed?.state === "degraded" ? "degraded" : feed?.state === "unavailable" ? "unavailable" : feed?.count ? "live" : "awaiting feed";
-  const statusExplanation = loading ? "CIVINT is checking the public source." : feed?.state === "unavailable" ? "The public source could not be reached. No pins are fabricated." : feed?.count ? "Sourced observations; not proof of current operation." : "The adapter is reachable, but no public observations are available yet.";
-  const ageLabel = feed?.cache_age_seconds != null ? `cached ${feed.cache_age_seconds < 60 ? feed.cache_age_seconds + "s" : Math.round(feed.cache_age_seconds / 60) + "m"} ago` : feed?.generated_at ? `refreshed ${new Date(feed.generated_at).toLocaleTimeString()}` : "awaiting refresh";
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    map.addControl(new maplibregl.ScaleControl({ maxWidth: 120, unit: "imperial" }), "bottom-right");
+
+    map.on("load", () => {
+      map.addSource("cameras", {
+        type: "geojson",
+        data: featureCollection([]),
+        cluster: true,
+        clusterMaxZoom: 9,
+        clusterRadius: 48,
+        clusterMinPoints: 2,
+      });
+
+      map.addLayer({
+        id: "camera-clusters-halo",
+        type: "circle",
+        source: "cameras",
+        filter: ["has", "point_count"],
+        paint: {
+          "circle-color": "#6ee7b7",
+          "circle-opacity": 0.11,
+          "circle-radius": ["step", ["get", "point_count"], 16, 10, 20, 50, 25, 200, 31],
+          "circle-pitch-alignment": "map",
+        },
+      });
+
+      map.addLayer({
+        id: "camera-clusters",
+        type: "circle",
+        source: "cameras",
+        filter: ["has", "point_count"],
+        paint: {
+          "circle-color": ["step", ["get", "point_count"], "#2dd4bf", 10, "#38bdf8", 50, "#a78bfa", 200, "#fb7185"],
+          "circle-opacity": 0.92,
+          "circle-stroke-color": "#071018",
+          "circle-stroke-width": 2,
+          "circle-radius": ["step", ["get", "point_count"], 8, 10, 11, 50, 14, 200, 18],
+        },
+      });
+
+      map.addLayer({
+        id: "camera-cluster-count",
+        type: "symbol",
+        source: "cameras",
+        filter: ["has", "point_count"],
+        layout: {
+          "text-field": ["step", ["get", "point_count"], ["get", "point_count"], 1000, "999+"],
+          "text-size": 10,
+          "text-font": ["Open Sans Regular"],
+          "text-allow-overlap": true,
+        },
+        paint: { "text-color": "#071018", "text-halo-color": "#d1fae5", "text-halo-width": 0.6 },
+      });
+
+      map.addLayer({
+        id: "camera-points",
+        type: "circle",
+        source: "cameras",
+        filter: ["!", ["has", "point_count"]],
+        paint: {
+          "circle-color": ["case", ["==", ["get", "verified"], 1], "#22c55e", "#fbbf24"],
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 3, 2.5, 6, 3.5, 10, 5, 14, 6],
+          "circle-opacity": 0.9,
+          "circle-stroke-color": "#071018",
+          "circle-stroke-width": 1.5,
+        },
+      });
+
+      map.on("click", "camera-clusters", (event) => {
+        const features = map.queryRenderedFeatures(event.point, { layers: ["camera-clusters"] });
+        const clusterId = features[0]?.properties?.cluster_id;
+        const source = map.getSource("cameras") as GeoJSONSource;
+        if (clusterId != null) source.getClusterExpansionZoom(Number(clusterId)).then((zoom) => {
+          const geometry = features[0].geometry;
+          if (geometry.type === "Point") map.easeTo({ center: geometry.coordinates as [number, number], zoom: Math.min(zoom, MAX_ZOOM), duration: 450 });
+        });
+      });
+
+      map.on("click", "camera-points", (event) => {
+        const feature = map.queryRenderedFeatures(event.point, { layers: ["camera-points"] })[0];
+        const p = feature?.properties;
+        if (!p) return;
+        setSelected({
+          id: String(p.id),
+          latitude: Number((feature.geometry as GeoJSON.Point).coordinates[1]),
+          longitude: Number((feature.geometry as GeoJSON.Point).coordinates[0]),
+          type: String(p.type),
+          mounted_on: String(p.mounted_on),
+          reported_at: String(p.reported_at),
+          verified: Number(p.verified) === 1,
+          source: "Flock Locations public camera reports",
+        });
+      });
+
+      map.on("mouseenter", "camera-clusters", () => { map.getCanvas().style.cursor = "pointer"; });
+      map.on("mouseleave", "camera-clusters", () => { map.getCanvas().style.cursor = ""; });
+      map.on("mouseenter", "camera-points", () => { map.getCanvas().style.cursor = "pointer"; });
+      map.on("mouseleave", "camera-points", () => { map.getCanvas().style.cursor = ""; });
+    });
+
+    mapRef.current = map;
+    return () => { map.remove(); mapRef.current = null; };
+  }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const update = () => {
+      const source = map.getSource("cameras") as GeoJSONSource | undefined;
+      if (source) source.setData(featureCollection(filtered) as any);
+    };
+    if (map.isStyleLoaded()) update();
+    else map.once("load", update);
+  }, [filtered]);
+
+  useEffect(() => {
+    if (!location || !mapRef.current || locationUsed) return;
+    mapRef.current.flyTo({ center: [location.longitude, location.latitude], zoom: 10.5, duration: 900, essential: true });
+    setLocationUsed(true);
+  }, [location, locationUsed]);
+
+  const centerOnLocation = () => {
+    if (!location || !mapRef.current) return;
+    mapRef.current.flyTo({ center: [location.longitude, location.latitude], zoom: 10.5, duration: 800, essential: true });
+    setNearbyOnly(true);
+  };
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <header className="border-b border-border bg-gradient-to-b from-muted/40 to-card p-5 md:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Watchtower · public infrastructure</p>
-              <Badge variant={statusLabel === "live" ? "live" : "outline"}>{statusLabel}</Badge>
-              <span className="rounded-full border border-border bg-background/60 px-2 py-1 font-mono text-[9px] text-muted-foreground">{ageLabel} · Flock Locations</span>
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Watchtower · spatial intelligence</p>
+              <Badge variant={status === "live" ? "live" : "outline"}>{status}</Badge>
+              <span className="rounded-full border border-border bg-background/60 px-2 py-1 font-mono text-[9px] text-muted-foreground">{feed?.count?.toLocaleString() ?? "—"} observations · {feed?.cache_age_seconds != null ? `cache ${feed.cache_age_seconds}s` : "source check"}</span>
             </div>
             <h2 className="mt-1 font-display text-3xl md:text-4xl">Flock camera map</h2>
             <p className="mt-2 max-w-3xl text-xs leading-relaxed text-muted-foreground">
-              Publicly reported ALPR infrastructure. This atlas shows sourced observations—not private Flock data, live vehicle activity, or a claim that a camera is currently operating.
+              Publicly reported ALPR infrastructure is shown as <strong className="text-foreground">sourced observations</strong>. A point does not establish current operation, ownership, or vehicle activity.
             </p>
-          <div className="mt-3 rounded-xl border border-border/80 bg-background/50 px-3 py-2 text-[10px] text-muted-foreground">
-            <span className="font-medium text-foreground">{statusLabel === "awaiting feed" ? "Awaiting public feed" : statusLabel === "unavailable" ? "Source unavailable" : statusLabel === "degraded" ? "Source degraded" : "Source healthy"}</span> · {statusExplanation}
+            <div className="mt-3 rounded-xl border border-border/80 bg-background/50 px-3 py-2 text-[10px] text-muted-foreground">
+              <span className="font-medium text-foreground">{explanation}</span> · Coverage is uneven; absence does not mean no cameras.
+            </div>
           </div>
-
-          <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-3">
+          <div className="grid min-w-[190px] grid-cols-2 gap-2 text-center">
             <div className="rounded-xl border border-border bg-background/70 px-4 py-2">
-              <p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Reports</p>
+              <p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Visible</p>
               <p className="font-display text-2xl tabular-nums">{filtered.length.toLocaleString()}</p>
-              <p className="mt-1 text-[9px] text-muted-foreground">public observations</p>
             </div>
             <div className="rounded-xl border border-border bg-background/70 px-4 py-2">
               <p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Verified</p>
               <p className="font-display text-2xl tabular-nums">{verifiedCount.toLocaleString()}</p>
-            </div>
-            <div className="col-span-2 rounded-xl border border-border bg-background/70 px-4 py-2 sm:col-span-1">
-              <p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Visible groups</p>
-              <p className="font-display text-2xl tabular-nums">{clusters.length.toLocaleString()}</p>
             </div>
           </div>
         </div>
 
         <div className="mt-4 grid gap-2 md:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
           <label className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              aria-label="Search Flock camera reports"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search camera type, mount, ID, or coordinates"
-              className="min-h-11 w-full rounded-xl border border-border bg-background pl-10 pr-3 text-sm outline-none transition focus:ring-2 focus:ring-ring"
-            />
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+            <input aria-label="Search Flock camera reports" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search type, mount, ID, or coordinates" className="min-h-11 w-full rounded-xl border border-border bg-background pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring" />
           </label>
-          <button type="button" onClick={() => setVerifiedOnly((value) => !value)} className="min-h-11 rounded-xl border border-border bg-background px-4 text-xs font-medium hover:bg-muted">
-            {verifiedOnly ? "Verified only" : "All reports"}
-          </button>
-          {location && (
-            <button type="button" onClick={() => centerOn(location, 4)} className="min-h-11 rounded-xl border border-border bg-background px-4 text-xs font-medium hover:bg-muted">
-              <LocateFixed className="mr-1 inline size-3.5" /> Center on me
-            </button>
-          )}
-          <div className="flex min-h-11 items-center justify-center rounded-xl border border-border bg-background px-3 font-mono text-[10px] text-muted-foreground">
-            {zoom.toFixed(1)}× zoom
-          </div>
+          <button type="button" onClick={() => setVerifiedOnly((value) => !value)} className="min-h-11 rounded-xl border border-border bg-background px-4 text-xs font-medium hover:bg-muted">{verifiedOnly ? "✓ Verified" : "All reports"}</button>
+          <button type="button" onClick={() => setHasCoordinatesOnly((value) => !value)} className="min-h-11 rounded-xl border border-border bg-background px-4 text-xs font-medium hover:bg-muted">{hasCoordinatesOnly ? "✓ Mappable" : "All records"}</button>
+          {location && <button type="button" onClick={centerOnLocation} className="min-h-11 rounded-xl border border-border bg-background px-4 text-xs font-medium hover:bg-muted"><LocateFixed className="mr-1 inline size-3.5" /> Near me</button>}
         </div>
-        {feed?.count === 0 && !loading && (
-          <div className="mt-3 rounded-xl border border-dashed border-border bg-muted/20 p-4">
-            <p className="text-sm font-medium">No public ALPR observations in this view yet.</p>
-            <p className="mt-1 text-xs text-muted-foreground">A point does not establish current operation, ownership, or vehicle activity. Expand your view or use the civic tools below.</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" onClick={() => { setZoom(1); setOffset({ x: 0, y: 0 }); }} className="rounded-lg border border-border bg-background px-3 py-2 text-xs hover:bg-muted">Browse national reports</button>
-              <button type="button" className="rounded-lg border border-border bg-background px-3 py-2 text-xs hover:bg-muted">Open Privacy desk</button>
-              <button type="button" className="rounded-lg border border-border bg-background px-3 py-2 text-xs hover:bg-muted">Draft FOIA</button>
-              <button type="button" className="rounded-lg border border-border bg-background px-3 py-2 text-xs hover:bg-muted">Search Record Index</button>
-            </div>
-          </div>
-        )}
       </header>
 
-      <div
-        className="relative select-none overflow-hidden bg-[#0b1016] touch-none"
-        onPointerDown={(event) => {
-          drag.current = { x: event.clientX, y: event.clientY, ox: offset.x, oy: offset.y };
-          event.currentTarget.setPointerCapture(event.pointerId);
-        }}
-        onPointerMove={(event) => {
-          if (!drag.current) return;
-          setOffset({
-            x: drag.current.ox + event.clientX - drag.current.x,
-            y: drag.current.oy + event.clientY - drag.current.y,
-          });
-        }}
-        onPointerUp={() => { drag.current = null; }}
-        onPointerCancel={() => { drag.current = null; }}
-        onDoubleClick={() => setZoom((value) => Math.min(8, value + 1))}
-      >
-        <svg viewBox={`0 0 ${W} ${H}`} className="block h-[min(68vh,650px)] min-h-[430px] w-full" role="img" aria-label="Flock ALPR camera infrastructure map">
-          <defs>
-            <radialGradient id="atlas-glow" cx="50%" cy="48%" r="70%">
-              <stop offset="0%" stopColor="#263849" stopOpacity="0.9" />
-              <stop offset="100%" stopColor="#0b1016" stopOpacity="1" />
-            </radialGradient>
-            <filter id="soft-shadow"><feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.35" /></filter>
-          </defs>
-          <rect width={W} height={H} fill="url(#atlas-glow)" />
+      {feed?.count === 0 && !loading && (
+        <div className="border-b border-border bg-muted/15 p-4">
+          <p className="text-sm font-medium">No public ALPR observations in this view yet.</p>
+          <p className="mt-1 text-xs text-muted-foreground">The source is not represented with fake pins. Try national view, the Record Index, Privacy desk, or FOIA tools when available.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" onClick={() => { setNearbyOnly(false); mapRef.current?.flyTo({ center: NATIONAL, zoom: 3.1, duration: 700 }); }} className="rounded-lg border border-border bg-background px-3 py-2 text-xs hover:bg-muted">Browse national reports</button>
+            <button type="button" className="rounded-lg border border-border bg-background px-3 py-2 text-xs hover:bg-muted">Open Privacy desk</button>
+            <button type="button" className="rounded-lg border border-border bg-background px-3 py-2 text-xs hover:bg-muted">Draft FOIA</button>
+            <button type="button" className="rounded-lg border border-border bg-background px-3 py-2 text-xs hover:bg-muted">Search Record Index</button>
+          </div>
+        </div>
+      )}
 
-          <g opacity="0.18">
-            {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-              <line key={`lon-${i}`} x1={(W / 6) * i} y1="0" x2={(W / 6) * i} y2={H} stroke="white" strokeDasharray="2 8" />
-            ))}
-            {[0, 1, 2, 3, 4, 5].map((i) => (
-              <line key={`lat-${i}`} x1="0" y1={(H / 5) * i} x2={W} y2={(H / 5) * i} stroke="white" strokeDasharray="2 8" />
-            ))}
-          </g>
+      <div className="relative h-[min(72vh,720px)] min-h-[460px] bg-[#0b1016]">
+        <div ref={mapNode} className="absolute inset-0" aria-label="Interactive Flock ALPR infrastructure map" />
 
-          <g transform={mapTransform}>
-            <path
-              d="M90 110 C190 65 270 92 350 82 S510 70 610 92 S750 72 900 110 L930 180 L900 235 L820 260 L760 330 L650 365 L545 420 L430 390 L320 420 L220 360 L150 290 L100 220 Z"
-              fill="#d7e3ea"
-              fillOpacity="0.055"
-              stroke="#d7e3ea"
-              strokeOpacity="0.32"
-              strokeWidth="2"
-              filter="url(#soft-shadow)"
-            />
-            <path d="M118 175 C260 120 410 135 520 118 S750 120 890 155" fill="none" stroke="#d7e3ea" strokeOpacity="0.08" strokeWidth="1" />
-
-            {clusters.map((cluster) => {
-              const first = cluster.cameras[0];
-              const size = cluster.cameras.length;
-              if (size === 1) {
-                return (
-                  <g key={first.id} transform={`translate(${cluster.x} ${cluster.y})`} onClick={(event) => { event.stopPropagation(); setSelected(first); }} className="cursor-pointer">
-                    <circle r={first.verified ? 5.5 : 4} fill={first.verified ? "#9ee7bd" : "#d5dde4"} fillOpacity={first.verified ? 0.95 : 0.58} stroke="#081018" strokeWidth="2" />
-                    {first.verified && <circle r="10" fill="none" stroke="#9ee7bd" strokeOpacity="0.28" />}
-                    <title>{first.type ?? "ALPR camera"} · {first.latitude.toFixed(4)}, {first.longitude.toFixed(4)}</title>
-                  </g>
-                );
-              }
-
-              const radius = Math.min(24, 9 + Math.log2(size) * 4);
-              return (
-                <g
-                  key={`cluster-${cluster.x}-${cluster.y}`}
-                  transform={`translate(${cluster.x} ${cluster.y})`}
-                  className="cursor-pointer"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setZoom((value) => Math.min(8, value + 1));
-                    setOffset((current) => ({
-                      x: W / 2 - (cluster.x * Math.min(8, zoom + 1)) + (current.x * 0),
-                      y: H / 2 - (cluster.y * Math.min(8, zoom + 1)) + (current.y * 0),
-                    }));
-                  }}
-                >
-                  <circle r={radius + 5} fill="#9ee7bd" fillOpacity="0.07" />
-                  <circle r={radius} fill="#14231e" stroke="#9ee7bd" strokeOpacity="0.75" strokeWidth="1.5" />
-                  <text y="1" textAnchor="middle" fill="#dff8e8" fontSize="10" fontWeight="700">{size > 999 ? "999+" : size}</text>
-                </g>
-              );
-            })}
-
-            {locateCamera && (
-              <g transform={`translate(${locateCamera.x} ${locateCamera.y})`} aria-label="Your approximate device location">
-                <circle r="16" fill="#7dd3fc" fillOpacity="0.08" />
-                <circle r="5" fill="#7dd3fc" stroke="#071018" strokeWidth="2" />
-                <circle r="14" fill="none" stroke="#7dd3fc" strokeOpacity="0.55">
-                  <animate attributeName="r" from="8" to="19" dur="1.8s" repeatCount="indefinite" />
-                  <animate attributeName="opacity" from="0.7" to="0" dur="1.8s" repeatCount="indefinite" />
-                </circle>
-              </g>
-            )}
-          </g>
-        </svg>
-
-        <div className="absolute left-4 top-4 rounded-xl border border-white/10 bg-black/55 px-3 py-2 text-white shadow-lg backdrop-blur">
+        <div className="pointer-events-none absolute left-4 top-4 max-w-[calc(100%-5rem)] rounded-xl border border-white/10 bg-black/65 px-3 py-2 text-white shadow-lg backdrop-blur-xl">
           <div className="flex items-center gap-2">
             <MapPin className="size-3.5 text-emerald-300" />
-            <p className="font-mono text-[10px] uppercase tracking-wider text-white/70">Public camera observations</p>
+            <span className="font-mono text-[10px] uppercase tracking-wider text-white/75">Public observations · Flock Locations</span>
           </div>
-          <p className="mt-1 text-[10px] text-white/50">{location ? "Centered on permitted device location" : "National overview · drag to explore"}</p>
+          <p className="mt-1 text-[10px] text-white/50">Clusters collapse as you zoom out. Individual observations emerge as you zoom in.</p>
         </div>
 
-        <div className="absolute bottom-4 left-4 flex flex-wrap gap-2">
-          <div className="rounded-lg border border-white/10 bg-black/55 px-3 py-2 font-mono text-[10px] text-white/70 backdrop-blur">
-            ● Verified report
+        {location && (
+          <div className="pointer-events-none absolute bottom-4 left-4 rounded-lg border border-sky-200/20 bg-sky-950/70 px-3 py-2 text-[10px] text-sky-100 shadow-lg backdrop-blur">
+            Location enabled · map can center on your area
           </div>
-          <div className="rounded-lg border border-white/10 bg-black/55 px-3 py-2 font-mono text-[10px] text-white/70 backdrop-blur">
-            ○ Reported observation
-          </div>
-          <div className="rounded-lg border border-white/10 bg-black/55 px-3 py-2 font-mono text-[10px] text-white/70 backdrop-blur">
-            ◉ Cluster · tap to zoom
-          </div>
-        </div>
-
-        <div className="absolute right-4 top-4 flex flex-col gap-2">
-          <button type="button" onClick={() => setZoom((value) => Math.min(8, value + 0.5))} className="inline-flex size-11 items-center justify-center rounded-xl border border-white/10 bg-black/60 text-white shadow-lg backdrop-blur hover:bg-black/75" aria-label="Zoom in">
-            <ZoomIn className="size-4" />
-          </button>
-          <button type="button" onClick={() => setZoom((value) => Math.max(1, value - 0.5))} className="inline-flex size-11 items-center justify-center rounded-xl border border-white/10 bg-black/60 text-white shadow-lg backdrop-blur hover:bg-black/75" aria-label="Zoom out">
-            <ZoomOut className="size-4" />
-          </button>
-          <button type="button" onClick={() => { setZoom(1); setOffset({ x: 0, y: 0 }); setSelected(null); }} className="inline-flex h-11 items-center justify-center rounded-xl border border-white/10 bg-black/60 px-3 text-[10px] font-medium text-white shadow-lg backdrop-blur hover:bg-black/75">
-            Reset
-          </button>
-        </div>
+        )}
 
         {selected && (
-          <aside className="absolute bottom-4 right-4 w-[min(390px,calc(100%-2rem))] rounded-2xl border border-white/10 bg-black/80 p-4 text-white shadow-2xl backdrop-blur-xl">
+          <aside className="absolute bottom-4 right-4 z-10 w-[min(390px,calc(100%-2rem))] rounded-2xl border border-white/10 bg-black/85 p-4 text-white shadow-2xl backdrop-blur-xl">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-wider text-white/50">Camera record</p>
+                <p className="font-mono text-[10px] uppercase tracking-wider text-white/50">Observation dossier</p>
                 <h3 className="mt-1 font-display text-xl">{selected.type ?? "ALPR camera"}</h3>
               </div>
-              <button type="button" aria-label="Close camera dossier" onClick={() => setSelected(null)} className="min-h-11 min-w-11 rounded-lg border border-white/10 text-lg text-white/70 hover:bg-white/10">×</button>
+              <button type="button" aria-label="Close observation dossier" onClick={() => setSelected(null)} className="min-h-11 min-w-11 rounded-lg border border-white/10 text-lg text-white/70 hover:bg-white/10">×</button>
             </div>
             <dl className="mt-3 space-y-2 text-xs">
               <div className="flex justify-between gap-4"><dt className="text-white/50">Coordinates</dt><dd className="font-mono">{selected.latitude.toFixed(5)}, {selected.longitude.toFixed(5)}</dd></div>
               <div className="flex justify-between gap-4"><dt className="text-white/50">Mount</dt><dd>{selected.mounted_on ?? "Not reported"}</dd></div>
-              <div className="flex justify-between gap-4"><dt className="text-white/50">Verification</dt><dd>{selected.verified ? "Community verified" : "Unverified report"}</dd></div>
+              <div className="flex justify-between gap-4"><dt className="text-white/50">Verification</dt><dd>{selected.verified ? "Community verified" : "Reported observation"}</dd></div>
               <div className="flex justify-between gap-4"><dt className="text-white/50">Reported</dt><dd>{selected.reported_at ?? "Not reported"}</dd></div>
             </dl>
-            <p className="mt-3 border-t border-white/10 pt-3 text-[10px] leading-relaxed text-white/50">
-              CIVINT presents the public record and provenance. It does not expose private plate-search data or imply current operation.
-            </p>
+            <p className="mt-3 border-t border-white/10 pt-3 text-[10px] leading-relaxed text-white/50">CIVINT presents public provenance. It is not a plate-search or vehicle-history product.</p>
           </aside>
         )}
 
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
-            <div className="rounded-2xl border border-white/10 bg-black/65 px-6 py-5 text-center text-white shadow-xl backdrop-blur">
-              <div className="mx-auto mb-3 size-7 animate-spin rounded-full border-2 border-white/20 border-t-emerald-300" />
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/70">Loading public atlas</p>
-              <p className="mt-1 text-xs text-white/45">Fetching the current published camera feed…</p>
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/10">
+            <div className="rounded-2xl border border-white/10 bg-black/65 px-5 py-4 text-center text-white shadow-xl backdrop-blur-xl">
+              <div className="mx-auto mb-2 size-6 animate-spin rounded-full border-2 border-white/20 border-t-emerald-300" />
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/70">Checking public atlas</p>
             </div>
           </div>
         )}
       </div>
 
       <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-3 text-[10px] text-muted-foreground">
-        <span>{feed?.count?.toLocaleString() ?? "—"} total source reports · clustered for responsive rendering</span>
-        <span>{feed?.generated_at ? `updated ${new Date(feed.generated_at).toLocaleString()}` : "awaiting feed"}</span>
+        <span>Pinch, double-tap, wheel, or use the controls to zoom · drag to pan · clusters represent multiple observations</span>
+        <span>{feed?.generated_at ? `source refreshed ${new Date(feed.generated_at).toLocaleTimeString()}` : "awaiting source"}</span>
       </footer>
     </section>
   );
