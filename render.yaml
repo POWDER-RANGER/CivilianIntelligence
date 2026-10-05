@@ -5,8 +5,8 @@ services:
     plan: free
     buildCommand: npm ci && npm run build
     startCommand: npm start
-    healthCheckPath: /
-    autoDeploy: true
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
     envVars:
       - key: NODE_VERSION
         value: "22"
@@ -15,4 +15,8 @@ services:
       - key: CIVINT_DEPLOYMENT
         value: "production"
       - key: DATABASE_URL
+        sync: false
+      - key: CELL_TITAN_BASE_URL
+        sync: false
+      - key: CELL_TITAN_API_TOKEN
         sync: false
