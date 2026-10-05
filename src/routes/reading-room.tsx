@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { createFileRoute } from "@tanstack/react-router";
@@ -133,11 +133,24 @@ function ReadingRoomPage() {
   const [readerPdf, setReaderPdf] = useState<string | null>(null);
   const [readerLoading, setReaderLoading] = useState(false);
   const [readerError, setReaderError] = useState("");
+  const [libraryQuery, setLibraryQuery] = useState("");
+  const [readerHistory, setReaderHistory] = useState<string[]>([]);
   function resetReader() {
     setReaderUrl(null); setReader(null); setReaderPdf(null); setReaderError(""); setReaderLoading(false);
   }
+  const filteredLibraries = useMemo(() => {
+    const q = libraryQuery.trim().toLowerCase();
+    if (!q) return LIBRARIES;
+    return LIBRARIES.filter((library) => [library.name, library.agency, library.description, ...library.tags].join(" ").toLowerCase().includes(q));
+  }, [libraryQuery]);
+  const filteredCollections = useMemo(() => {
+    const q = libraryQuery.trim().toLowerCase();
+    if (!q) return CIA_COLLECTIONS;
+    return CIA_COLLECTIONS.filter((collection) => [collection.title, collection.description, ...collection.tags].join(" ").toLowerCase().includes(q));
+  }, [libraryQuery]);
   async function openInside(url: string) {
     setReaderUrl(url); setReader(null); setReaderPdf(null); setReaderError("");
+    setReaderHistory((history) => [url, ...history.filter((item) => item !== url)].slice(0, 5));
     if (/\.pdf(?:[?#]|$)/i.test(url)) {
       setReaderPdf("/api/civint/reading-room/source?url="+encodeURIComponent(url));
       return;
@@ -196,6 +209,14 @@ function ReadingRoomPage() {
         </section>}
 
         <section className="mt-8 rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div><h2 className="font-display text-2xl">Find a collection</h2><p className="mt-1 text-xs text-muted-foreground">Filter CIVINT’s indexed entry points before opening an official source.</p></div>
+            <div className="w-full sm:max-w-sm"><Input value={libraryQuery} onChange={(event) => setLibraryQuery(event.target.value)} placeholder="Agency, topic, collection…" aria-label="Filter reading-room collections" /></div>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2"><Badge variant="outline">{filteredLibraries.length} libraries</Badge><Badge variant="outline">{filteredCollections.length} CIA collections</Badge>{libraryQuery && <button type="button" onClick={() => setLibraryQuery("")} className="text-xs text-primary hover:underline">Clear filter</button>}</div>
+        </section>
+
+        <section className="mt-8 rounded-2xl border border-border bg-card p-5 shadow-sm">
           <div className="flex items-start gap-3">
             <div className="rounded-lg bg-muted p-2"><Search className="size-5" /></div>
             <div>
@@ -218,10 +239,10 @@ function ReadingRoomPage() {
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Federal libraries</p>
               <h2 className="mt-1 font-display text-2xl">Where the records live</h2>
             </div>
-            <Badge variant="outline">{LIBRARIES.length} indexed libraries</Badge>
+            <Badge variant="outline">{filteredLibraries.length} indexed libraries</Badge>
           </div>
           <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {LIBRARIES.map((library) => (
+            {filteredLibraries.map((library) => (
               <article
                 key={library.name}
                 className="group flex flex-col rounded-xl border border-border bg-card p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md"
@@ -257,10 +278,10 @@ function ReadingRoomPage() {
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">CIA collections</p>
               <h2 className="mt-1 font-display text-2xl">Start with high-value collections</h2>
             </div>
-            <Badge variant="outline">{CIA_COLLECTIONS.length} entry points</Badge>
+            <Badge variant="outline">{filteredCollections.length} entry points</Badge>
           </div>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {CIA_COLLECTIONS.map((collection) => (
+            {filteredCollections.map((collection) => (
               <button type="button" onClick={() => void openInside(collection.url)} className="group w-full text-left rounded-xl border border-border bg-card p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md">
                 <div className="flex items-start justify-between gap-4">
                   <div className="rounded-lg bg-muted p-2"><Library className="size-4 text-primary" /></div>
