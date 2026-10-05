@@ -52,3 +52,21 @@ test("Titan verifier failure remains distinguishable from absent telemetry", () 
   assert.equal(absent.evidenceOk, null);
   assert.equal(absent.ok, false);
 });
+
+
+test("Titan observation envelope is preserved", () => {
+  const result = summarizeTitanTelemetry({
+    recent: { samples: [] },
+    evidence: { records: [] },
+    verify: { ok: true },
+    observation: {
+      state: "live",
+      owner_scope: "user_device",
+      limitations: ["observation only"],
+    },
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.state, "live");
+  assert.equal(result.ownerScope, "user_device");
+  assert.deepEqual(result.limitations, ["observation only"]);
+});
