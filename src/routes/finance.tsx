@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FederalSpendingPanel } from "@/components/finance/federal-spending-panel";
 import { FINANCE_ITEMS, FINANCE_KINDS, FINANCE_METRICS, FINANCE_SOURCES, type FinanceItem, type FinanceKind } from "@/data/finance";
 
 export const Route = createFileRoute("/finance")({ component: FinancePage });
@@ -41,6 +42,8 @@ function FinancePage() {
             </div>
           ))}
         </div>
+
+        <FederalSpendingPanel />
 
         <div className="mt-6 flex flex-wrap gap-2">
           {KINDS.map((k) => (
