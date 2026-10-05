@@ -120,13 +120,16 @@ async function probe(config: PillarConfig): Promise<PillarStatus> {
   const body = await readJson<Record<string, unknown>>(config, "/api/health");
   const latencyMs = Math.round(performance.now() - started);
 
+  const healthy = body?.status === "ok" || body?.status === "online";
+  const reachable = Boolean(body);
+
   return {
     id: config.id,
     label: config.label,
-    status: body ? "online" : "degraded",
+    status: !reachable ? "degraded" : healthy ? "online" : "degraded",
     configured: true,
     checkedAt,
-    latencyMs: body ? latencyMs : null,
+    latencyMs: reachable ? latencyMs : null,
     service: typeof body?.service === "string" ? body.service : null,
     version: typeof body?.version === "string" ? body.version : null,
   };
@@ -166,11 +169,15 @@ export const getTitanTelemetry = createServerFn({ method: "GET" }).handler(
     );
     const verify = await readJson<{ ok?: boolean }>(config, "/api/evidence/verify", true);
 
+    const evidenceOk = typeof verify?.ok === "boolean" ? verify.ok : null;
+    const reachable = Boolean(recent || evidence || verify);
+
     return {
       samples: Array.isArray(recent?.samples) ? recent.samples : [],
       evidence: Array.isArray(evidence?.records) ? evidence.records : [],
-      evidenceOk: typeof verify?.ok === "boolean" ? verify.ok : null,
-      ok: Boolean(recent || evidence || verify),
+      evidenceOk,
+      // A reachable pillar with a broken evidence chain is degraded, not healthy.
+      ok: reachable && evidenceOk !== false,
     };
   },
 );
