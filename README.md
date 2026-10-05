@@ -6,6 +6,21 @@ CIVINTELLIGENCE is the central public-interest application for the CIVWATCH ecos
 
 > Transparency is not optional.
 
+## The Open Eye
+
+The purpose of this platform is to make public power more legible without turning the platform itself into another instrument of coercion or surveillance. The record is public; our job is to make it findable.
+
+CIVWATCH is built around a simple principle: **give people evidence they can inspect, connect, and challenge rather than conclusions they are expected to accept.** Sources remain traceable, uncertainty remains visible, and private citizens remain outside the targeting boundary. The objective is not to replace one system of control with another, but to reduce the conditions in which secrecy, intimidation, coercion, and unnecessary surveillance become substitutes for shared understanding.
+
+### Core objective
+
+- **Make power visible.** Public spending, public decisions, public systems, and public acts should be understandable and attributable.
+- **Make evidence understandable.** Claims should remain connected to sources, provenance, and context.
+- **Protect individual autonomy.** Public-interest intelligence must not become individual targeting.
+- **Let people decide.** The platform provides evidence and makes its reasoning challengeable; it does not prescribe what users must believe.
+
+> **The record is public. We are going to make it findable.**
+
 ## System of record
 
 **CivilianIntelligence is the hub.** Other CIVWATCH repositories remain independently runnable, but production integration flows terminate here rather than creating a second application center of gravity.
@@ -102,7 +117,7 @@ See [docs/CROSS_REPO_INTEGRATION.md](./docs/CROSS_REPO_INTEGRATION.md) for owner
 
 ## Acceptance status
 
-**Merged core, pending CI/CD validation.** The eight-repository integration spine has been merged into the primary codebases. Automated validation is currently blocked by a reproducible GitHub Actions setup/logging failure in which jobs are created but terminate before reporting executable steps. No production-readiness claim is made until CI, tests, builds, and security gates execute and pass.
+**Integration consolidated; launch gate remains open.** The eight-repository integration spine is established with CivilianIntelligence as the system of record. Production launch is gated on executable validation: local typecheck/test/build and security acceptance across the hub and specialized pillars, browser/client verification, and restoration of GitHub Actions for supplementary reproducibility. The current Actions blocker is an account-level billing lock that prevents jobs from starting; this is tracked in the launch gate issue. No production-readiness claim is made until the acceptance gates execute and pass.
 
 Incident record: [docs/CI_RUNNER_INCIDENT_2026-10-04.md](./docs/CI_RUNNER_INCIDENT_2026-10-04.md).
 
