@@ -120,7 +120,7 @@ See [docs/CROSS_REPO_INTEGRATION.md](./docs/CROSS_REPO_INTEGRATION.md) for owner
 
 ## Acceptance status
 
-**Integration consolidated; launch gate remains open.** The eight-repository integration spine is established with CivilianIntelligence as the system of record. Production launch is gated on executable validation: local typecheck/test/build and security acceptance across the hub and specialized pillars, browser/client verification, and restoration of GitHub Actions for supplementary reproducibility. The current Actions blocker is an account-level billing lock that prevents jobs from starting; this is tracked in the launch gate issue. No production-readiness claim is made until the acceptance gates execute and pass.
+**Public web deployment is active; native-client release gates remain open.** The eight-repository integration spine is established with CivilianIntelligence as the system of record, and the CIVINTELLIGENCE public web application plus REST/API surface are now deployed and usable. Remaining acceptance work covers executable validation, security acceptance, browser/client verification, and restoration of GitHub Actions for supplementary reproducibility. Native Android/iOS/desktop applications are the next delivery track and will consume the established service contracts rather than recreate the platform. The current Actions blocker is an account-level billing lock that prevents jobs from starting; this does not erase the fact that the public web deployment is operational.
 
 Incident record: [docs/CI_RUNNER_INCIDENT_2026-10-04.md](./docs/CI_RUNNER_INCIDENT_2026-10-04.md).
 
