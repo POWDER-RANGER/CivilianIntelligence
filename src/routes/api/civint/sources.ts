@@ -10,7 +10,7 @@ type SourceStatus = {
 async function probe(url: string) {
   const response = await fetch(url, {
     method: "GET",
-    headers: { Accept: "application/json" },
+    headers: { Accept: "*/*" },
     signal: AbortSignal.timeout(8000),
   });
   return response.ok;
