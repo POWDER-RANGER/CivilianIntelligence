@@ -130,7 +130,9 @@ def usaspending(terms=("Flock Safety", "Flock Group", "license plate reader"), s
 
 # ---------------------------------------------------------------- OSM surveillance infrastructure
 def _surveillance_category(tags):
-    """Classify an OSM surveillance node without inventing vendor/device claims."""
+    """Classify an explicitly mapped OSM surveillance object."""
+    if tags.get("man_made") != "surveillance":
+        return "other"
     st = (tags.get("surveillance:type") or "").strip().lower()
     if st == "alpr":
         return "alpr"
