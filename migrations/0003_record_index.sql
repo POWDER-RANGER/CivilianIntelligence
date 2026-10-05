@@ -1,8 +1,6 @@
 -- CIVINT Record Index: provenance-first records, immutable observations, and typed relationships.
 -- The source registry remains the canonical source table for existing adapters.
 
-create extension if not exists vector;
-
 alter table source_registry
   add column if not exists native_surface text,
   add column if not exists health_state text not null default 'unconfigured',
@@ -34,7 +32,7 @@ create table if not exists records (
   adapter_version text not null,
   body_ref text,
   tsv tsvector not null default ''::tsvector,
-  embedding vector,
+  embedding jsonb,
   created_at timestamptz not null default now(),
   record_updated_at timestamptz not null default now(),
   unique (source_id, source_record_id)
