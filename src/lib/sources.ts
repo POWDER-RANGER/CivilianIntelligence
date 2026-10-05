@@ -5,6 +5,7 @@ export type SourceDefinition = {
   name: string;
   category: SourceCategory;
   endpoint: string;
+  healthcheckUrl: string;
   accessMethod: string;
   license: string;
   attribution: string;
@@ -18,6 +19,7 @@ export const SOURCES: SourceDefinition[] = [
     name: "Flock Locations",
     category: "surveillance infrastructure",
     endpoint: "https://flocklocations.com/api/cameras/export?format=geojson",
+    healthcheckUrl: "https://flocklocations.com/press",
     accessMethod: "Server-side GeoJSON",
     license: "CC BY 4.0",
     attribution: "Independent community-run dataset",
@@ -29,6 +31,7 @@ export const SOURCES: SourceDefinition[] = [
     name: "USAspending",
     category: "federal spending",
     endpoint: "https://api.usaspending.gov/api/v2/",
+    healthcheckUrl: "https://api.usaspending.gov/",
     accessMethod: "Server-side JSON API",
     license: "Public federal data",
     attribution: "USAspending.gov",
@@ -40,6 +43,7 @@ export const SOURCES: SourceDefinition[] = [
     name: "SEC EDGAR",
     category: "corporate filings",
     endpoint: "https://data.sec.gov/",
+    healthcheckUrl: "https://data.sec.gov/",
     accessMethod: "Server-side JSON API",
     license: "Public federal data",
     attribution: "U.S. Securities and Exchange Commission",
