@@ -120,12 +120,9 @@ function TitanPage() {
             >
               macOS / Linux / source
             </a>
-            <a
-              href="http://127.0.0.1:8000"
-              className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
-            >
-              Open local Titan
-            </a>
+            <span className="rounded-lg border border-border bg-muted/40 px-4 py-2 text-sm text-muted-foreground">
+              Local Titan runs on your computer
+            </span>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
             Android requires Developer options and USB debugging; the first connection requires accepting the device
