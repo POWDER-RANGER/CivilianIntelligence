@@ -16,6 +16,7 @@ const NAV = [
   { to: "/toolkit", label: "Toolkit", hint: "Request & verify" },
   { to: "/titan", label: "Cell Titan", hint: "User-owned RF" },
   { to: "/veil", label: "VEIL", hint: "Briefing" },
+  { to: "/records", label: "Record Index", hint: "Find the record" },
   { to: "/signal", label: "Signal vs Record", hint: "Attention & evidence" },
   { to: "/movement", label: "Movement", hint: "Government activity" },
   { to: "/oversight", label: "Oversight", hint: "Money, ethics & FOIA" },
