@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import maplibregl, { type GeoJSONSource, type Map } from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
 import { LocateFixed, MapPin, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -31,6 +29,37 @@ const NATIONAL: [number, number] = [-96, 38];
 const MAX_ZOOM = 16;
 const MIN_ZOOM = 3;
 
+type MapLibreRuntime = any;
+let mapLibreLoader: Promise<MapLibreRuntime> | null = null;
+function loadMapLibre(): Promise<MapLibreRuntime> {
+  if (typeof window === "undefined") return Promise.reject(new Error("browser only"));
+  if ((window as any).maplibregl) return Promise.resolve((window as any).maplibregl);
+  if (mapLibreLoader) return mapLibreLoader;
+  mapLibreLoader = new Promise((resolve, reject) => {
+    if (!document.querySelector('link[data-civint-maplibre]')) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = "https://unpkg.com/maplibre-gl@5.7.3/dist/maplibre-gl.css";
+      link.dataset.civintMaplibre = "true";
+      document.head.appendChild(link);
+    }
+    const existing = document.querySelector<HTMLScriptElement>('script[data-civint-maplibre]');
+    if (existing) {
+      existing.addEventListener("load", () => resolve((window as any).maplibregl));
+      existing.addEventListener("error", () => reject(new Error("Map runtime failed to load")));
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://unpkg.com/maplibre-gl@5.7.3/dist/maplibre-gl.js";
+    script.async = true;
+    script.dataset.civintMaplibre = "true";
+    script.onload = () => resolve((window as any).maplibregl);
+    script.onerror = () => reject(new Error("Map runtime failed to load"));
+    document.head.appendChild(script);
+  });
+  return mapLibreLoader;
+}
+
 function statusText(feed: Feed | null, loading: boolean) {
   if (loading) return ["caching", "Checking the public source."] as const;
   if (!feed) return ["unavailable", "No feed response was received."] as const;
@@ -59,7 +88,7 @@ function featureCollection(cameras: Camera[]) {
 
 export function AlprAtlas({ location }: { location?: Location | null }) {
   const mapNode = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<Map | null>(null);
+  const mapRef = useRef<any>(null);
   const [feed, setFeed] = useState<Feed | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Camera | null>(null);
@@ -112,6 +141,9 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
 
   useEffect(() => {
     if (!mapNode.current || mapRef.current) return;
+    let cancelled = false;
+    loadMapLibre().then((maplibregl) => {
+      if (cancelled || !mapNode.current || mapRef.current) return;
 
     const map = new maplibregl.Map({
       container: mapNode.current,
@@ -210,7 +242,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
       map.on("click", "camera-clusters", (event) => {
         const features = map.queryRenderedFeatures(event.point, { layers: ["camera-clusters"] });
         const clusterId = features[0]?.properties?.cluster_id;
-        const source = map.getSource("cameras") as GeoJSONSource;
+        const source = map.getSource("cameras") as any;
         if (clusterId != null) source.getClusterExpansionZoom(Number(clusterId)).then((zoom) => {
           const geometry = features[0].geometry;
           if (geometry.type === "Point") map.easeTo({ center: geometry.coordinates as [number, number], zoom: Math.min(zoom, MAX_ZOOM), duration: 450 });
@@ -240,15 +272,16 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
     });
 
     mapRef.current = map;
-    return () => { map.remove(); mapRef.current = null; };
+    }).catch(() => undefined);
+    return () => { cancelled = true; mapRef.current?.remove(); mapRef.current = null; };
   }, []);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     const update = () => {
-      const source = map.getSource("cameras") as GeoJSONSource | undefined;
-      if (source) source.setData(featureCollection(filtered) as any);
+      const source = map.getSource("cameras") as any;
+      if (source) source?.setData(featureCollection(filtered) as any);
     };
     if (map.isStyleLoaded()) update();
     else map.once("load", update);
