@@ -1,6 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { upsertIndexedRecord } from "@/lib/record-index";
-
 const UPSTREAM = "https://flocklocations.com/api/cameras/export?format=geojson";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
@@ -49,31 +47,6 @@ function normalizeFeature(feature: any, index: number): Camera | null {
   };
 }
 
-async function indexFeatures(features: Camera[]) {
-  let indexed = 0;
-  for (let start = 0; start < features.length; start += 40) {
-    const batch = features.slice(start, start + 40);
-    const results = await Promise.allSettled(batch.map(async (feature) => {
-      await upsertIndexedRecord({
-        sourceId: "alpr-flocklocations",
-        sourceRecordId: feature.id,
-        kind: "alpr-observation",
-        title: "Flock Locations camera report " + feature.id,
-        identifiers: [feature.id],
-        entities: [feature.type, feature.mounted_on].filter((value): value is string => Boolean(value)),
-        sourceUrl: "https://flocklocations.com/",
-        retrievalMethod: "feed",
-        adapterVersion: "flocklocations-geojson-v1",
-        rawContent: JSON.stringify(feature),
-        hashBasis: "observation",
-      });
-      return true;
-    }));
-    indexed += results.filter((result) => result.status === "fulfilled").length;
-  }
-  return indexed;
-}
-
 async function loadFeed(): Promise<Feed> {
   const now = Date.now();
   if (cachedFeed && now - cachedAt < CACHE_TTL_MS) return cachedFeed;
@@ -107,10 +80,6 @@ async function loadFeed(): Promise<Feed> {
 
     cachedFeed = feed;
     cachedAt = Date.now();
-
-    // Indexing is deliberately decoupled from the user-facing request. The map
-    // should never wait on hundreds/thousands of database writes.
-    void indexFeatures(features).catch(() => undefined);
 
     return feed;
   })().finally(() => {
