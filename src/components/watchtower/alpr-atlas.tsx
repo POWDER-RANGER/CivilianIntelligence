@@ -124,8 +124,46 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
     const controller = new AbortController();
     fetch("/api/civint/alpr/data", { headers: { Accept: "application/json" }, cache: "force-cache", signal: controller.signal })
       .then((response) => {
-        if (!response.ok) throw new Error("Feed unavailable");
+        if (!response.ok) throw new Error("Server feed unavailable");
         return response.json() as Promise<Feed>;
+      })
+      .catch(async (error) => {
+        if (error?.name === "AbortError") throw error;
+        // Direct public-feed fallback keeps the atlas useful if the Render
+        // server cannot reach the upstream source. The source is public and
+        // does not receive device location from this request.
+        const response = await fetch("https://flocklocations.com/api/cameras/export?format=geojson", {
+          headers: { Accept: "application/geo+json, application/json" },
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error("Public feed unavailable");
+        const payload = await response.json() as { features?: any[] };
+        const features = (payload.features ?? []).map((feature: any, index: number) => {
+          const coords = feature?.geometry?.coordinates;
+          if (!Array.isArray(coords) || coords.length < 2) return null;
+          const longitude = Number(coords[0]);
+          const latitude = Number(coords[1]);
+          if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+          const p = feature?.properties ?? {};
+          return {
+            id: String(p.id ?? p.camera_id ?? index),
+            latitude,
+            longitude,
+            type: p.type ? String(p.type) : null,
+            mounted_on: p.mounted_on ? String(p.mounted_on) : null,
+            reported_at: p.reported_at ? String(p.reported_at) : null,
+            verified: Boolean(p.verified ?? p.verification_status === "verified"),
+            source: "flock-locations",
+          } satisfies Camera;
+        }).filter(Boolean) as Camera[];
+        return {
+          state: features.length ? "live" : "degraded",
+          generated_at: new Date().toISOString(),
+          source: { name: "Flock Locations public camera reports", method: "direct public GeoJSON fallback" },
+          count: features.length,
+          features,
+        } satisfies Feed;
       })
       .then(setFeed)
       .catch((error) => {
@@ -156,21 +194,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
       maxBounds: [[-130, 18], [-60, 56]],
       attributionControl: true,
       cooperativeGestures: true,
-      style: {
-        version: 8,
-        sources: {
-          "osm-raster": {
-            type: "raster",
-            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-            tileSize: 256,
-            attribution: "© OpenStreetMap contributors",
-          },
-        },
-        layers: [
-          { id: "background", type: "background", paint: { "background-color": "#0b1016" } },
-          { id: "osm", type: "raster", source: "osm-raster", paint: { "raster-opacity": 0.42, "raster-saturation": -0.55, "raster-contrast": 0.15 } },
-        ],
-      },
+      style: "https://tiles.openfreemap.org/styles/liberty",
     });
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
