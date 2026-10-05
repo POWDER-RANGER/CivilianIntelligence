@@ -91,7 +91,7 @@ Every promoted signal should retain:
 1. source/system identifier,
 2. source timestamp or snapshot age,
 3. confidence/quality metadata where applicable,
-4. an explicit "live", "snapshot", "demo", or "unavailable" state.
+4. an explicit "live", "snapshot", or "unavailable" state. Synthetic/demo data is test-only and must not enter production feeds.
 
 The UI must not silently promote demo/placeholder records to live intelligence.
 
