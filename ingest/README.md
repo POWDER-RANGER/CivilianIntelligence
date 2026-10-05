@@ -33,6 +33,7 @@ python civint_ingest.py daily
 | `awards.json` | Federal awards matching search terms |
 | `alpr_overpass.json` | Backward-compatible ALPR nodes |
 | `surveillance.json` | Normalized ALPR, gunshot-detector, camera, and other mapped surveillance infrastructure with provenance |
+| `atlas_surveillance.json` | Jurisdiction-level Atlas of Surveillance records with publisher provenance |
 | `relations.json` / `rejected.jsonl` | Quote-verified entity/relation extraction |
 
 ### Design notes
@@ -48,7 +49,9 @@ python civint_ingest.py daily
   snapshot age, attribution, operator/manufacturer tags when present, and explicit confidence.
 - `alpr_overpass.json` remains for compatibility with existing Watchtower/App clients.
 - DeFlock and FlockHopper remain visible as source references while OSM is the canonical
-  machine-readable ingest path.
+  machine-readable mapped-infrastructure path.
+- Atlas of Surveillance is a separate record/evidence path; its agency/vendor narratives
+  are not converted into precise physical locations without an independent geographic source.
 - Watchtower consumes the normalized surveillance feed instead of treating its demo feature
   array as the primary map source.
 
