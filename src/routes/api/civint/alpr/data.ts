@@ -16,10 +16,12 @@ type Camera = {
 };
 
 type Feed = {
-  state: "live" | "unavailable";
+  state: "live" | "unavailable" | "degraded" | "awaiting_feed" | "caching";
   generated_at: string | null;
   source: { id: string; name: string; method: string };
   count: number;
+  cache_age_seconds?: number;
+  error_class?: "timeout" | "upstream" | "schema" | "empty";
   civint_index?: { attempted: boolean; indexed: number; state: "indexed" | "partial" | "unavailable" };
   features: Camera[];
 };
@@ -86,12 +88,13 @@ async function loadFeed(): Promise<Feed> {
     if (!upstream.ok) throw new Error("Upstream returned " + upstream.status);
 
     const payload = await upstream.json() as { features?: any[] };
+    if (!Array.isArray(payload.features)) throw Object.assign(new Error("Upstream schema missing features"), { code: "schema" });
     const features = (payload.features ?? [])
       .map(normalizeFeature)
       .filter((x): x is Camera => x !== null);
 
     const feed: Feed = {
-      state: "live",
+      state: features.length ? "live" : "degraded",
       generated_at: new Date().toISOString(),
       source: {
         id: "flock-locations",
@@ -135,7 +138,7 @@ export const Route = createFileRoute("/api/civint/alpr/data")({
         } catch (error) {
           if (cachedFeed) {
             return Response.json(
-              { ...cachedFeed, state: "live" },
+              { ...cachedFeed, state: "degraded", cache_age_seconds: Math.max(0, Math.round((Date.now() - cachedAt) / 1000)) },
               {
                 headers: {
                   "Cache-Control": "public, max-age=60, s-maxage=60, stale-while-revalidate=300",
@@ -149,6 +152,7 @@ export const Route = createFileRoute("/api/civint/alpr/data")({
           return Response.json(
             {
               state: "unavailable",
+              error_class: (error as any)?.code === "schema" ? "schema" : (error as any)?.name === "TimeoutError" ? "timeout" : "upstream",
               error: error instanceof Error ? error.message : "Upstream unavailable",
               features: [],
             },
