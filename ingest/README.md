@@ -16,6 +16,8 @@ export NWS_USER_AGENT="CIVINT (contact: you@real-address)"
 # optional
 export CIVINT_OUT=civint_data
 export CIVINT_PBF=iowa-latest.osm.pbf
+# optional Atlas CSV source for daily runs
+export CIVINT_ATLAS_URL=https://www.atlasofsurveillance.org/download.csv
 
 python civint_ingest.py nws
 python civint_ingest.py usaspending
@@ -28,7 +30,7 @@ python civint_ingest.py daily
 
 | File | Purpose |
 |------|---------|
-| `civint.db` | SQLite master (alerts, awards, points) |
+| `civint.db` | SQLite master (alerts, awards, points, surveillance records) |
 | `alerts.json` | Active NWS alerts |
 | `awards.json` | Federal awards matching search terms |
 | `alpr_overpass.json` | Backward-compatible ALPR nodes |
@@ -38,7 +40,8 @@ python civint_ingest.py daily
 
 ### Design notes
 
-- **No API keys.** Only `NWS_USER_AGENT` (real contact address) is required.
+- **No API keys.** The ingest uses public HTTP sources; NWS still requires a descriptive `NWS_USER_AGENT`.
+  Atlas can be enabled for `daily` with `CIVINT_ATLAS_URL`.
 - USAspending covers **federal** awards only — local city contracts with Flock Safety will not appear; those need the Legistar + PDF agenda pipeline.
 - Quote verifier enforces closed entity/relation sets, quote presence after normalization (including hyphenated PDF line-breaks), length bounds, and endpoint presence in the chunk's entity list. Missing page endpoints are kept with `endpoints_on_page` flags rather than rejected (jurisdictions are often header-implied).
 - `daily` continues if one source fails.
