@@ -19,6 +19,7 @@ type Feed = {
   generated_at: string | null;
   source: { name: string; method: string };
   count: number;
+  total_count?: number;
   cache_age_seconds?: number;
   error_class?: "timeout" | "upstream" | "schema" | "empty";
   features: Camera[];
