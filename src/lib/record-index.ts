@@ -359,6 +359,43 @@ export async function getRecordDossier(
   };
 }
 
+
+export async function upsertRecordEdge(
+  edge: {
+    fromRecordId: string;
+    toRecordId: string;
+    edgeType: string;
+    basis: string;
+    tier: RecordEdgeTier;
+    createdBy: string;
+  },
+  sql: Sql = await getSql(),
+): Promise<void> {
+  if (edge.fromRecordId === edge.toRecordId) {
+    throw new Error("A record edge cannot point to the same record.");
+  }
+  if (!edge.edgeType.trim() || !edge.basis.trim() || !edge.createdBy.trim()) {
+    throw new Error("Record edges require type, basis, and creator.");
+  }
+  await sql.query(
+    [
+      "insert into record_edges",
+      "(from_record_id, to_record_id, edge_type, basis, tier, created_by)",
+      "values ($1,$2,$3,$4,$5,$6)",
+      "on conflict (from_record_id, to_record_id, edge_type) do update set",
+      "basis=excluded.basis, tier=excluded.tier, created_by=excluded.created_by",
+    ].join(" "),
+    [
+      edge.fromRecordId,
+      edge.toRecordId,
+      edge.edgeType.trim(),
+      edge.basis.trim(),
+      edge.tier,
+      edge.createdBy.trim(),
+    ],
+  );
+}
+
 export function sourceAsRecordContext(source: SourceDefinition): { id: string; name: string; originalUrl: string } {
   return { id: source.id, name: source.name, originalUrl: source.endpoint };
 }
