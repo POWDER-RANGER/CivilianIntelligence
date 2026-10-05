@@ -405,11 +405,9 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
         )}
 
         {loading && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/10">
-            <div className="rounded-2xl border border-white/10 bg-black/65 px-5 py-4 text-center text-white shadow-xl backdrop-blur-xl">
-              <div className="mx-auto mb-2 size-6 animate-spin rounded-full border-2 border-white/20 border-t-emerald-300" />
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/70">Checking public atlas</p>
-            </div>
+          <div className="pointer-events-none absolute right-4 top-4 z-10 rounded-full border border-white/10 bg-black/65 px-3 py-2 text-white shadow-lg backdrop-blur-xl">
+            <span className="mr-2 inline-block size-2 animate-pulse rounded-full bg-emerald-300 align-middle" />
+            <span className="font-mono text-[10px] uppercase tracking-wider text-white/75">Loading observations</span>
           </div>
         )}
       </div>
