@@ -24,7 +24,7 @@ export const Route = createFileRoute("/api/civint/sources")({
         const results: SourceStatus[] = await Promise.all(
           SOURCES.map(async (source) => {
             try {
-              return { source, state: (await probe(source.endpoint)) ? "reachable" : "unavailable", checked_at };
+              return { source, state: (await probe(source.healthcheckUrl)) ? "reachable" : "unavailable", checked_at };
             } catch {
               return { source, state: "unavailable", checked_at };
             }
