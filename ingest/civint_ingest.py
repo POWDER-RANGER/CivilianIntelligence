@@ -175,7 +175,6 @@ def normalize_atlas_row(row):
             "source_url": ATLAS_URL,
             "method": "Atlas of Surveillance CSV",
             "state": "snapshot",
-            "license": "CC-BY",
         },
     }
 
@@ -206,8 +205,7 @@ def atlas(url=None):
             "id": "atlas-of-surveillance",
             "name": "Atlas of Surveillance",
             "url": url,
-            "license": "CC-BY",
-            "publisher": "Electronic Frontier Foundation / Reynolds School of Journalism",
+                "publisher": "Electronic Frontier Foundation / Reynolds School of Journalism",
         },
         "count": len(records),
         "records": records,
@@ -533,7 +531,7 @@ def main():
             except Exception as ex:
                 failed.append("osm")
                 print(f"daily: osm failed: {ex}", file=sys.stderr)
-        if os.environ.get("CIVINT_ATLAS"):
+        if os.environ.get("CIVINT_ATLAS_URL"):
             try:
                 atlas()
             except Exception as ex:
