@@ -14,13 +14,11 @@ type Geography = {
   STATEFP?: string;
 };
 
-function firstName(group: Record<string, Geography> | undefined, keys: string[]): string | null {
+function firstName(group: Record<string, Geography> | undefined): string | null {
   if (!group) return null;
-  for (const key of keys) {
-    const value = group[key]?.NAME ?? group[key]?.BASENAME;
-    if (value) return String(value);
-  }
-  return null;
+  const first = Object.values(group)[0];
+  const value = first?.NAME ?? first?.BASENAME;
+  return value ? String(value) : null;
 }
 
 function uniqueResults(groups: Array<Awaited<ReturnType<typeof searchIndexedRecords>>>): Array<Awaited<ReturnType<typeof searchIndexedRecords>>[number]> {
@@ -61,9 +59,9 @@ export const Route = createFileRoute("/api/civint/location/context")({
             } };
           };
           const geographies = payload.result?.geographies;
-          const city = firstName(geographies?.["Places (Census)"], ["place"]);
-          const county = firstName(geographies?.["Counties (Census)"], ["county"]);
-          const state = firstName(geographies?.["States (Census)"], ["state"]);
+          const city = firstName(geographies?.["Places (Census)"]);
+          const county = firstName(geographies?.["Counties (Census)"]);
+          const state = firstName(geographies?.["States (Census)"]);
 
           const [cityRecords, countyRecords, stateRecords] = await Promise.all([
             city ? searchIndexedRecords({ query: city, limit: 5 }) : Promise.resolve([]),
