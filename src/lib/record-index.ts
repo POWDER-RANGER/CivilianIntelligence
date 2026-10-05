@@ -238,6 +238,7 @@ export async function searchIndexedRecords(
   const clauses: string[] = [];
   const params: unknown[] = [];
   let queryParam: number | null = null;
+  let identifierParam: number | null = null;
 
   if (filters.query?.trim()) {
     queryParam = params.push(filters.query.trim());
@@ -251,7 +252,8 @@ export async function searchIndexedRecords(
   }
 
   if (filters.identifier?.trim()) {
-    const p = params.push(filters.identifier.trim());
+    identifierParam = params.push(filters.identifier.trim());
+    const p = identifierParam;
     clauses.push([
       "exists (select 1 from jsonb_array_elements_text(r.identifiers) value",
       "where lower(value) = lower($" + p + "))",
