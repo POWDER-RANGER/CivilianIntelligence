@@ -8,15 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 const NAV = [
-  { to: "/", label: "Framework", hint: "Directory" },
-  { to: "/movement", label: "Movement", hint: "Where government is" },
-  { to: "/oversight", label: "Oversight", hint: "Money, ethics, FOIA" },
-  { to: "/finance", label: "Finance", hint: "Money in politics" },
-  { to: "/privacy", label: "Privacy", hint: "How you are watched" },
-  { to: "/toolkit", label: "Toolkit", hint: "Request and verify" },
-  { to: "/watchtower", label: "Watchtower", hint: "Map oversight" },
-  { to: "/titan", label: "Cell Titan", hint: "RF evidence" },
+  { to: "/", label: "Framework", hint: "Start here" },
+  { to: "/watchtower", label: "Watchtower", hint: "Places & infrastructure" },
+  { to: "/finance", label: "Finance", hint: "Money & filings" },
+  { to: "/privacy", label: "Privacy", hint: "How systems watch" },
+  { to: "/sources", label: "Sources", hint: "Live data registry" },
+  { to: "/toolkit", label: "Toolkit", hint: "Request & verify" },
+  { to: "/titan", label: "Cell Titan", hint: "User-owned RF" },
   { to: "/veil", label: "VEIL", hint: "Briefing" },
+  { to: "/movement", label: "Movement", hint: "Government activity" },
+  { to: "/oversight", label: "Oversight", hint: "Money, ethics & FOIA" },
 ] as const;
 
 export function AppShell({
