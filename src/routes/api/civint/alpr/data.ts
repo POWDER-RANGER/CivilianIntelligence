@@ -21,12 +21,36 @@ type Feed = {
   cache_age_seconds?: number;
   error_class?: "timeout" | "upstream" | "schema" | "empty";
   civint_index?: { attempted: boolean; indexed: number; state: "indexed" | "partial" | "unavailable" };
+  total_count?: number;
   features: Camera[];
 };
 
 let cachedFeed: Feed | null = null;
 let cachedAt = 0;
 let inflight: Promise<Feed> | null = null;
+
+function selectViewport(features: Camera[], west: number, south: number, east: number, north: number, limit: number): Camera[] {
+  const inView = features.filter((camera) =>
+    camera.longitude >= west && camera.longitude <= east &&
+    camera.latitude >= south && camera.latitude <= north
+  );
+  if (inView.length <= limit) return inView;
+
+  // Preserve geographic coverage instead of taking the first N records.
+  const cols = Math.max(1, Math.ceil(Math.sqrt(limit * Math.max(0.35, Math.cos(((south + north) / 2) * Math.PI / 180)))));
+  const rows = Math.max(1, Math.ceil(limit / cols));
+  const cellW = Math.max((east - west) / cols, 0.0001);
+  const cellH = Math.max((north - south) / rows, 0.0001);
+  const picked = new Map<string, Camera>();
+  for (const camera of inView) {
+    const col = Math.min(cols - 1, Math.max(0, Math.floor((camera.longitude - west) / cellW)));
+    const row = Math.min(rows - 1, Math.max(0, Math.floor((camera.latitude - south) / cellH)));
+    const key = row + ":" + col;
+    if (!picked.has(key)) picked.set(key, camera);
+    if (picked.size >= limit) break;
+  }
+  return [...picked.values()];
+}
 
 function normalizeFeature(feature: any, index: number): Camera | null {
   const coords = feature?.geometry?.coordinates;
@@ -92,11 +116,18 @@ async function loadFeed(): Promise<Feed> {
 export const Route = createFileRoute("/api/civint/alpr/data")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
         try {
           const feed = await loadFeed();
+          const url = new URL(request.url);
+          const bbox = ["west","south","east","north"].map((key) => Number(url.searchParams.get(key)));
+          const hasBbox = bbox.every(Number.isFinite) && bbox[0] < bbox[2] && bbox[1] < bbox[3];
+          const limitParam = Number(url.searchParams.get("limit") ?? "5000");
+          const limit = Math.min(Math.max(Number.isFinite(limitParam) ? limitParam : 5000, 500), 15000);
+          const visible = hasBbox ? selectViewport(feed.features, bbox[0], bbox[1], bbox[2], bbox[3], limit) : feed.features.slice(0, limit);
+          const responseFeed = { ...feed, count: visible.length, total_count: feed.features.length, features: visible };
           return Response.json(
-            feed,
+            responseFeed,
             {
               headers: {
                 "Cache-Control": "public, max-age=600, s-maxage=600, stale-while-revalidate=1800",
