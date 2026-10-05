@@ -170,6 +170,12 @@ Planned library surfaces include:
 
 The Reading Room layer is intentionally designed around official deep links, collection guidance, provenance, and later normalized metadata/search—not synthetic records or uncontrolled bulk mirroring. As each library is activated, its status will move from **planned/in progress** to **available** without changing the architectural principle: upstream records remain attributable, while CIVINTELLIGENCE becomes the easier discovery and evidence surface.
 
+### Evidence layer
+
+
+**Find the Record, Don't Replace It** is now the evidence-path doctrine. The Record Index provides stable record IDs, source-native identifiers, retrieval timestamps and methods, SHA-256 content or observation hashes, version history, and typed record relationships. The `/records` surface returns pointers into that index and the `/records/:id` Dossier keeps the official/source record prominent while separating CIVINT-authored context.
+
+The Desk Assistant is being built against this contract: the model can interpret a request and construct a query, but indexed results are rendered from the Record Index rather than rewritten into a synthetic answer. Empty retrieval is an honest state and routes toward the Toolkit instead of a guess.
 ### In progress
 
 - **Deployment synchronization** — keeping the Render production branch aligned with the current mainline application so newly merged public surfaces are actually exposed.
