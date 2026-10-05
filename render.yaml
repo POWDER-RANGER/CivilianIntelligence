@@ -12,5 +12,7 @@ services:
         value: "22"
       - key: NITRO_PRESET
         value: "node-server"
+      - key: CIVINT_DEPLOYMENT
+        value: "production"
       - key: DATABASE_URL
         sync: false
