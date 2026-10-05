@@ -119,6 +119,37 @@ function applyPointFilter(map: any, brandOnly: boolean, query: string) {
   map.setFilter("camera-points", filter);
 }
 
+function createBasemapStyle() {
+  // Keep the base map independent from third-party style JSON, fonts, and sprites.
+  // Only simple raster tiles are needed for the geographic context; ALPR data remains vector-tiled.
+  return {
+    version: 8,
+    sources: {
+      osm: {
+        type: "raster",
+        tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+        tileSize: 256,
+        attribution: "© OpenStreetMap contributors",
+        maxzoom: 19,
+      },
+    },
+    layers: [
+      {
+        id: "osm",
+        type: "raster",
+        source: "osm",
+        paint: {
+          "raster-opacity": 0.98,
+          "raster-saturation": -0.5,
+          "raster-contrast": 0.08,
+          "raster-brightness-min": 0.05,
+          "raster-brightness-max": 0.86,
+        },
+      },
+    ],
+  };
+}
+
 export function AlprAtlas({ location }: { location?: Location | null }) {
   const mapNode = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
@@ -155,7 +186,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
         maxBounds: [[-130, 18], [-60, 56]],
         attributionControl: true,
         cooperativeGestures: false,
-        style: "https://tiles.openfreemap.org/styles/liberty",
+        style: createBasemapStyle(),
       });
 
       map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
@@ -203,27 +234,6 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
           },
         });
 
-        map.addLayer({
-          id: "camera-direction",
-          type: "symbol",
-          source: "cameras",
-          "source-layer": SOURCE_LAYER,
-          minzoom: 12,
-          layout: {
-            "text-field": "›",
-            "text-size": 18,
-            "text-rotate": ["coalesce", ["to-number", ["get", "direction"]], 0],
-            "text-allow-overlap": true,
-            "text-ignore-placement": true,
-          },
-          paint: {
-            "text-color": "#67e8f9",
-            "text-opacity": 0.8,
-            "text-halo-color": "#071018",
-            "text-halo-width": 1,
-          },
-        });
-
         setMapReady(true);
         setSourceReady(true);
         refreshVisibleCount(map);
@@ -248,8 +258,9 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
 
         map.on("error", (event: any) => {
           const message = String(event?.error?.message ?? "");
-          if (message.toLowerCase().includes("cameras") || message.toLowerCase().includes("tile")) {
-            setError("The mapped tile provider is unavailable. No camera observations are fabricated.");
+          const lower = message.toLowerCase();
+          if (lower.includes("cameras") || lower.includes("tile") || lower.includes("openstreetmap")) {
+            setError("A map data provider is unavailable. No camera observations are fabricated.");
           }
         });
 
