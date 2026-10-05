@@ -40,6 +40,46 @@ export type CivintAlprNode = {
   tags: Record<string, string>;
 };
 
+export type CivintSurveillanceAsset = {
+  type: "node";
+  id: number;
+  lat: number;
+  lon: number;
+  category: "alpr" | "gunshot_detector" | "camera" | "other";
+  surveillance_type: string | null;
+  operator: string | null;
+  manufacturer: string | null;
+  name: string | null;
+  zone: string | null;
+  direction: string | null;
+  tags: Record<string, string>;
+  confidence: number | null;
+  provenance: {
+    source_id: string;
+    source_url: string;
+    observed_at: string | null;
+    method: string;
+    state: "snapshot" | "live" | "demo" | "unavailable";
+    attribution?: string;
+  };
+};
+
+export type CivintSurveillanceFeed = {
+  schema_version: string;
+  state: "snapshot" | "live" | "demo" | "unavailable";
+  generated_at: string | null;
+  as_of: string | null;
+  source: {
+    id: string;
+    name: string;
+    url: string;
+    license?: string;
+    attribution?: string;
+  };
+  counts: Record<string, number>;
+  elements: CivintSurveillanceAsset[];
+};
+
 const BASE = "/civint"; // public/civint/ in the Vite app, or CDN path in prod
 
 async function softJson<T>(path: string): Promise<T | null> {
@@ -65,6 +105,10 @@ export async function getCivintAwards(): Promise<CivintAward[]> {
 export async function getCivintAlpr(): Promise<CivintAlprNode[]> {
   const data = await softJson<{ elements?: CivintAlprNode[] }>("/alpr_overpass.json");
   return data?.elements ?? [];
+}
+
+export async function getCivintSurveillance(): Promise<CivintSurveillanceFeed | null> {
+  return softJson<CivintSurveillanceFeed>("/surveillance.json");
 }
 
 /** Format a USD amount for display cards. */
