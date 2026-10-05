@@ -97,6 +97,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
   const [hasCoordinatesOnly, setHasCoordinatesOnly] = useState(true);
   const [nearbyOnly, setNearbyOnly] = useState(false);
   const [locationUsed, setLocationUsed] = useState(false);
+  const filteredRef = useRef<Camera[]>([]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -116,6 +117,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
   }, [feed, query, verifiedOnly, hasCoordinatesOnly, nearbyOnly, location]);
 
   const verifiedCount = useMemo(() => filtered.filter((camera) => camera.verified).length, [filtered]);
+  filteredRef.current = filtered;
   const [status, explanation] = statusText(feed, loading);
 
   useEffect(() => {
@@ -177,7 +179,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
     map.on("load", () => {
       map.addSource("cameras", {
         type: "geojson",
-        data: featureCollection([]),
+        data: featureCollection(filteredRef.current),
         cluster: true,
         clusterMaxZoom: 9,
         clusterRadius: 48,
