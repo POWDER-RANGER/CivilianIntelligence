@@ -13,7 +13,9 @@ type Camera = {
 };
 
 type Feed = {
-  state: "live" | "unavailable";
+  state: "live" | "unavailable" | "degraded" | "awaiting_feed" | "caching";
+  cache_age_seconds?: number;
+  error_class?: "timeout" | "upstream" | "schema" | "empty";
   generated_at: string | null;
   source: { name: string; method: string };
   count: number;
@@ -61,6 +63,7 @@ function clusterCameras(cameras: Camera[], zoom: number): Cluster[] {
 
 export function AlprAtlas({ location }: { location?: Location | null }) {
   const [feed, setFeed] = useState<Feed | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Camera | null>(null);
   const [query, setQuery] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
@@ -80,6 +83,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
         return r.json() as Promise<Feed>;
       })
       .then(setFeed)
+      .finally(() => setLoading(false))
       .catch((error) => {
         if (error?.name !== "AbortError") {
           setFeed({
@@ -141,6 +145,10 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
 
   const mapTransform = `translate(${offset.x} ${offset.y}) scale(${zoom})`;
 
+  const statusLabel = loading ? "caching" : feed?.state === "degraded" ? "degraded" : feed?.state === "unavailable" ? "unavailable" : feed?.count ? "live" : "awaiting feed";
+  const statusExplanation = loading ? "CIVINT is checking the public source." : feed?.state === "unavailable" ? "The public source could not be reached. No pins are fabricated." : feed?.count ? "Sourced observations; not proof of current operation." : "The adapter is reachable, but no public observations are available yet.";
+  const ageLabel = feed?.cache_age_seconds != null ? `cached ${feed.cache_age_seconds < 60 ? feed.cache_age_seconds + "s" : Math.round(feed.cache_age_seconds / 60) + "m"} ago` : feed?.generated_at ? `refreshed ${new Date(feed.generated_at).toLocaleTimeString()}` : "awaiting refresh";
+
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <header className="border-b border-border bg-gradient-to-b from-muted/40 to-card p-5 md:p-6">
@@ -148,18 +156,22 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Watchtower · public infrastructure</p>
-              <Badge variant={feed?.state === "live" ? "live" : "outline"}>{feed?.state ?? "loading"}</Badge>
+              <Badge variant={statusLabel === "live" ? "live" : "outline"}>{statusLabel}</Badge>
+              <span className="rounded-full border border-border bg-background/60 px-2 py-1 font-mono text-[9px] text-muted-foreground">{ageLabel} · Flock Locations</span>
             </div>
             <h2 className="mt-1 font-display text-3xl md:text-4xl">Flock camera map</h2>
             <p className="mt-2 max-w-3xl text-xs leading-relaxed text-muted-foreground">
               Publicly reported ALPR infrastructure. This atlas shows sourced observations—not private Flock data, live vehicle activity, or a claim that a camera is currently operating.
             </p>
+          <div className="mt-3 rounded-xl border border-border/80 bg-background/50 px-3 py-2 text-[10px] text-muted-foreground">
+            <span className="font-medium text-foreground">{statusLabel === "awaiting feed" ? "Awaiting public feed" : statusLabel === "unavailable" ? "Source unavailable" : statusLabel === "degraded" ? "Source degraded" : "Source healthy"}</span> · {statusExplanation}
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-3">
             <div className="rounded-xl border border-border bg-background/70 px-4 py-2">
               <p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Reports</p>
               <p className="font-display text-2xl tabular-nums">{filtered.length.toLocaleString()}</p>
+              <p className="mt-1 text-[9px] text-muted-foreground">public observations</p>
             </div>
             <div className="rounded-xl border border-border bg-background/70 px-4 py-2">
               <p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Verified</p>
@@ -195,6 +207,18 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
             {zoom.toFixed(1)}× zoom
           </div>
         </div>
+        {feed?.count === 0 && !loading && (
+          <div className="mt-3 rounded-xl border border-dashed border-border bg-muted/20 p-4">
+            <p className="text-sm font-medium">No public ALPR observations in this view yet.</p>
+            <p className="mt-1 text-xs text-muted-foreground">A point does not establish current operation, ownership, or vehicle activity. Expand your view or use the civic tools below.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button type="button" onClick={() => { setZoom(1); setOffset({ x: 0, y: 0 }); }} className="rounded-lg border border-border bg-background px-3 py-2 text-xs hover:bg-muted">Browse national reports</button>
+              <button type="button" className="rounded-lg border border-border bg-background px-3 py-2 text-xs hover:bg-muted">Open Privacy desk</button>
+              <button type="button" className="rounded-lg border border-border bg-background px-3 py-2 text-xs hover:bg-muted">Draft FOIA</button>
+              <button type="button" className="rounded-lg border border-border bg-background px-3 py-2 text-xs hover:bg-muted">Search Record Index</button>
+            </div>
+          </div>
+        )}
       </header>
 
       <div
@@ -346,7 +370,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
           </aside>
         )}
 
-        {!feed && (
+        {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
             <div className="rounded-2xl border border-white/10 bg-black/65 px-6 py-5 text-center text-white shadow-xl backdrop-blur">
               <div className="mx-auto mb-3 size-7 animate-spin rounded-full border-2 border-white/20 border-t-emerald-300" />
