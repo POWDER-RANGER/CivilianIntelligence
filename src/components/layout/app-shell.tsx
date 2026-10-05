@@ -22,6 +22,7 @@ const NAV_GROUPS = [
     { to: "/reading-room", label: "Reading Room", hint: "Declassified records" },
     { to: "/records", label: "Record Index", hint: "Find the record" },
     { to: "/sources", label: "Sources", hint: "Public source registry" },
+    { to: "/github-reading-room", label: "GitHub Reading Room", hint: "Inspect repositories safely" },
   ] },
   { label: "Tools", items: [
     { to: "/watchtower", label: "Watchtower", hint: "Places & infrastructure" },
