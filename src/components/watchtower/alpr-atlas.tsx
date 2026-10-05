@@ -131,7 +131,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
       south: String(bounds.getSouth()),
       east: String(bounds.getEast()),
       north: String(bounds.getNorth()),
-      limit: map.getZoom() < 5 ? "3500" : map.getZoom() < 8 ? "6000" : "10000",
+      // Keep payloads small enough for phones/foldables; clustering handles the visual density.\n      limit: map.getZoom() < 5 ? "1500" : map.getZoom() < 8 ? "2500" : "4000",
     });
     fetchAbortRef.current?.abort();
     const controller = new AbortController();
@@ -184,7 +184,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
 
       map.on("load", () => {
         setMapReady(true);
-        fetchViewport(map);
+        // Do not block first paint on the data request. The basemap becomes interactive immediately.\n        // If location is already available, start with the local viewport instead of downloading the national feed twice.\n        fetchViewport(map);
         let moveTimer: ReturnType<typeof setTimeout> | null = null;
         map.on("moveend", () => {
           if (moveTimer) clearTimeout(moveTimer);
@@ -303,8 +303,8 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
   }, [filtered]);
 
   useEffect(() => {
-    if (!location || !mapRef.current || !mapReady || locationUsed) return;
-    mapRef.current.flyTo({ center: [location.longitude, location.latitude], zoom: 10.5, duration: 900, essential: true });
+    if (!location || !mapRef.current || !mapReady || locationUsed) return;\n    // Location can arrive after the map has initialized; only then move/fetch the local viewport.
+    mapRef.current.flyTo({ center: [location.longitude, location.latitude], zoom: 10.5, duration: 700, essential: true });
     setLocationUsed(true);
   }, [location, mapReady, locationUsed]);
 
