@@ -93,6 +93,7 @@ Primary outputs:
 | awards.json | Veil / Finance |
 | alpr_overpass.json | Privacy / Watchtower compatibility |
 | surveillance.json | Privacy / Watchtower / Flutter — normalized mapped surveillance infrastructure |
+| atlas_surveillance.json | Privacy — jurisdiction-level Atlas surveillance records |
 | sources.json | Veil / source provenance — federated source registry |
 
 See [ingest/README.md](./ingest/README.md).
