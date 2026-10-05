@@ -35,10 +35,15 @@ function uniqueResults(groups: Array<Awaited<ReturnType<typeof searchIndexedReco
 export const Route = createFileRoute("/api/civint/location/context")({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const url = new URL(request.url);
-        const lat = Number(url.searchParams.get("lat"));
-        const lon = Number(url.searchParams.get("lon"));
+      POST: async ({ request }) => {
+        let body: { latitude?: unknown; longitude?: unknown };
+        try {
+          body = await request.json() as { latitude?: unknown; longitude?: unknown };
+        } catch {
+          return Response.json({ state: "invalid", message: "A JSON location request is required." }, { status: 400 });
+        }
+        const lat = Number(body.latitude);
+        const lon = Number(body.longitude);
         if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
           return Response.json({ state: "invalid", message: "Valid latitude and longitude are required." }, { status: 400 });
         }
@@ -72,7 +77,6 @@ export const Route = createFileRoute("/api/civint/location/context")({
           return Response.json(
             {
               state: "available",
-              coordinates: { latitude: lat, longitude: lon },
               geography: { city, county, state },
               coverage: {
                 city: cityRecords.length > 0,
@@ -91,7 +95,7 @@ export const Route = createFileRoute("/api/civint/location/context")({
                 evidence: "CIVINT Record Index",
               },
             },
-            { headers: { "Cache-Control": "private, max-age=300" } },
+            { headers: { "Cache-Control": "no-store" } },
           );
         } catch (error) {
           return Response.json(

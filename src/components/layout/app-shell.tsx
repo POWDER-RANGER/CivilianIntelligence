@@ -7,20 +7,28 @@ import { searchNodes } from "@/lib/intel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-const NAV = [
-  { to: "/", label: "Framework", hint: "Start here" },
-  { to: "/watchtower", label: "Watchtower", hint: "Places & infrastructure" },
-  { to: "/finance", label: "Finance", hint: "Money & filings" },
-  { to: "/privacy", label: "Privacy", hint: "How systems watch" },
-  { to: "/sources", label: "Sources", hint: "Live data registry" },
-  { to: "/toolkit", label: "Toolkit", hint: "Request & verify" },
-  { to: "/titan", label: "Cell Titan", hint: "User-owned RF" },
-  { to: "/veil", label: "VEIL", hint: "Briefing" },
-  { to: "/records", label: "Record Index", hint: "Find the record" },
-  { to: "/signal", label: "Signal vs Record", hint: "Attention & evidence" },
-  { to: "/movement", label: "Movement", hint: "Government activity" },
-  { to: "/oversight", label: "Oversight", hint: "Money, ethics & FOIA" },
-  { to: "/reading-room", label: "Reading Room", hint: "Declassified records" },
+const NAV_GROUPS = [
+  { label: "Start", items: [
+    { to: "/", label: "Open Desk", hint: "Local context & map" },
+    { to: "/toolkit", label: "Toolkit", hint: "Request & verify" },
+  ] },
+  { label: "Desks", items: [
+    { to: "/finance", label: "Finance", hint: "Money & filings" },
+    { to: "/privacy", label: "Privacy", hint: "How systems watch" },
+    { to: "/movement", label: "Movement", hint: "Government activity" },
+    { to: "/oversight", label: "Oversight", hint: "Money, ethics & FOIA" },
+  ] },
+  { label: "Libraries", items: [
+    { to: "/reading-room", label: "Reading Room", hint: "Declassified records" },
+    { to: "/records", label: "Record Index", hint: "Find the record" },
+    { to: "/sources", label: "Sources", hint: "Public source registry" },
+  ] },
+  { label: "Tools", items: [
+    { to: "/watchtower", label: "Watchtower", hint: "Places & infrastructure" },
+    { to: "/signal", label: "Signal vs Record", hint: "Attention & evidence" },
+    { to: "/veil", label: "VEIL", hint: "Briefing" },
+    { to: "/titan", label: "Cell Titan", hint: "User-owned RF" },
+  ] },
 ] as const;
 
 export function AppShell({
@@ -57,22 +65,27 @@ export function AppShell({
 
           </Link>
 
-          <nav className="ml-4 hidden items-center gap-1 lg:flex">
-            {NAV.map((item) => {
-              const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+          <nav className="ml-2 hidden items-center gap-1 lg:flex" aria-label="Main navigation">
+            {NAV_GROUPS.map((group) => {
+              const active = group.items.some((item) => item.to === "/" ? pathname === "/" : pathname.startsWith(item.to));
               return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={cn(
-                    "rounded-md px-3 py-1.5 text-sm transition-colors",
-                    active
-                      ? "bg-muted text-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
-                >
-                  {item.label}
-                </Link>
+                <details key={group.label} className="group relative">
+                  <summary className={cn(
+                    "cursor-pointer list-none rounded-md px-3 py-2 text-sm transition-colors [&::-webkit-details-marker]:hidden",
+                    active ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}>{group.label}</summary>
+                  <div className="absolute left-0 top-full z-50 mt-1 min-w-56 rounded-xl border border-border bg-popover p-1.5 shadow-lg">
+                    {group.items.map((item) => (
+                      <Link key={item.to} to={item.to} className={cn(
+                        "flex flex-col rounded-md px-3 py-2 hover:bg-muted",
+                        (item.to === "/" ? pathname === "/" : pathname.startsWith(item.to)) ? "bg-muted" : "",
+                      )}>
+                        <span className="text-sm text-foreground">{item.label}</span>
+                        <span className="text-[11px] text-muted-foreground">{item.hint}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </details>
               );
             })}
           </nav>
@@ -143,17 +156,19 @@ export function AppShell({
                 </span>
               </button>
             ))}
-            <nav className="mt-2 grid gap-1">
-              {NAV.map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setOpen(false)}
-                  className="flex items-baseline justify-between rounded-md px-2 py-2.5 hover:bg-muted"
-                >
-                  <span>{item.label}</span>
-                  <span className="text-xs text-muted-foreground">{item.hint}</span>
-                </Link>
+            <nav className="mt-2 grid gap-4" aria-label="Main navigation">
+              {NAV_GROUPS.map((group) => (
+                <section key={group.label}>
+                  <h2 className="px-2 pb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{group.label}</h2>
+                  <div className="grid gap-0.5">
+                    {group.items.map((item) => (
+                      <Link key={item.to} to={item.to} onClick={() => setOpen(false)} className="flex items-baseline justify-between rounded-md px-2 py-2.5 hover:bg-muted">
+                        <span>{item.label}</span>
+                        <span className="text-xs text-muted-foreground">{item.hint}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
               ))}
             </nav>
           </div>
