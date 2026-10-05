@@ -303,7 +303,8 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
   }, [filtered]);
 
   useEffect(() => {
-    if (!location || !mapRef.current || !mapReady || locationUsed) return;\n    // Location can arrive after the map has initialized; only then move/fetch the local viewport.
+    if (!location || !mapRef.current || !mapReady || locationUsed) return;
+    // Location can arrive after the map has initialized; only then move/fetch the local viewport.
     mapRef.current.flyTo({ center: [location.longitude, location.latitude], zoom: 10.5, duration: 700, essential: true });
     setLocationUsed(true);
   }, [location, mapReady, locationUsed]);
