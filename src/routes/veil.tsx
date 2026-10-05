@@ -34,7 +34,7 @@ function severityVariant(s: string) {
   return "outline" as const;
 }
 
-function pillarVariant(s: PillarStatus["status"]) {
+function pillarStatusVariant(s: PillarStatus["status"]) {
   if (s === "online") return "live" as const;
   if (s === "degraded") return "warn" as const;
   return "outline" as const;
@@ -47,9 +47,9 @@ function VeilPage() {
   const [awards, setAwards] = useState<CivintAward[]>([]);
   const [civintLive, setCivintLive] = useState(false);
   const [pillars, setPillars] = useState<PillarStatus[]>([]);
-  const [sources, setSources] = useState<CivintSource[]>([]);
+  const [sourceRegistry, setSourceRegistry] = useState<CivintSource[]>([]);
 
-  const sources = countLeaves(FRAMEWORK);
+  const indexedSources = countLeaves(FRAMEWORK);
   const liveMovement = MOVEMENT_EVENTS.filter((e) => e.status === "live").length;
   const alerts = OVERSIGHT_ITEMS.filter((i) => i.severity === "alert").length;
   const expanding = PRIVACY_SYSTEMS.filter((s) => s.risk === "expanding").length;
@@ -71,7 +71,7 @@ function VeilPage() {
       if (!cancelled) setPillars(items);
     });
     void getCivintSources().then((items) => {
-      if (!cancelled) setSources(items);
+      if (!cancelled) setSourceRegistry(items);
     });
     return () => {
       cancelled = true;
@@ -122,7 +122,7 @@ function VeilPage() {
                       {p.version ? "v" + p.version : "endpoint not configured"}{p.latencyMs != null ? " · " + p.latencyMs + "ms" : ""}
                     </p>
                   </div>
-                  <Badge variant={pillarVariant(p.status)}>{p.status}</Badge>
+                  <Badge variant={pillarStatusVariant(p.status)}>{p.status}</Badge>
                 </div>
                 <div className="mt-3 flex gap-3 text-[11px]">
                   <a href={p.id === "watchtower" ? "https://github.com/POWDER-RANGER/civwatch-watchtower" : "https://github.com/POWDER-RANGER/civwatch-cell-titan"} target="_blank" rel="noreferrer" className="text-steel hover:underline">Repository</a>
@@ -133,7 +133,7 @@ function VeilPage() {
           </div>
         </section>
 
-        {sources.length > 0 && (
+        {sourceRegistry.length > 0 && (
           <section className="mt-6 rounded-xl border border-border bg-card p-5">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
@@ -144,10 +144,10 @@ function VeilPage() {
                   Machine-readable inputs are distinguished from evidence/reference sources.
                 </p>
               </div>
-              <Badge variant="live">{sources.filter((x) => x.status === "active").length} active</Badge>
+              <Badge variant="live">{sourceRegistry.filter((x) => x.status === "active").length} active</Badge>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
-              {sources.slice(0, 12).map((source) => (
+              {sourceRegistry.slice(0, 12).map((source) => (
                 <a
                   key={source.id}
                   href={source.url}
@@ -165,7 +165,7 @@ function VeilPage() {
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: "Indexed sources", value: String(sources) },
+            { label: "Indexed sources", value: String(indexedSources) },
             { label: "Live movement", value: String(liveMovement) },
             { label: "Oversight alerts", value: String(alerts) },
             { label: "Expanding systems", value: String(expanding) },
