@@ -58,6 +58,11 @@ export type TitanTelemetryInputs = {
   recent: { samples?: TitanSample[] } | null;
   evidence: { records?: TitanEvidenceRecord[] } | null;
   verify: { ok?: boolean } | null;
+  observation?: {
+    state?: "live" | "demo" | "snapshot" | "unavailable";
+    owner_scope?: "user_device";
+    limitations?: string[];
+  } | null;
 };
 
 type PillarConfig = {
@@ -115,7 +120,7 @@ export function getPillarHealthStatus(body: Record<string, unknown> | null): "on
 }
 
 export function summarizeTitanTelemetry(inputs: TitanTelemetryInputs): TitanTelemetryResponse {
-  const { recent, evidence, verify } = inputs;
+  const { recent, evidence, verify, observation } = inputs;
   const evidenceOk = typeof verify?.ok === "boolean" ? verify.ok : null;
   const reachable = Boolean(recent || evidence || verify);
 
@@ -123,6 +128,9 @@ export function summarizeTitanTelemetry(inputs: TitanTelemetryInputs): TitanTele
     samples: Array.isArray(recent?.samples) ? recent.samples : [],
     evidence: Array.isArray(evidence?.records) ? evidence.records : [],
     evidenceOk,
+    state: observation?.state ?? null,
+    ownerScope: observation?.owner_scope ?? null,
+    limitations: Array.isArray(observation?.limitations) ? observation.limitations : [],
     // A reachable pillar is not healthy unless the evidence verifier explicitly passes.
     ok: reachable && evidenceOk === true,
   };
@@ -196,6 +204,6 @@ export const getTitanTelemetry = createServerFn({ method: "GET" }).handler(
     );
     const verify = await readJson<{ ok?: boolean }>(config, "/api/evidence/verify", true);
 
-    return summarizeTitanTelemetry({ recent, evidence, verify });
+    return summarizeTitanTelemetry({ recent: observations, evidence, verify, observation: observations });
   },
 );
