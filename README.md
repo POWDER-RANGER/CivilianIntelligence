@@ -136,3 +136,46 @@ Incident record: [docs/CI_RUNNER_INCIDENT_2026-10-04.md](./docs/CI_RUNNER_INCIDE
 ## License
 
 MIT — built for citizens, by citizens.
+
+
+## Public surface & activation status
+
+The public CIVINTELLIGENCE surface is organized around an evidence-first set of native desks and tools. The current production deployment includes the lighter user-facing shell, Framework, Watchtower, Finance, Privacy, Toolkit, Cell Titan, VEIL, Movement, and Oversight surfaces.
+
+### Available now
+
+- **Framework** — living civic intelligence source catalog and system map.
+- **Watchtower** — geospatial oversight, including the native ALPR infrastructure atlas. It reports public infrastructure observations and provenance; it does not provide private Flock account access or individual vehicle tracking.
+- **Finance** — federal spending/public-record views and the native SEC filing desk.
+- **Privacy** — surveillance-system transparency and public-record pathways.
+- **Toolkit** — FOIA / Privacy Act / state-request workflows with agency-aware request generation.
+- **Cell Titan** — defensive RF telemetry and evidence, subject to real device/service availability.
+- **VEIL** — executive public-record briefing surface.
+- **Movement** — government movement, calendars, hearings, and related public activity.
+- **Oversight** — accountability and public-record pathways, including native Congress.gov / FOIA / Federal Register adapters where credentials or upstream availability permit.
+
+### Activation track
+
+The next major focus is the **Reading Room / Declassified Libraries** layer. CIVINTELLIGENCE is being prepared as the interface and evidence layer for curated federal electronic reading rooms rather than as a replacement for the originating agencies.
+
+Planned library surfaces include:
+
+- CIA Electronic Reading Room / CREST
+- FBI Vault
+- State Department FOIA Virtual Reading Room
+- DHS FOIA Library
+- NSA Reading Room
+- DIA FOIA Electronic Reading Room
+- additional agency and archival reading rooms as the provenance, licensing, and maintenance model is established
+
+The Reading Room layer is intentionally designed around official deep links, collection guidance, provenance, and later normalized metadata/search—not synthetic records or uncontrolled bulk mirroring. As each library is activated, its status will move from **planned/in progress** to **available** without changing the architectural principle: upstream records remain attributable, while CIVINTELLIGENCE becomes the easier discovery and evidence surface.
+
+### In progress
+
+- **Deployment synchronization** — keeping the Render production branch aligned with the current mainline application so newly merged public surfaces are actually exposed.
+- **Reading Room activation** — federal library index and declassified-record discovery surfaces.
+- **Unified Search** — one evidence-first search surface spanning framework data, live desks, normalized public records, and future Reading Room metadata.
+- **Cross-desk dossiers** — connecting related finance, oversight, privacy, movement, and public-infrastructure records without turning correlation into unsupported inference.
+- **Evidence graph / timelines** — provenance-preserving relationships and challengeable explanations across public records.
+
+> **Status rule:** CIVINTELLIGENCE distinguishes **available**, **unconfigured**, **degraded**, and **in progress**. A planned capability is not represented as live data, and a source outage is not silently converted into a healthy state.
