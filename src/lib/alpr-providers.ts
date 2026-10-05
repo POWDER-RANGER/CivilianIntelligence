@@ -20,18 +20,20 @@ export const ALPR_PROVIDERS: AlprProvider[] = [
     coverage: "United States",
     cadence: "hourly",
     provenance: "OpenStreetMap / DeFlock community",
-    notes: "Viewport-native vector tiles; the map only requests tiles covering the current view.",
+    notes:
+      "Primary map feed. TileJSON resolves viewport-native MVT tiles; the browser never downloads a national GeoJSON export.",
   },
   {
     id: "flock-locations",
     name: "Flock Locations",
-    role: "fallback",
+    role: "validation",
     endpoint: "https://flocklocations.com/api/cameras/export?format=geojson",
     format: "geojson",
     coverage: "United States",
     cadence: "published feed",
     provenance: "Independent community-run dataset",
-    notes: "Retained for source comparison, fallback ingestion, and provenance; never blocks the primary map.",
+    notes:
+      "Validation/provenance feed only. It is GeoJSON, not TileJSON, and is never passed to the MapLibre vector source.",
   },
   {
     id: "openstreetmap-alpr",
@@ -42,8 +44,11 @@ export const ALPR_PROVIDERS: AlprProvider[] = [
     coverage: "Global",
     cadence: "continuously edited",
     provenance: "OpenStreetMap contributors",
-    notes: "Underlying public observation layer used by major ALPR transparency projects.",
+    notes:
+      "Public mapping source underlying the DeFlock community dataset; shown here as provenance, not as a synchronous map query.",
   },
 ];
 
-export const PRIMARY_ALPR_PROVIDER = ALPR_PROVIDERS.find((provider) => provider.role === "primary")!;
+export const PRIMARY_ALPR_PROVIDER = ALPR_PROVIDERS.find(
+  (provider) => provider.role === "primary",
+)!;
