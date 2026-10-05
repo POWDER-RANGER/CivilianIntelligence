@@ -7,6 +7,9 @@ const ICONS = {
   "surveillance infrastructure": Radio,
   "federal spending": Database,
   "corporate filings": FileText,
+  legislation: FileText,
+  oversight: FileText,
+  regulatory: FileText,
 } satisfies Record<SourceDefinition["category"], typeof Activity>;
 
 type Status = { source: SourceDefinition; state: "reachable" | "unavailable"; checked_at: string };
