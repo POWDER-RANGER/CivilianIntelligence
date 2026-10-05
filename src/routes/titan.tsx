@@ -17,6 +17,7 @@ function TitanPage() {
   const [samples, setSamples] = useState<TitanSample[]>([]);
   const [evidence, setEvidence] = useState<TitanEvidenceRecord[]>([]);
   const [evidenceOk, setEvidenceOk] = useState<boolean | null>(null);
+  const [observationState, setObservationState] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -27,6 +28,7 @@ function TitanPage() {
       setSamples(data.samples);
       setEvidence(data.evidence);
       setEvidenceOk(data.evidenceOk);
+      setObservationState(data.state);
       setError(data.ok ? null : "Cell Titan is unavailable, unauthorized, or not configured.");
     }).catch((e) => {
       if (!cancelled) setError(String(e));
@@ -56,6 +58,17 @@ function TitanPage() {
           </div>
         )}
 
+        <div className="mt-6 flex flex-wrap gap-2">
+          {observationState && (
+            <Badge variant={observationState === "live" ? "live" : observationState === "demo" ? "warn" : "outline"}>
+              observations: {observationState}
+            </Badge>
+          )}
+          <Badge variant="outline">owner: user device</Badge>
+          {evidenceOk === true && <Badge variant="live">evidence verified</Badge>}
+          {evidenceOk === false && <Badge variant="danger">evidence broken</Badge>}
+        </div>
+
         <div className="mt-6 grid gap-3 sm:grid-cols-4">
           <div className="rounded-xl border border-border bg-card p-5">
             <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">API</p>
@@ -79,7 +92,9 @@ function TitanPage() {
           <header className="border-b border-border px-5 py-4">
             <h2 className="font-display text-2xl">Recent telemetry</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Retrieved server-side with the configured Titan bearer token when remote access is enabled.
+              Authenticated Titan observations are user-device telemetry. They describe available radio/sensor
+              observations and evidence; they do not, by themselves, identify a specific interceptor or prove unlawful
+              collection.
             </p>
           </header>
           <div className="divide-y divide-border">

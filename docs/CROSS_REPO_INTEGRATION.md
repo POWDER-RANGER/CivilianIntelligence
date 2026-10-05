@@ -46,10 +46,14 @@ The canonical public snapshots are:
 
 - `/civint/alerts.json`
 - `/civint/awards.json`
-- `/civint/alpr_overpass.json`
+- `/civint/alpr_overpass.json` — backward-compatible ALPR view
+- `/civint/surveillance.json` — normalized mapped surveillance observations
+- `/civint/sources.json` — federated upstream source registry
 
 These originate in `CivilianIntelligence/ingest` and are consumed by the hub,
-Watchtower, and the Flutter client.
+Watchtower, and the Flutter client. Mature public/community projects are referenced
+or consumed through their public source layer rather than cloned into separate
+CIVWATCH databases.
 
 ### Watchtower
 
@@ -60,6 +64,7 @@ Watchtower owns map/report service behavior:
 - `GET /api/civint/alerts`
 - `GET /api/civint/awards`
 - `GET /api/civint/alpr`
+- `GET /api/civint/surveillance`
 
 Public write access must be authenticated/rate-limited before any production
 deployment.
@@ -70,6 +75,7 @@ Titan owns sensor/evidence behavior:
 
 - `GET /api/health`
 - `GET /api/telemetry/recent`
+- `GET /api/observations` — authenticated user-device observation envelope
 - `GET /api/evidence/verify`
 - `GET /api/evidence/tail`
 - privileged writes under bearer-token control
@@ -99,3 +105,18 @@ The ecosystem is not considered integrated until:
 - CIVWATCH security scanners and relevant backend/ML tests are green.
 - No committed secrets, open-LAN Titan defaults, or unauthenticated public
   report/feature writes remain.
+
+
+## Federated surveillance source strategy
+
+CIVINT's canonical mapped-infrastructure input is OpenStreetMap's public surveillance
+tagging. DeFlock and FlockHopper are treated as compatible community ecosystems through
+the OSM objects they already publish, not as databases to scrape or replicate. Evidence-
+backed sources such as FlockRadar and Atlas of Surveillance remain provenance/reference
+inputs for future record joins.
+
+The normalized surveillance contract deliberately separates observation from conclusion:
+a mapped ALPR, camera, or acoustic sensor is evidence that an object was mapped, not proof
+that it is currently operating, who owns it, what data it transmits, or whether its use is
+lawful. Additional claims require independent public records or first-party/user-owned
+telemetry.

@@ -2,7 +2,7 @@
  * CIVINT ingest feed loaders.
  *
  * These read the dashboard-ready JSON produced by ingest/civint_ingest.py
- * (alerts.json, awards.json, alpr_overpass.json). In production the files
+ * (alerts.json, awards.json, alpr_overpass.json, surveillance.json, sources.json). In production the files
  * live under /data/civint/ or are served by a small static endpoint;
  * during local dev they can be dropped in public/civint/.
  *
@@ -40,6 +40,58 @@ export type CivintAlprNode = {
   tags: Record<string, string>;
 };
 
+export type CivintSurveillanceAsset = {
+  type: "node";
+  id: number;
+  lat: number;
+  lon: number;
+  category: "alpr" | "gunshot_detector" | "camera" | "other";
+  surveillance_type: string | null;
+  operator: string | null;
+  manufacturer: string | null;
+  name: string | null;
+  zone: string | null;
+  direction: string | null;
+  tags: Record<string, string>;
+  confidence: number | null;
+  provenance: {
+    source_id: string;
+    source_url: string;
+    observed_at: string | null;
+    method: string;
+    state: "snapshot" | "live" | "demo" | "unavailable";
+    attribution?: string;
+  };
+};
+
+export type CivintSource = {
+  id: string;
+  name: string;
+  url: string;
+  integration: string;
+  status: string;
+  scope?: string;
+  license?: string;
+  attribution?: string;
+  direct_database_ingest?: boolean;
+};
+
+export type CivintSurveillanceFeed = {
+  schema_version: string;
+  state: "snapshot" | "live" | "demo" | "unavailable";
+  generated_at: string | null;
+  as_of: string | null;
+  source: {
+    id: string;
+    name: string;
+    url: string;
+    license?: string;
+    attribution?: string;
+  };
+  counts: Record<string, number>;
+  elements: CivintSurveillanceAsset[];
+};
+
 const BASE = "/civint"; // public/civint/ in the Vite app, or CDN path in prod
 
 async function softJson<T>(path: string): Promise<T | null> {
@@ -65,6 +117,22 @@ export async function getCivintAwards(): Promise<CivintAward[]> {
 export async function getCivintAlpr(): Promise<CivintAlprNode[]> {
   const data = await softJson<{ elements?: CivintAlprNode[] }>("/alpr_overpass.json");
   return data?.elements ?? [];
+}
+
+export async function getCivintSurveillance(): Promise<CivintSurveillanceFeed | null> {
+  return softJson<CivintSurveillanceFeed>("/surveillance.json");
+}
+
+export type CivintSourceRegistry = {
+  schema_version: string;
+  purpose: string;
+  updated: string;
+  sources: CivintSource[];
+};
+
+export async function getCivintSources(): Promise<CivintSource[]> {
+  const data = await softJson<CivintSourceRegistry>("/sources.json");
+  return Array.isArray(data?.sources) ? data.sources : [];
 }
 
 /** Format a USD amount for display cards. */

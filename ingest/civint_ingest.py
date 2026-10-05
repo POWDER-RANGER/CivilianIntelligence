@@ -3,7 +3,7 @@
 
   python civint_ingest.py nws                              active NWS alerts (IA, IL, MO)
   python civint_ingest.py usaspending                      federal awards matching search terms
-  python civint_ingest.py osm --pbf iowa-latest.osm.pbf    ALPR points from a Geofabrik extract
+  python civint_ingest.py osm --pbf iowa-latest.osm.pbf    surveillance/ALPR/gunshot/camera points from OSM PBF
   python civint_ingest.py verify --chunks chunks.json      enforce the extraction-schema quote rules
   python civint_ingest.py daily                            nws + usaspending (+ osm if CIVINT_PBF is set)
 
@@ -61,6 +61,11 @@ def connect():
         recipient TEXT, amount REAL, agency TEXT, start_date TEXT, award_group TEXT, fetched TEXT,
         PRIMARY KEY(internal_id, term, matched_by));
     CREATE TABLE IF NOT EXISTS points(osm_id INTEGER PRIMARY KEY, lat REAL, lon REAL, tags TEXT, fetched TEXT);
+    CREATE TABLE IF NOT EXISTS surveillance_assets(
+        osm_id INTEGER PRIMARY KEY, category TEXT NOT NULL, lat REAL, lon REAL,
+        surveillance_type TEXT, operator TEXT, manufacturer TEXT, tags TEXT,
+        observed_at TEXT, source_url TEXT
+    );
     """)
     return con
 
@@ -123,48 +128,154 @@ def usaspending(terms=("Flock Safety", "Flock Group", "license plate reader"), s
     print("usaspending: awards ->", export(con, "awards", "awards.json"))
 
 
-# ---------------------------------------------------------------- OSM ALPR points
-def _extract_ts(path):
-    """Extract timestamp for a .osm.pbf: the replication header if present, else the file mtime."""
-    try:
-        import osmium.io
-        ts = osmium.io.Reader(str(path), osmium.osm.osm_entity_bits.NOTHING).header().get(
-            "osmosis_replication_timestamp")
-        if ts:
-            return ts if isinstance(ts, str) else ts.isoformat()
-    except Exception:
-        pass
-    return datetime.fromtimestamp(Path(path).stat().st_mtime, timezone.utc).isoformat(timespec="seconds")
+# ---------------------------------------------------------------- OSM surveillance infrastructure
+def _surveillance_category(tags):
+    """Classify an explicitly mapped OSM surveillance object."""
+    if tags.get("man_made") != "surveillance":
+        return "other"
+    st = (tags.get("surveillance:type") or "").strip().lower()
+    if st == "alpr":
+        return "alpr"
+    if st == "gunshot_detector":
+        return "gunshot_detector"
+    if st == "camera":
+        return "camera"
+    # OSM documents camera:type=ALPR as a possible legacy/synonym tagging pattern.
+    if (tags.get("camera:type") or "").strip().lower() == "alpr":
+        return "alpr"
+    return "other"
+
+
+def _source_url(osm_id):
+    return f"https://www.openstreetmap.org/node/{osm_id}"
 
 
 def osm(pbfs):
-    """Filter local Geofabrik .osm.pbf extracts for ALPR nodes; write Overpass-style JSON for the dashboard."""
+    """Normalize mapped surveillance nodes from one or more OSM PBF extracts.
+
+    The upstream dataset remains OpenStreetMap. DeFlock/FlockHopper compatibility is
+    achieved by consuming the same OSM objects rather than scraping or duplicating
+    their application-specific databases.
+    """
     try:
         import osmium
     except ImportError:
         sys.exit("pip install osmium")
-    pts = {}
+
+    assets = {}
 
     class Handler(osmium.SimpleHandler):
         def node(self, n):
             tags = {t.k: t.v for t in n.tags}
-            if tags.get("man_made") == "surveillance" and tags.get("surveillance:type", "").upper() == "ALPR" \
-                    and n.location.valid():
-                pts[n.id] = (n.location.lat, n.location.lon, tags)
+            if tags.get("man_made") != "surveillance" or not n.location.valid():
+                return
+            category = _surveillance_category(tags)
+            assets[n.id] = {
+                "type": "node",
+                "id": n.id,
+                "lat": n.location.lat,
+                "lon": n.location.lon,
+                "category": category,
+                "surveillance_type": tags.get("surveillance:type") or None,
+                "operator": tags.get("operator") or None,
+                "manufacturer": tags.get("manufacturer") or None,
+                "name": tags.get("name") or None,
+                "zone": tags.get("surveillance:zone") or None,
+                "direction": tags.get("camera:direction") or None,
+                "tags": tags,
+            }
 
     for f in pbfs:
         Handler().apply_file(str(f))
+
     con = connect()
+    asof = min(_extract_ts(f) for f in pbfs)
     with con:
         con.execute("DELETE FROM points")
-        for i, (lat, lon, tags) in pts.items():
-            con.execute("INSERT OR REPLACE INTO points VALUES (?,?,?,?,?)", (i, lat, lon, json.dumps(tags), now()))
-    elements = [{"type": "node", "id": i, "lat": lat, "lon": lon, "tags": tags} for i, (lat, lon, tags) in pts.items()]
-    asof = min(_extract_ts(f) for f in pbfs)  # the oldest extract governs the snapshot's freshness label
-    (OUT / "alpr_overpass.json").write_text(json.dumps({
-        "version": 0.6, "generator": "civint_ingest",
-        "osm3s": {"timestamp_osm_base": asof}, "elements": elements}), encoding="utf-8")
-    print("osm: ALPR points ->", len(elements), f"(extract as of {asof}; import OUT/alpr_overpass.json in the dashboard)")
+        con.execute("DELETE FROM surveillance_assets")
+        for i, asset in assets.items():
+            tags = json.dumps(asset["tags"], sort_keys=True)
+            con.execute(
+                "INSERT OR REPLACE INTO points VALUES (?,?,?,?,?)",
+                (i, asset["lat"], asset["lon"], tags, now()),
+            )
+            con.execute(
+                "INSERT OR REPLACE INTO surveillance_assets VALUES (?,?,?,?,?,?,?,?,?,?)",
+                (
+                    i,
+                    asset["category"],
+                    asset["lat"],
+                    asset["lon"],
+                    asset["surveillance_type"],
+                    asset["operator"],
+                    asset["manufacturer"],
+                    tags,
+                    asof,
+                    _source_url(i),
+                ),
+            )
+
+    elements = []
+    for asset in assets.values():
+        elements.append({
+            **asset,
+            "confidence": 0.9 if asset["category"] in {"alpr", "gunshot_detector"} else 0.75,
+            "provenance": {
+                "source_id": "osm",
+                "source_url": _source_url(asset["id"]),
+                "observed_at": asof,
+                "method": "OSM PBF extract",
+                "state": "snapshot",
+                "attribution": "© OpenStreetMap contributors",
+            },
+        })
+
+    counts = Counter(a["category"] for a in assets.values())
+    surveillance = {
+        "schema_version": "1.0",
+        "state": "snapshot",
+        "generated_at": now(),
+        "as_of": asof,
+        "source": {
+            "id": "osm",
+            "name": "OpenStreetMap",
+            "url": "https://www.openstreetmap.org/",
+            "license": "ODbL",
+            "attribution": "© OpenStreetMap contributors",
+        },
+        "integration": {
+            "deflock": "via OSM",
+            "flockhopper_deflock_data": "via OSM",
+            "direct_third_party_database_ingest": False,
+        },
+        "counts": dict(counts),
+        "elements": elements,
+    }
+    (OUT / "surveillance.json").write_text(json.dumps(surveillance, indent=1), encoding="utf-8")
+
+    alpr = {
+        "version": 0.6,
+        "generator": "civint_ingest",
+        "osm3s": {"timestamp_osm_base": asof},
+        "elements": [
+            {
+                "type": a["type"],
+                "id": a["id"],
+                "lat": a["lat"],
+                "lon": a["lon"],
+                "tags": a["tags"],
+            }
+            for a in assets.values()
+            if a["category"] == "alpr"
+        ],
+    }
+    (OUT / "alpr_overpass.json").write_text(json.dumps(alpr, indent=1), encoding="utf-8")
+    print(
+        "osm: surveillance ->",
+        len(elements),
+        f"(ALPR {counts.get('alpr', 0)}; gunshot detectors {counts.get('gunshot_detector', 0)}; "
+        f"cameras {counts.get('camera', 0)}; extract as of {asof})"
+    )
 
 
 # ---------------------------------------------------------------- quote verifier
@@ -286,7 +397,8 @@ def main():
     p = sub.add_parser("usaspending")
     p.add_argument("--terms", nargs="+", default=["Flock Safety", "Flock Group", "license plate reader"])
     p.add_argument("--start", default="2021-10-01"); p.add_argument("--end"); p.add_argument("--max-pages", type=int, default=5)
-    p = sub.add_parser("osm"); p.add_argument("--pbf", nargs="+", required=True)
+    p = sub.add_parser("osm"); p.add_argument("--pbf", nargs="+", required=True,
+                                                   help="one or more OSM PBF extracts")
     p = sub.add_parser("verify"); p.add_argument("--chunks", required=True)
     sub.add_parser("daily")
     a = ap.parse_args()

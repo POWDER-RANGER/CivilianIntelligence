@@ -2,6 +2,11 @@
 
 Keyless data pipelines that feed the CIVINTELLIGENCE data layer (Privacy desk, Finance desk, Watchtower / Veil).
 
+The pipeline treats mature public/community projects as upstream evidence, not competitors to rebuild:
+OpenStreetMap is the canonical mapped-infrastructure source; DeFlock and FlockHopper data are
+consumed through the OSM objects they already publish rather than scraped into a duplicate
+database.
+
 ## `civint_ingest.py`
 
 ```bash
@@ -26,7 +31,8 @@ python civint_ingest.py daily
 | `civint.db` | SQLite master (alerts, awards, points) |
 | `alerts.json` | Active NWS alerts |
 | `awards.json` | Federal awards matching search terms |
-| `alpr_overpass.json` | Overpass-style ALPR nodes (import via dashboard) |
+| `alpr_overpass.json` | Backward-compatible ALPR nodes |
+| `surveillance.json` | Normalized ALPR, gunshot-detector, camera, and other mapped surveillance infrastructure with provenance |
 | `relations.json` / `rejected.jsonl` | Quote-verified entity/relation extraction |
 
 ### Design notes
@@ -36,7 +42,17 @@ python civint_ingest.py daily
 - Quote verifier enforces closed entity/relation sets, quote presence after normalization (including hyphenated PDF line-breaks), length bounds, and endpoint presence in the chunk's entity list. Missing page endpoints are kept with `endpoints_on_page` flags rather than rejected (jurisdictions are often header-implied).
 - `daily` continues if one source fails.
 
+### Integration now active
+
+- OSM surveillance nodes are normalized into `surveillance.json` with source URLs,
+  snapshot age, attribution, operator/manufacturer tags when present, and explicit confidence.
+- `alpr_overpass.json` remains for compatibility with existing Watchtower/App clients.
+- DeFlock and FlockHopper remain visible as source references while OSM is the canonical
+  machine-readable ingest path.
+- Watchtower consumes the normalized surveillance feed instead of treating its demo feature
+  array as the primary map source.
+
 ### Next
 
 - City agenda ingestion (Legistar keyless API + PDF text → model extraction → `verify`)
-- Wire JSON loaders into Privacy / Finance / Watchtower routes
+- Evidence-backed local contract joins between mapped assets, operators, and public spending

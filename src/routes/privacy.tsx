@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PRIVACY_SYSTEMS, type PrivacySystem } from "@/data/desks";
+import { getCivintSurveillance, type CivintSurveillanceFeed } from "@/lib/civint-feeds";
 
 export const Route = createFileRoute("/privacy")({ component: PrivacyPage });
 
@@ -28,6 +29,17 @@ function PrivacyPage() {
   const [cat, setCat] = useState<(typeof CATS)[number]>("all");
   const [openId, setOpenId] = useState<string | null>(PRIVACY_SYSTEMS[0]?.id ?? null);
   const systems = PRIVACY_SYSTEMS.filter((s) => cat === "all" || s.category === cat);
+  const [surveillance, setSurveillance] = useState<CivintSurveillanceFeed | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void getCivintSurveillance().then((data) => {
+      if (!cancelled) setSurveillance(data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <AppShell>
@@ -47,6 +59,52 @@ function PrivacyPage() {
             </Button>
           ))}
         </div>
+
+        {surveillance && (
+          <section className="mt-8 rounded-xl border border-border bg-card p-5">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Mapped infrastructure</p>
+                <h2 className="mt-1 font-display text-2xl">Open surveillance map feed</h2>
+                <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
+                  Community-mapped OSM observations, normalized by CIVINT. These are mapped assets, not proof of
+                  current operation, ownership, or unlawful interception.
+                </p>
+              </div>
+              <Badge
+                variant={
+                  surveillance.state === "live"
+                    ? "live"
+                    : surveillance.state === "demo" || surveillance.state === "snapshot"
+                      ? "warn"
+                      : "outline"
+                }
+              >
+                {surveillance.state}
+              </Badge>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-4">
+              {[
+                ["ALPR", surveillance.counts.alpr ?? 0],
+                ["Gunshot", surveillance.counts.gunshot_detector ?? 0],
+                ["Camera", surveillance.counts.camera ?? 0],
+                ["Other", surveillance.counts.other ?? 0],
+              ].map(([label, value]) => (
+                <div key={String(label)} className="rounded-lg border border-border p-4">
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+                  <p className="mt-1 font-display text-3xl tabular-nums">{String(value)}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-[11px] text-muted-foreground">
+              {surveillance.elements.length} normalized observations · as of {surveillance.as_of ?? "unknown"} ·{" "}
+              <a href={surveillance.source.url} target="_blank" rel="noreferrer" className="text-steel hover:underline">
+                {surveillance.source.name}
+              </a>{" "}
+              {surveillance.source.license || ""}
+            </p>
+          </section>
+        )}
 
         <div className="mt-8 grid gap-3 md:grid-cols-2">
           {systems.map((sys) => {

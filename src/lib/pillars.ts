@@ -48,6 +48,9 @@ export type TitanTelemetryResponse = {
   samples: TitanSample[];
   evidence: TitanEvidenceRecord[];
   evidenceOk: boolean | null;
+  state: "live" | "demo" | "snapshot" | "unavailable" | null;
+  ownerScope: "user_device" | null;
+  limitations: string[];
   ok: boolean;
 };
 
@@ -180,11 +183,12 @@ export const getWatchtowerFeatures = createServerFn({ method: "GET" }).handler(
 export const getTitanTelemetry = createServerFn({ method: "GET" }).handler(
   async (): Promise<TitanTelemetryResponse> => {
     const config = getConfig("cell-titan");
-    const recent = await readJson<{ samples?: TitanSample[] }>(
-      config,
-      "/api/telemetry/recent?n=50",
-      true,
-    );
+    const observations = await readJson<{
+      samples?: TitanSample[];
+      state?: "live" | "demo" | "snapshot" | "unavailable";
+      owner_scope?: "user_device";
+      limitations?: string[];
+    }>(config, "/api/observations?n=50", true);
     const evidence = await readJson<{ records?: TitanEvidenceRecord[] }>(
       config,
       "/api/evidence/tail?n=20",

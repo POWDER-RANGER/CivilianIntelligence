@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.0",
+  "purpose": "Federated CIVINT public-source registry. Mature upstream projects are referenced or consumed; CIVINT does not claim ownership of their datasets.",
+  "updated": "2026-10-05",
+  "sources": [
+    {
+      "id": "osm",
+      "name": "OpenStreetMap",
+      "url": "https://www.openstreetmap.org/",
+      "integration": "native-machine-readable-ingest",
+      "status": "active",
+      "license": "ODbL",
+      "scope": "mapped surveillance infrastructure and geospatial context",
+      "attribution": "© OpenStreetMap contributors"
+    },
+    {
+      "id": "deflock",
+      "name": "DeFlock",
+      "url": "https://maps.deflock.org/",
+      "integration": "via-osm",
+      "status": "reference-and-validation",
+      "scope": "crowdsourced ALPR mapping and field editing",
+      "direct_database_ingest": false
+    },
+    {
+      "id": "flockhopper-deflock-data",
+      "name": "FlockHopper deflock-data",
+      "url": "https://github.com/flockhopper3/deflock-data",
+      "integration": "via-osm",
+      "status": "reference-and-validation",
+      "scope": "automated OSM→GeoJSON/PMTiles ALPR pipeline",
+      "direct_database_ingest": false
+    },
+    {
+      "id": "flockradar",
+      "name": "FlockRadar",
+      "url": "https://flockradar.com/",
+      "integration": "evidence-reference",
+      "status": "reference",
+      "scope": "evidence-backed ALPR transparency records"
+    },
+    {
+      "id": "atlas-of-surveillance",
+      "name": "Atlas of Surveillance",
+      "url": "https://atlasofsurveillance.org/",
+      "integration": "evidence-reference",
+      "status": "reference",
+      "scope": "public-record surveillance technology deployments"
+    },
+    {
+      "id": "alprmaps",
+      "name": "ALPR Maps",
+      "url": "https://alprmaps.com/",
+      "integration": "evidence-reference",
+      "status": "reference",
+      "scope": "community ALPR mapping and route context"
+    },
+    {
+      "id": "aimsicd",
+      "name": "Android IMSI-Catcher Detector (AIMSICD)",
+      "url": "https://github.com/CellularPrivacy/Android-IMSI-Catcher-Detector",
+      "integration": "titan-research-reference",
+      "status": "reference",
+      "scope": "defensive cellular anomaly detection techniques"
+    },
+    {
+      "id": "usaspending",
+      "name": "USAspending",
+      "url": "https://www.usaspending.gov/",
+      "integration": "native-api-ingest",
+      "status": "active",
+      "scope": "federal awards and contracts"
+    },
+    {
+      "id": "nws",
+      "name": "National Weather Service",
+      "url": "https://www.weather.gov/",
+      "integration": "native-api-ingest",
+      "status": "active",
+      "scope": "active public hazard alerts"
+    }
+  ]
+}

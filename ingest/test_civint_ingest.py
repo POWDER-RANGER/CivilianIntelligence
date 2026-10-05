@@ -34,3 +34,22 @@ def test_nulls_unsupported_amount_keeps_supported():
     es, _, _ = ci.verify_chunk({"entities": ents, "relations": []}, 1, TEXT)
     amounts = {e["name"]: e["attrs"]["amount"] for e in es}
     assert amounts == {"A": None, "B": "$120,000"}
+
+
+SURVEILLANCE = [
+    {"man_made": "surveillance", "surveillance:type": "ALPR", "operator": "Flock Safety"},
+    {"man_made": "surveillance", "surveillance:type": "gunshot_detector"},
+    {"man_made": "surveillance", "surveillance:type": "camera"},
+    {"man_made": "surveillance", "camera:type": "ALPR"},
+    {"man_made": "surveillance", "surveillance:type": "other"},
+]
+
+def test_surveillance_categories():
+    assert [ci._surveillance_category(tags) for tags in SURVEILLANCE] == [
+        "alpr", "gunshot_detector", "camera", "alpr", "other"
+    ]
+
+
+def test_non_surveillance_is_not_promoted():
+    assert ci._surveillance_category({"surveillance:type": "ALPR"}) == "other"
+    assert ci._surveillance_category({"amenity": "cafe"}) == "other"
