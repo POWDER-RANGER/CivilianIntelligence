@@ -51,4 +51,5 @@ def test_surveillance_categories():
 
 
 def test_non_surveillance_is_not_promoted():
+    assert ci._surveillance_category({"surveillance:type": "ALPR"}) == "other"
     assert ci._surveillance_category({"amenity": "cafe"}) == "other"
