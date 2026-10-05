@@ -73,7 +73,7 @@ function WatchtowerPage() {
           <header className="border-b border-border px-5 py-4">
             <h2 className="font-display text-2xl">Map feature rail</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Server-side fetch from Watchtower; demo records remain visibly labeled.
+              Server-side fetch from Watchtower; only sourced observations are displayed.
             </p>
           </header>
           <div className="divide-y divide-border">

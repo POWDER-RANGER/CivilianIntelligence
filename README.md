@@ -57,7 +57,7 @@ CIVWATCH is built around a simple principle: **give people evidence they can ins
 - Transparent scoring and explicit context.
 - **Defensive only.** No individual targeting.
 - Public data first and keyless where possible.
-- Demo, snapshot, live, and unavailable states remain distinguishable.
+- Live, snapshot, and unavailable states remain distinguishable; synthetic telemetry is not production data.
 
 ## Quick start
 
