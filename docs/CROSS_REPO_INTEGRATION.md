@@ -48,6 +48,7 @@ The canonical public snapshots are:
 - `/civint/awards.json`
 - `/civint/alpr_overpass.json` — backward-compatible ALPR view
 - `/civint/surveillance.json` — normalized mapped surveillance observations
+- `/civint/atlas_surveillance.json` — jurisdiction-level Atlas surveillance records
 - `/civint/sources.json` — federated upstream source registry
 
 These originate in `CivilianIntelligence/ingest` and are consumed by the hub,

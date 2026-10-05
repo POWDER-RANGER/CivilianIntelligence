@@ -53,3 +53,20 @@ def test_surveillance_categories():
 def test_non_surveillance_is_not_promoted():
     assert ci._surveillance_category({"surveillance:type": "ALPR"}) == "other"
     assert ci._surveillance_category({"amenity": "cafe"}) == "other"
+
+
+def test_normalize_atlas_row():
+    item = ci.normalize_atlas_row({
+        "Agency": "Example Police Department",
+        "City": "Example City",
+        "County": "Example County",
+        "State": "EX",
+        "Technology": "Automated License Plate Readers",
+        "Vendor": "Flock Safety",
+        "Description": "Uses ALPR technology.",
+    })
+    assert item["id"].startswith("aos:")
+    assert item["agency"] == "Example Police Department"
+    assert item["technology"] == "Automated License Plate Readers"
+    assert item["provenance"]["license"] == "CC-BY"
+    assert ci.normalize_atlas_row({"Agency": "", "Technology": ""}) is None

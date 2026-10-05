@@ -42,9 +42,9 @@
     {
       "id": "atlas-of-surveillance",
       "name": "Atlas of Surveillance",
-      "url": "https://atlasofsurveillance.org/",
-      "integration": "evidence-reference",
-      "status": "reference",
+      "url": "https://www.atlasofsurveillance.org/download.csv",
+      "integration": "native-csv-ingest",
+      "status": "supported",
       "scope": "public-record surveillance technology deployments"
     },
     {

@@ -4,7 +4,12 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PRIVACY_SYSTEMS, type PrivacySystem } from "@/data/desks";
-import { getCivintSurveillance, type CivintSurveillanceFeed } from "@/lib/civint-feeds";
+import {
+  getCivintSurveillance,
+  getCivintSurveillanceRecords,
+  type CivintSurveillanceFeed,
+  type CivintSurveillanceRecordsFeed,
+} from "@/lib/civint-feeds";
 
 export const Route = createFileRoute("/privacy")({ component: PrivacyPage });
 
@@ -30,11 +35,15 @@ function PrivacyPage() {
   const [openId, setOpenId] = useState<string | null>(PRIVACY_SYSTEMS[0]?.id ?? null);
   const systems = PRIVACY_SYSTEMS.filter((s) => cat === "all" || s.category === cat);
   const [surveillance, setSurveillance] = useState<CivintSurveillanceFeed | null>(null);
+  const [atlas, setAtlas] = useState<CivintSurveillanceRecordsFeed | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     void getCivintSurveillance().then((data) => {
       if (!cancelled) setSurveillance(data);
+    });
+    void getCivintSurveillanceRecords().then((data) => {
+      if (!cancelled) setAtlas(data);
     });
     return () => {
       cancelled = true;
@@ -59,6 +68,41 @@ function PrivacyPage() {
             </Button>
           ))}
         </div>
+
+        {atlas && (
+          <section className="mt-6 rounded-xl border border-border bg-card p-5">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Record intelligence</p>
+                <h2 className="mt-1 font-display text-2xl">Atlas of Surveillance</h2>
+                <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
+                  Jurisdiction-level public records about surveillance technology, agencies, and vendors.
+                  These records complement mapped observations and retain the upstream source boundary.
+                </p>
+              </div>
+              <Badge variant={atlas.state === "snapshot" ? "warn" : "outline"}>{atlas.state}</Badge>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {[
+                ["Records", atlas.count],
+                ["Technologies", new Set(atlas.records.map((r) => r.technology).filter(Boolean)).size],
+                ["Agencies", new Set(atlas.records.map((r) => r.agency).filter(Boolean)).size],
+              ].map(([label, value]) => (
+                <div key={String(label)} className="rounded-lg border border-border p-4">
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+                  <p className="mt-1 font-display text-3xl tabular-nums">{String(value)}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-[11px] text-muted-foreground">
+              Source snapshot:{" "}
+              <a href={atlas.source.url} target="_blank" rel="noreferrer" className="text-steel hover:underline">
+                {atlas.source.name}
+              </a>{" "}
+              · {atlas.source.license ?? "publisher terms"}
+            </p>
+          </section>
+        )}
 
         {surveillance && (
           <section className="mt-8 rounded-xl border border-border bg-card p-5">

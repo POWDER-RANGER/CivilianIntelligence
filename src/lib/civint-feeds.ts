@@ -64,6 +64,33 @@ export type CivintSurveillanceAsset = {
   };
 };
 
+export type CivintSurveillanceRecord = {
+  id: string;
+  agency: string | null;
+  city: string | null;
+  county: string | null;
+  state: string | null;
+  technology: string | null;
+  vendor: string | null;
+  narrative: string | null;
+  provenance: {
+    source_id: string;
+    source_url: string;
+    method: string;
+    state: "snapshot" | "live" | "demo" | "unavailable";
+    license?: string;
+  };
+};
+
+export type CivintSurveillanceRecordsFeed = {
+  schema_version: string;
+  state: "snapshot" | "live" | "demo" | "unavailable";
+  generated_at: string | null;
+  source: { id: string; name: string; url: string; license?: string };
+  count: number;
+  records: CivintSurveillanceRecord[];
+};
+
 export type CivintSource = {
   id: string;
   name: string;
@@ -121,6 +148,10 @@ export async function getCivintAlpr(): Promise<CivintAlprNode[]> {
 
 export async function getCivintSurveillance(): Promise<CivintSurveillanceFeed | null> {
   return softJson<CivintSurveillanceFeed>("/surveillance.json");
+}
+
+export async function getCivintSurveillanceRecords(): Promise<CivintSurveillanceRecordsFeed | null> {
+  return softJson<CivintSurveillanceRecordsFeed>("/atlas_surveillance.json");
 }
 
 export type CivintSourceRegistry = {
