@@ -1,4 +1,4 @@
-export type SourceCategory = "surveillance infrastructure" | "federal spending" | "corporate filings";
+export type SourceCategory = "surveillance infrastructure" | "federal spending" | "corporate filings" | "legislation" | "oversight" | "regulatory";
 
 export type SourceDefinition = {
   id: string;
@@ -49,6 +49,42 @@ export const SOURCES: SourceDefinition[] = [
     attribution: "U.S. Securities and Exchange Commission",
     cadence: "Real-time filings",
     nativeSurface: "Finance / Corporate Records",
+  },
+  {
+    id: "congress-gov",
+    name: "Congress.gov",
+    category: "legislation",
+    endpoint: "https://api.congress.gov/v3/",
+    healthcheckUrl: "https://api.congress.gov/",
+    accessMethod: "Server-side JSON API",
+    license: "Public federal data",
+    attribution: "U.S. Congress",
+    cadence: "Continuously maintained",
+    nativeSurface: "Legislation / Public Records",
+  },
+  {
+    id: "foia-gov",
+    name: "FOIA.gov",
+    category: "oversight",
+    endpoint: "https://api.foia.gov/api/",
+    healthcheckUrl: "https://www.foia.gov/reports.html",
+    accessMethod: "Server-side JSON/XML API",
+    license: "Public federal data",
+    attribution: "U.S. Department of Justice",
+    cadence: "Annual and quarterly reporting",
+    nativeSurface: "Oversight / FOIA",
+  },
+  {
+    id: "federal-register",
+    name: "Federal Register",
+    category: "regulatory",
+    endpoint: "https://www.federalregister.gov/api/v1/",
+    healthcheckUrl: "https://www.federalregister.gov/",
+    accessMethod: "Server-side JSON API",
+    license: "Public federal data",
+    attribution: "Office of the Federal Register",
+    cadence: "Daily publication",
+    nativeSurface: "Oversight / Regulations",
   },
 ];
 
