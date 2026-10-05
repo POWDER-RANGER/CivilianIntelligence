@@ -54,6 +54,12 @@ export type TitanTelemetryResponse = {
   ok: boolean;
 };
 
+export type TitanTelemetryInputs = {
+  recent: { samples?: TitanSample[] } | null;
+  evidence: { records?: TitanEvidenceRecord[] } | null;
+  verify: { ok?: boolean } | null;
+};
+
 type PillarConfig = {
   id: PillarId;
   label: string;
@@ -103,6 +109,25 @@ async function readJson<T>(config: PillarConfig, path: string, authenticated = f
   }
 }
 
+export function getPillarHealthStatus(body: Record<string, unknown> | null): "online" | "degraded" {
+  if (!body) return "degraded";
+  return body.status === "ok" || body.status === "online" ? "online" : "degraded";
+}
+
+export function summarizeTitanTelemetry(inputs: TitanTelemetryInputs): TitanTelemetryResponse {
+  const { recent, evidence, verify } = inputs;
+  const evidenceOk = typeof verify?.ok === "boolean" ? verify.ok : null;
+  const reachable = Boolean(recent || evidence || verify);
+
+  return {
+    samples: Array.isArray(recent?.samples) ? recent.samples : [],
+    evidence: Array.isArray(evidence?.records) ? evidence.records : [],
+    evidenceOk,
+    // A reachable pillar is not healthy unless the evidence verifier explicitly passes.
+    ok: reachable && evidenceOk === true,
+  };
+}
+
 async function probe(config: PillarConfig): Promise<PillarStatus> {
   const checkedAt = new Date().toISOString();
 
@@ -122,14 +147,15 @@ async function probe(config: PillarConfig): Promise<PillarStatus> {
   const started = performance.now();
   const body = await readJson<Record<string, unknown>>(config, "/api/health");
   const latencyMs = Math.round(performance.now() - started);
+  const reachable = Boolean(body);
 
   return {
     id: config.id,
     label: config.label,
-    status: body ? "online" : "degraded",
+    status: getPillarHealthStatus(body),
     configured: true,
     checkedAt,
-    latencyMs: body ? latencyMs : null,
+    latencyMs: reachable ? latencyMs : null,
     service: typeof body?.service === "string" ? body.service : null,
     version: typeof body?.version === "string" ? body.version : null,
   };
@@ -170,14 +196,6 @@ export const getTitanTelemetry = createServerFn({ method: "GET" }).handler(
     );
     const verify = await readJson<{ ok?: boolean }>(config, "/api/evidence/verify", true);
 
-    return {
-      samples: Array.isArray(observations?.samples) ? observations.samples : [],
-      evidence: Array.isArray(evidence?.records) ? evidence.records : [],
-      evidenceOk: typeof verify?.ok === "boolean" ? verify.ok : null,
-      state: observations?.state ?? null,
-      ownerScope: observations?.owner_scope ?? null,
-      limitations: Array.isArray(observations?.limitations) ? observations.limitations : [],
-      ok: Boolean(observations || evidence || verify),
-    };
+    return summarizeTitanTelemetry({ recent, evidence, verify });
   },
 );
