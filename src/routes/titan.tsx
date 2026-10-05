@@ -88,6 +88,52 @@ function TitanPage() {
           </div>
         </div>
 
+
+
+        <section className="mt-6 rounded-xl border border-border bg-card p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Local collector</p>
+              <h2 className="mt-1 font-display text-2xl">Connect your own Android</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                Titan cannot access a phone plugged into your computer from this public service. Run the local
+                collector once, approve Android USB debugging, and Titan will discover and capture only the device
+                your computer exposes through ADB.
+              </p>
+            </div>
+            <Badge variant="outline">USB + ADB</Badge>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <a
+              href="https://raw.githubusercontent.com/POWDER-RANGER/civwatch-cell-titan/main/START-TITAN.bat"
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
+            >
+              Windows one-click launcher
+            </a>
+            <a
+              href="https://github.com/POWDER-RANGER/civwatch-cell-titan"
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
+            >
+              macOS / Linux / source
+            </a>
+            <a
+              href="http://127.0.0.1:8000"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
+            >
+              Open local Titan
+            </a>
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Android requires Developer options and USB debugging; the first connection requires accepting the device
+            authorization prompt. The local launcher creates the session automatically and never places a long-lived
+            Titan bearer token in browser JavaScript.
+          </p>
+        </section>
+
         <section className="mt-8 rounded-xl border border-border bg-card">
           <header className="border-b border-border px-5 py-4">
             <h2 className="font-display text-2xl">Recent telemetry</h2>
