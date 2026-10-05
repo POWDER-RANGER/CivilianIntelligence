@@ -49,7 +49,7 @@ function SignalRecordPage() {
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filter stories or records…" aria-label="Filter stories or records" className="h-10 w-full rounded-md border border-border bg-background pl-9 pr-3 text-base outline-none focus:ring-2 focus:ring-primary" />
             </div>
             <label className="flex min-h-10 items-center gap-2 rounded-md border border-border px-3 text-xs text-muted-foreground"><input type="checkbox" checked={weaker} onChange={(e) => setWeaker(e.target.checked)} />Include weaker matches</label>
-            <Button type="button" variant="outline" title="Desk Assistant context is scaffolded; no assistant call is made from this page yet."><BookOpen className="mr-2 size-4" />Ask Desk</Button>
+            <Button type="button" variant="outline" disabled title="Desk Assistant is not connected to a live provider yet."><BookOpen className="mr-2 size-4" />Desk Assistant coming soon</Button>
           </div>
         </section>
 
