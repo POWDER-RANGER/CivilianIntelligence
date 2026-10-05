@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
+import { AlprAtlas } from "@/components/watchtower/alpr-atlas";
 import { getPillarStatus, getWatchtowerFeatures, type PillarStatus, type WatchtowerFeature } from "@/lib/pillars";
 
 export const Route = createFileRoute("/watchtower")({ component: WatchtowerPage });
@@ -68,6 +69,8 @@ function WatchtowerPage() {
             <p className="mt-2 font-display text-3xl tabular-nums">{count}</p>
           </div>
         </div>
+
+        <AlprAtlas />
 
         <section className="mt-8 rounded-xl border border-border bg-card">
           <header className="border-b border-border px-5 py-4">
