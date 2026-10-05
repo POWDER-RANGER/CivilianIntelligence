@@ -142,9 +142,10 @@ function mapRecord(row: Record<string, unknown>): IndexedRecord {
   };
 }
 
-export async function syncSourceRegistry(sql: Sql = await getSql()): Promise<void> {
+export async function syncSourceRegistry(sql?: Sql): Promise<void> {
+  const db = sql ?? await getSql();
   for (const source of SOURCES) {
-    await sql.query(
+    await db.query(
       [
         "insert into source_registry",
         "(id, name, category, access_method, endpoint, license, attribution, cadence, native_surface, active, updated_at)",
@@ -162,8 +163,9 @@ export async function syncSourceRegistry(sql: Sql = await getSql()): Promise<voi
   }
 }
 
-export async function upsertIndexedRecord(input: RecordInput, sql: Sql = await getSql()): Promise<IndexedRecord> {
-  await syncSourceRegistry(sql);
+export async function upsertIndexedRecord(input: RecordInput, sql?: Sql): Promise<IndexedRecord> {
+  const db = sql ?? await getSql();
+  await syncSourceRegistry(db);
 
   const identifiers = normalizeIdentifiers(input.identifiers);
   const entities = normalizeEntities(input.entities);
@@ -204,7 +206,7 @@ export async function upsertIndexedRecord(input: RecordInput, sql: Sql = await g
     "select u.*, s.name as source_name from upserted u join source_registry s on s.id = u.source_id",
   ].join(" ");
 
-  const rows = await sql.query<Record<string, unknown>>(sqlText, [
+  const rows = await db.query<Record<string, unknown>>(sqlText, [
     id,
     input.sourceRecordId.trim(),
     input.kind,
@@ -230,9 +232,10 @@ export async function upsertIndexedRecord(input: RecordInput, sql: Sql = await g
 
 export async function searchIndexedRecords(
   filters: RecordSearchFilters,
-  sql: Sql = await getSql(),
+  sql?: Sql,
 ): Promise<RecordSearchResult[]> {
-  await syncSourceRegistry(sql);
+  const db = sql ?? await getSql();
+  await syncSourceRegistry(db);
 
   const clauses: string[] = [];
   const params: unknown[] = [];
@@ -304,7 +307,7 @@ export async function searchIndexedRecords(
     "limit $" + limitParam,
   ].filter(Boolean).join(" ");
 
-  const rows = await sql.query<Record<string, unknown>>(sqlText, params);
+  const rows = await db.query<Record<string, unknown>>(sqlText, params);
   return rows.map((row) => ({
     ...mapRecord(row),
     matchReason: String(row.match_reason) as RecordSearchResult["matchReason"],
@@ -313,17 +316,18 @@ export async function searchIndexedRecords(
 
 export async function getRecordDossier(
   id: string,
-  sql: Sql = await getSql(),
+  sql?: Sql,
 ): Promise<RecordDossier | null> {
-  await syncSourceRegistry(sql);
+  const db = sql ?? await getSql();
+  await syncSourceRegistry(db);
 
-  const records = await sql.query<Record<string, unknown>>(
+  const records = await db.query<Record<string, unknown>>(
     "select r.*, s.name as source_name from records r join source_registry s on s.id = r.source_id where r.id = $1",
     [id],
   );
   if (!records[0]) return null;
 
-  const edges = await sql.query<Record<string, unknown>>(
+  const edges = await db.query<Record<string, unknown>>(
     [
       "select from_record_id, to_record_id, edge_type, basis, tier, created_by, created_at",
       "from record_edges where from_record_id = $1 or to_record_id = $1",
@@ -332,7 +336,7 @@ export async function getRecordDossier(
     [id],
   );
 
-  const versions = await sql.query<Record<string, unknown>>(
+  const versions = await db.query<Record<string, unknown>>(
     "select content_hash, hash_basis, retrieved_at, retrieval_method, adapter_version, body_ref from record_versions where record_id = $1 order by retrieved_at desc",
     [id],
   );
@@ -369,7 +373,7 @@ export async function upsertRecordEdge(
     tier: RecordEdgeTier;
     createdBy: string;
   },
-  sql: Sql = await getSql(),
+  sql?: Sql,
 ): Promise<void> {
   if (edge.fromRecordId === edge.toRecordId) {
     throw new Error("A record edge cannot point to the same record.");
@@ -377,7 +381,8 @@ export async function upsertRecordEdge(
   if (!edge.edgeType.trim() || !edge.basis.trim() || !edge.createdBy.trim()) {
     throw new Error("Record edges require type, basis, and creator.");
   }
-  await sql.query(
+  const db = sql ?? await getSql();
+  await db.query(
     [
       "insert into record_edges",
       "(from_record_id, to_record_id, edge_type, basis, tier, created_by)",
