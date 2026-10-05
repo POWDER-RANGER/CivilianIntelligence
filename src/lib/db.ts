@@ -10,6 +10,13 @@ const rawDatabaseUrl =
 const databaseUrl =
   rawDatabaseUrl && rawDatabaseUrl.trim() ? rawDatabaseUrl : undefined;
 
+// Public deployments must use a real persistent Postgres database. The embedded
+// PGLite fallback remains useful for local/preview development, but it must not
+// silently make a public deployment look healthy while losing state on restart.
+if (process.env.CIVINT_DEPLOYMENT === "production" && !databaseUrl) {
+  throw new Error("DATABASE_URL is required for a production CIVINTELLIGENCE deployment");
+}
+
 /**
  * Active backend: real **Neon** when `DATABASE_URL` is set (deployed / configured
  * sandbox), otherwise a local embedded **PGLite** (Postgres compiled to WASM) so
