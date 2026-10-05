@@ -64,6 +64,18 @@ export type CivintSurveillanceAsset = {
   };
 };
 
+export type CivintSource = {
+  id: string;
+  name: string;
+  url: string;
+  integration: string;
+  status: string;
+  scope?: string;
+  license?: string;
+  attribution?: string;
+  direct_database_ingest?: boolean;
+};
+
 export type CivintSurveillanceFeed = {
   schema_version: string;
   state: "snapshot" | "live" | "demo" | "unavailable";
@@ -109,6 +121,11 @@ export async function getCivintAlpr(): Promise<CivintAlprNode[]> {
 
 export async function getCivintSurveillance(): Promise<CivintSurveillanceFeed | null> {
   return softJson<CivintSurveillanceFeed>("/surveillance.json");
+}
+
+export async function getCivintSources(): Promise<CivintSource[]> {
+  const data = await softJson<CivintSource[]>("/sources.json");
+  return Array.isArray(data) ? data : [];
 }
 
 /** Format a USD amount for display cards. */
