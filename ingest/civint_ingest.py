@@ -3,6 +3,7 @@
 
   python civint_ingest.py nws                              active NWS alerts (IA, IL, MO)
   python civint_ingest.py usaspending                      federal awards matching search terms
+  python civint_ingest.py atlas                            Atlas of Surveillance public-record CSV
   python civint_ingest.py osm --pbf iowa-latest.osm.pbf    surveillance/ALPR/gunshot/camera points from OSM PBF
   python civint_ingest.py verify --chunks chunks.json      enforce the extraction-schema quote rules
   python civint_ingest.py daily                            nws + usaspending (+ osm if CIVINT_PBF is set)
@@ -12,9 +13,13 @@ Config (env or a .env file next to this script's working dir):
   NWS_USER_AGENT="CIVINT (contact: you@real-address)"
   CIVINT_OUT=civint_data       (optional output folder)
   CIVINT_PBF=iowa-latest.osm.pbf  (optional, used by `daily`)
+  CIVINT_ATLAS_URL=https://www.atlasofsurveillance.org/download.csv (optional)
 No API keys are needed by anything in this file.
 """
 import argparse
+import csv
+import hashlib
+import io
 import json
 import os
 import re
@@ -126,6 +131,107 @@ def usaspending(terms=("Flock Safety", "Flock Group", "license plate reader"), s
                         break
                     time.sleep(0.5)
     print("usaspending: awards ->", export(con, "awards", "awards.json"))
+
+
+# ---------------------------------------------------------------- Atlas of Surveillance
+ATLAS_URL = "https://www.atlasofsurveillance.org/download.csv"
+
+
+def _atlas_value(row, *names):
+    for name in names:
+        value = row.get(name)
+        if value is not None and str(value).strip():
+            return str(value).strip()
+    return None
+
+
+def normalize_atlas_row(row):
+    agency = _atlas_value(row, "Agency", "agency")
+    state = _atlas_value(row, "State", "state")
+    city = _atlas_value(row, "City", "city")
+    county = _atlas_value(row, "County", "county")
+    technology = _atlas_value(row, "Technology", "technology")
+    vendor = _atlas_value(row, "Vendor", "vendor")
+    narrative = _atlas_value(row, "Description", "description", "Notes", "notes")
+    if not agency and not technology:
+        return None
+
+    stable = "|".join(
+        x or "" for x in (agency, city, county, state, technology, vendor, narrative)
+    )
+    record_id = "aos:" + hashlib.sha256(stable.encode("utf-8")).hexdigest()[:20]
+    return {
+        "id": record_id,
+        "agency": agency,
+        "city": city,
+        "county": county,
+        "state": state,
+        "technology": technology,
+        "vendor": vendor,
+        "narrative": narrative,
+        "raw": dict(row),
+        "provenance": {
+            "source_id": "atlas-of-surveillance",
+            "source_url": ATLAS_URL,
+            "method": "Atlas of Surveillance CSV",
+            "state": "snapshot",
+            "license": "CC-BY",
+        },
+    }
+
+
+def atlas(url=None):
+    url = url or os.environ.get("CIVINT_ATLAS_URL", ATLAS_URL)
+    headers = {
+        "User-Agent": os.environ.get(
+            "CIVINT_USER_AGENT",
+            "CIVINT public-source ingest (https://github.com/POWDER-RANGER/CivilianIntelligence)",
+        ),
+        "Accept": "text/csv,text/plain;q=0.9,*/*;q=0.8",
+    }
+    r = requests.get(url, headers=headers, timeout=60)
+    r.raise_for_status()
+    reader = csv.DictReader(io.StringIO(r.content.decode("utf-8-sig")))
+    records = []
+    for row in reader:
+        item = normalize_atlas_row(row)
+        if item:
+            records.append(item)
+
+    feed = {
+        "schema_version": "1.0",
+        "state": "snapshot",
+        "generated_at": now(),
+        "source": {
+            "id": "atlas-of-surveillance",
+            "name": "Atlas of Surveillance",
+            "url": url,
+            "license": "CC-BY",
+            "publisher": "Electronic Frontier Foundation / Reynolds School of Journalism",
+        },
+        "count": len(records),
+        "records": records,
+    }
+    (OUT / "atlas_surveillance.json").write_text(json.dumps(feed, indent=1), encoding="utf-8")
+
+    con = connect()
+    with con:
+        con.execute(
+            "CREATE TABLE IF NOT EXISTS surveillance_records("
+            "id TEXT PRIMARY KEY, technology TEXT, agency TEXT, city TEXT, county TEXT, "
+            "state TEXT, vendor TEXT, narrative TEXT, raw TEXT, source_url TEXT, fetched TEXT)"
+        )
+        con.execute("DELETE FROM surveillance_records")
+        for item in records:
+            con.execute(
+                "INSERT OR REPLACE INTO surveillance_records VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    item["id"], item["technology"], item["agency"], item["city"], item["county"],
+                    item["state"], item["vendor"], item["narrative"], json.dumps(item["raw"], sort_keys=True),
+                    item["provenance"]["source_url"], now(),
+                ),
+            )
+    print("atlas: surveillance records ->", len(records))
 
 
 # ---------------------------------------------------------------- OSM surveillance infrastructure
@@ -399,6 +505,7 @@ def main():
     p.add_argument("--start", default="2021-10-01"); p.add_argument("--end"); p.add_argument("--max-pages", type=int, default=5)
     p = sub.add_parser("osm"); p.add_argument("--pbf", nargs="+", required=True,
                                                    help="one or more OSM PBF extracts")
+    p = sub.add_parser("atlas"); p.add_argument("--url", default=os.environ.get("CIVINT_ATLAS_URL", ATLAS_URL))
     p = sub.add_parser("verify"); p.add_argument("--chunks", required=True)
     sub.add_parser("daily")
     a = ap.parse_args()
@@ -408,6 +515,8 @@ def main():
         usaspending(a.terms, a.start, a.end, a.max_pages)
     elif a.cmd == "osm":
         osm(a.pbf)
+    elif a.cmd == "atlas":
+        atlas(a.url)
     elif a.cmd == "verify":
         verify(a.chunks)
     else:
@@ -424,6 +533,12 @@ def main():
             except Exception as ex:
                 failed.append("osm")
                 print(f"daily: osm failed: {ex}", file=sys.stderr)
+        if os.environ.get("CIVINT_ATLAS"):
+            try:
+                atlas()
+            except Exception as ex:
+                failed.append("atlas")
+                print(f"daily: atlas failed: {ex}", file=sys.stderr)
         sys.exit(1 if failed else 0)
 
 
