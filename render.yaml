@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: civintelligence
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NITRO_PRESET
+        value: "node-server"
+      - key: DATABASE_URL
+        sync: false
