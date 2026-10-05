@@ -123,9 +123,16 @@ export async function getCivintSurveillance(): Promise<CivintSurveillanceFeed | 
   return softJson<CivintSurveillanceFeed>("/surveillance.json");
 }
 
+export type CivintSourceRegistry = {
+  schema_version: string;
+  purpose: string;
+  updated: string;
+  sources: CivintSource[];
+};
+
 export async function getCivintSources(): Promise<CivintSource[]> {
-  const data = await softJson<CivintSource[]>("/sources.json");
-  return Array.isArray(data) ? data : [];
+  const data = await softJson<CivintSourceRegistry>("/sources.json");
+  return Array.isArray(data?.sources) ? data.sources : [];
 }
 
 /** Format a USD amount for display cards. */
