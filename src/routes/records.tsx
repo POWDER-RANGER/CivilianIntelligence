@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { AppShell } from "@/components/layout/app-shell";
 import { FileSearch, Search } from "lucide-react";
+import { rememberRecentRecord } from "@/lib/recent-records";
 
 type RecordResult = {
   id: string;
@@ -105,7 +106,7 @@ function RecordsPage() {
         {results.length > 0 && (
           <div className="mt-6 space-y-3">
             {results.map((record) => (
-              <Link key={record.id} to="/records/$id" params={{ id: record.id }} className="block rounded-xl border border-border bg-card p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md">
+              <Link key={record.id} to="/records/$id" params={{ id: record.id }} onClick={() => rememberRecentRecord({ id: record.id, title: record.title, kind: record.kind, sourceName: record.source.name })} className="block rounded-xl border border-border bg-card p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h2 className="font-display text-xl">{record.title}</h2>
