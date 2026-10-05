@@ -35,7 +35,12 @@ function Home() {
         const next = { latitude: coords.latitude, longitude: coords.longitude };
         setLocation(next);
         setLocationState("granted");
-        void fetch("/api/civint/location/context?lat=" + encodeURIComponent(next.latitude) + "&lon=" + encodeURIComponent(next.longitude))
+        void fetch("/api/civint/location/context", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify(next),
+          cache: "no-store",
+        })
           .then((response) => response.json() as Promise<LocationContext>)
           .then(setContext)
           .catch(() => setContext({ state: "unavailable" }));
@@ -80,6 +85,23 @@ function Home() {
       <div className="mx-auto w-full max-w-[1600px] px-4 py-4 md:px-6">
         <AlprAtlas location={location} />
       </div>
+
+      <section className="mx-auto w-full max-w-[1600px] px-4 pb-4 md:px-6" aria-label="Quick actions">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <Link to="/toolkit" className="flex min-h-16 items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium shadow-sm hover:border-primary/40 hover:bg-muted">
+            <span>Draft a public-records request</span><span aria-hidden="true">↗</span>
+          </Link>
+          <Link to="/finance" className="flex min-h-16 items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium shadow-sm hover:border-primary/40 hover:bg-muted">
+            <span>Explore federal spending</span><span aria-hidden="true">↗</span>
+          </Link>
+          <Link to="/reading-room" className="flex min-h-16 items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium shadow-sm hover:border-primary/40 hover:bg-muted">
+            <span>Browse declassified collections</span><span aria-hidden="true">↗</span>
+          </Link>
+          <Link to="/records" className="flex min-h-16 items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium shadow-sm hover:border-primary/40 hover:bg-muted">
+            <span>Search the Record Index</span><span aria-hidden="true">↗</span>
+          </Link>
+        </div>
+      </section>
 
       <section className="mx-auto grid w-full max-w-[1600px] gap-4 px-4 pb-8 md:grid-cols-[minmax(0,1fr)_360px] md:px-6">
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
