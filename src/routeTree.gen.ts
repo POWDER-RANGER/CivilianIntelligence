@@ -30,6 +30,7 @@ import { Route as OversightFoiaRouteImport } from './routes/api/civint/oversight
 import { Route as RecordsIdApiRouteImport } from './routes/api/civint/records/$id'
 import { Route as RecordsSearchRouteImport } from './routes/api/civint/records/search'
 import { Route as CivintSourcesRouteImport } from './routes/api/civint/sources'
+import { Route as ReadingRoomSourceRouteImport } from './routes/api/civint/reading-room/source'
 
 const IndexRoute = IndexRouteImport.update({ id: '/', path: '/', getParentRoute: () => rootRouteImport } as any)
 const FinanceRoute = FinanceRouteImport.update({ id: '/finance', path: '/finance', getParentRoute: () => rootRouteImport } as any)
@@ -56,6 +57,7 @@ const OversightFoiaRoute = OversightFoiaRouteImport.update({ id: '/api/civint/ov
 const RecordsIdApiRoute = RecordsIdApiRouteImport.update({ id: '/api/civint/records/$id', path: '/api/civint/records/$id', getParentRoute: () => rootRouteImport } as any)
 const RecordsSearchRoute = RecordsSearchRouteImport.update({ id: '/api/civint/records/search', path: '/api/civint/records/search', getParentRoute: () => rootRouteImport } as any)
 const CivintSourcesRoute = CivintSourcesRouteImport.update({ id: '/api/civint/sources', path: '/api/civint/sources', getParentRoute: () => rootRouteImport } as any)
+const ReadingRoomSourceRoute = ReadingRoomSourceRouteImport.update({ id: '/api/civint/reading-room/source', path: '/api/civint/reading-room/source', getParentRoute: () => rootRouteImport } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -83,6 +85,8 @@ export interface FileRoutesByFullPath {
   '/api/civint/records/$id': typeof RecordsIdApiRoute
   '/api/civint/records/search': typeof RecordsSearchRoute
   '/api/civint/sources': typeof CivintSourcesRoute
+  '/api/civint/reading-room/source': typeof ReadingRoomSourceRoute
+  '/api/civint/reading-room/source': typeof ReadingRoomSourceRoute
 }
 export interface FileRoutesByTo extends FileRoutesByFullPath {}
 export interface FileRoutesById {
@@ -168,6 +172,7 @@ const rootRouteChildren = {
   RecordsIdApiRoute,
   RecordsSearchRoute,
   CivintSourcesRoute,
+  ReadingRoomSourceRoute,
 }
 export const routeTree = rootRouteImport._addFileChildren(rootRouteChildren as any)._addFileTypes<FileRouteTypes>()
 
