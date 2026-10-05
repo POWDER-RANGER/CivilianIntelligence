@@ -1,200 +1,144 @@
-import { useEffect, useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { List, Network } from "lucide-react";
+import { useEffect, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { LocateFixed, ShieldCheck } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
-import { IntelList, IntelTree } from "@/components/framework/intel-tree";
-import { NodePanel } from "@/components/framework/node-panel";
+import { AlprAtlas } from "@/components/watchtower/alpr-atlas";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { FRAMEWORK, DEFAULT_EXPANDED } from "@/data/catalog";
-import { MARKER_LEGEND, countLeaves, findNode, flatten, pathTo, searchNodes, type Marker } from "@/lib/intel";
+import { readRecentRecords, type RecentRecord } from "@/lib/recent-records";
 
-type View = "tree" | "index";
-
-type Search = {
-  node?: string;
-  q?: string;
-  view?: View;
+type LocationContext = {
+  state: "available" | "unavailable";
+  coordinates?: { latitude: number; longitude: number };
+  geography?: { city: string | null; county: string | null; state: string | null };
+  coverage?: { city: boolean; county: boolean; state: boolean; federal: boolean };
+  records?: Record<string, Array<{ id: string; title: string; kind: string; agency: string | null }>>;
 };
 
-export const Route = createFileRoute("/")({
-  validateSearch: (s: Record<string, unknown>): Search => ({
-    node: typeof s.node === "string" ? s.node : undefined,
-    q: typeof s.q === "string" ? s.q : undefined,
-    view: s.view === "index" ? "index" : s.view === "tree" ? "tree" : undefined,
-  }),
-  component: Home,
-});
+export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
-  const search = Route.useSearch();
-  const navigate = Route.useNavigate();
-  const [expanded, setExpanded] = useState<Set<string>>(() => new Set(DEFAULT_EXPANDED));
-  const [selectedId, setSelectedId] = useState<string>(search.node ?? "civwatch");
-  const [view, setView] = useState<View>(search.view ?? "tree");
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationState, setLocationState] = useState<"idle" | "requesting" | "granted" | "denied" | "unavailable">("idle");
+  const [context, setContext] = useState<LocationContext | null>(null);
+  const [recent, setRecent] = useState<RecentRecord[]>([]);
 
-  const selected = findNode(FRAMEWORK, selectedId) ?? FRAMEWORK;
-  const crumb = (pathTo(FRAMEWORK, selectedId) ?? [FRAMEWORK]).map((n) => n.name);
-  const total = countLeaves(FRAMEWORK);
+  useEffect(() => setRecent(readRecentRecords()), []);
 
-  const matchIds = useMemo(() => {
-    if (!search.q) return undefined;
-    const hits = searchNodes(FRAMEWORK, search.q);
-    return new Set(hits.flatMap((h) => (pathTo(FRAMEWORK, h.node.id) ?? []).map((n) => n.id)));
-  }, [search.q]);
-
-  useEffect(() => {
-    if (!search.node) return;
-    const path = pathTo(FRAMEWORK, search.node);
-    if (!path) return;
-    setSelectedId(search.node);
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      path.forEach((n) => next.add(n.id));
-      return next;
-    });
-  }, [search.node]);
-
-  function toggle(id: string) {
-    if (id === "civwatch") return;
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      const collapsing = next.has(id);
-      if (collapsing) {
-        next.delete(id);
-        const node = findNode(FRAMEWORK, id);
-        if (node) flatten(node).forEach(({ node: child }) => next.delete(child.id));
-        next.add("civwatch");
-        return next;
-      }
-      const path = pathTo(FRAMEWORK, id);
-      const parent = path?.[path.length - 2];
-      if (parent?.children) {
-        for (const sib of parent.children) {
-          if (sib.id === id) continue;
-          next.delete(sib.id);
-          flatten(sib).forEach(({ node: child }) => next.delete(child.id));
-        }
-      }
-      next.add(id);
-      next.add("civwatch");
-      return next;
-    });
+  async function useMyLocation() {
+    if (!("geolocation" in navigator)) {
+      setLocationState("unavailable");
+      return;
+    }
+    setLocationState("requesting");
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        const next = { latitude: coords.latitude, longitude: coords.longitude };
+        setLocation(next);
+        setLocationState("granted");
+        void fetch("/api/civint/location/context?lat=" + encodeURIComponent(next.latitude) + "&lon=" + encodeURIComponent(next.longitude))
+          .then((response) => response.json() as Promise<LocationContext>)
+          .then(setContext)
+          .catch(() => setContext({ state: "unavailable" }));
+      },
+      () => setLocationState("denied"),
+      { enableHighAccuracy: false, maximumAge: 300000, timeout: 10000 },
+    );
   }
 
-  function select(id: string) {
-    setSelectedId(id);
-    void navigate({
-      search: (prev) => ({ ...prev, node: id }),
-      replace: true,
-    });
-  }
-
-  function expandTo(id: string) {
-    const path = pathTo(FRAMEWORK, id);
-    if (!path) return;
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      path.forEach((n) => next.add(n.id));
-      return next;
-    });
-    select(id);
-  }
+  const geography = context?.geography;
+  const levels = [
+    { label: "City", value: geography?.city, key: "city" },
+    { label: "County", value: geography?.county, key: "county" },
+    { label: "State", value: geography?.state, key: "state" },
+    { label: "Federal", value: "United States", key: "federal" },
+  ];
 
   return (
     <AppShell flush>
-      <div className="flex flex-col lg:min-h-0 lg:flex-1 lg:flex-row">
-        <section className="relative flex min-w-0 flex-col lg:min-h-0 lg:flex-1">
-          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border px-4 py-4">
-            <div className="max-w-2xl">
-              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
-                Civilian government intelligence
-              </p>
-              <h1 className="mt-1 font-display text-3xl leading-none md:text-4xl">The framework</h1>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                What OSINT Framework is to open-source intelligence, CIVWATCH is to government power — movement,
-                oversight, and privacy invasion, indexed as public record.
+      <section className="border-b border-border bg-background">
+        <div className="mx-auto max-w-[1600px] px-4 pb-4 pt-5 md:px-6">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">The Open Desk</p>
+              <h1 className="mt-1 font-display text-3xl md:text-4xl">What is happening around you?</h1>
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+                Start with public infrastructure, then move outward through city, county, state, and federal records.
+                CIVINT surfaces evidence; the original publisher remains the source of record.
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">{total} sources</Badge>
-              <div className="flex rounded-md border border-border p-0.5">
-                <Button
-                  variant={view === "tree" ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => setView("tree")}
-                >
-                  <Network className="size-3.5" />
-                  Tree
-                </Button>
-                <Button
-                  variant={view === "index" ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => setView("index")}
-                >
-                  <List className="size-3.5" />
-                  Index
-                </Button>
-              </div>
-            </div>
+            <button type="button" onClick={useMyLocation} disabled={locationState === "requesting"} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-medium shadow-sm hover:bg-muted disabled:opacity-60">
+              <LocateFixed className="size-4" />
+              {locationState === "requesting" ? "Locating…" : locationState === "granted" ? "Location enabled" : "Use my location"}
+            </button>
           </div>
-
-          <div className="flex flex-wrap gap-3 border-b border-border px-4 py-2">
-            {(Object.keys(MARKER_LEGEND) as Marker[]).map((m) => (
-              <span key={m} className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                <span className="text-steel">({m})</span> {MARKER_LEGEND[m].label}
-              </span>
-            ))}
-            <span className="ml-auto hidden text-[11px] text-muted-foreground md:inline">
-              Drag to pan · scroll to zoom
-            </span>
-          </div>
-
-          <div className="relative md:min-h-[480px] lg:min-h-0 lg:flex-1">
-            {view === "tree" ? (
-              <>
-                <div className="absolute inset-0 hidden md:block">
-                  <IntelTree
-                    root={FRAMEWORK}
-                    expanded={expanded}
-                    selectedId={selectedId}
-                    matchIds={matchIds}
-                    onToggle={toggle}
-                    onSelect={select}
-                  />
-                </div>
-                <div className="md:hidden">
-                  <IntelList
-                    root={FRAMEWORK}
-                    expanded={expanded}
-                    selectedId={selectedId}
-                    onToggle={toggle}
-                    onSelect={select}
-                  />
-                </div>
-              </>
-            ) : (
-              <div className="h-full overflow-y-auto">
-                <IntelList
-                  root={FRAMEWORK}
-                  expanded={expanded}
-                  selectedId={selectedId}
-                  onToggle={toggle}
-                  onSelect={select}
-                />
-              </div>
-            )}
-          </div>
-        </section>
-
-        <aside className="hidden w-[360px] shrink-0 border-l border-border bg-card lg:block">
-          <NodePanel node={selected} crumb={crumb} onOpenChild={expandTo} />
-        </aside>
-
-        <div className="border-t border-border bg-card lg:hidden">
-          <NodePanel node={selected} crumb={crumb} onOpenChild={expandTo} />
+          {locationState === "denied" && (
+            <p className="mt-3 text-xs text-muted-foreground">Location permission was not granted. You can still search and explore the map normally.</p>
+          )}
         </div>
+      </section>
+
+      <div className="mx-auto w-full max-w-[1600px] px-4 py-4 md:px-6">
+        <AlprAtlas location={location} />
       </div>
+
+      <section className="mx-auto grid w-full max-w-[1600px] gap-4 px-4 pb-8 md:grid-cols-[minmax(0,1fr)_360px] md:px-6">
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Local lens</p>
+              <h2 className="mt-1 font-display text-2xl">Public records in your civic context</h2>
+            </div>
+            {geography && <Badge variant="live">{[geography.city, geography.county, geography.state].filter(Boolean).join(" · ")}</Badge>}
+          </div>
+          {!context && (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Allow location above to resolve your civic geography. CIVINT will use the coordinates only to find the relevant public-record context.
+            </p>
+          )}
+          {context?.state === "unavailable" && <p className="mt-4 text-sm text-muted-foreground">Local context is temporarily unavailable. No inferred location or synthetic records are shown.</p>}
+          {context?.state === "available" && (
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {levels.map((level) => {
+                const records = context.records?.[level.key] ?? [];
+                return (
+                  <div key={level.key} className="rounded-xl border border-border bg-background p-4">
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{level.label}</p>
+                    <p className="mt-1 text-sm font-medium">{level.value ?? "Not resolved"}</p>
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      {records.length ? `${records.length} indexed record${records.length === 1 ? "" : "s"}` : "No matching indexed records found"}
+                    </p>
+                    {records.slice(0, 3).map((record) => (
+                      <Link key={record.id} to="/records/$id" params={{ id: record.id }} className="mt-2 block text-xs text-primary hover:underline">{record.title}</Link>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <p className="mt-5 border-t border-border pt-4 text-[11px] leading-relaxed text-muted-foreground">
+            Location is permission-based. CIVINT does not fingerprint the device, sell location data, or treat proximity as evidence about a person.
+          </p>
+        </div>
+
+        <aside className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="size-4 text-primary" />
+            <h2 className="font-display text-2xl">Recent CIVINT activity</h2>
+          </div>
+          {recent.length === 0 ? (
+            <p className="mt-4 text-sm text-muted-foreground">Records you open can appear here on your next visit. This memory stays in this browser.</p>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {recent.map((record) => (
+                <Link key={record.id} to="/records/$id" params={{ id: record.id }} className="block rounded-lg border border-border p-3 hover:bg-muted">
+                  <p className="text-sm font-medium">{record.title}</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">{record.sourceName} · {new Date(record.viewedAt).toLocaleString()}</p>
+                </Link>
+              ))}
+            </div>
+          )}
+        </aside>
+      </section>
     </AppShell>
   );
 }
