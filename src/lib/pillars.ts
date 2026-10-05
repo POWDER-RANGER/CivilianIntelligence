@@ -48,6 +48,9 @@ export type TitanTelemetryResponse = {
   samples: TitanSample[];
   evidence: TitanEvidenceRecord[];
   evidenceOk: boolean | null;
+  state: "live" | "demo" | "snapshot" | "unavailable" | null;
+  ownerScope: "user_device" | null;
+  limitations: string[];
   ok: boolean;
 };
 
@@ -154,11 +157,12 @@ export const getWatchtowerFeatures = createServerFn({ method: "GET" }).handler(
 export const getTitanTelemetry = createServerFn({ method: "GET" }).handler(
   async (): Promise<TitanTelemetryResponse> => {
     const config = getConfig("cell-titan");
-    const recent = await readJson<{ samples?: TitanSample[] }>(
-      config,
-      "/api/telemetry/recent?n=50",
-      true,
-    );
+    const observations = await readJson<{
+      samples?: TitanSample[];
+      state?: "live" | "demo" | "snapshot" | "unavailable";
+      owner_scope?: "user_device";
+      limitations?: string[];
+    }>(config, "/api/observations?n=50", true);
     const evidence = await readJson<{ records?: TitanEvidenceRecord[] }>(
       config,
       "/api/evidence/tail?n=20",
@@ -167,10 +171,13 @@ export const getTitanTelemetry = createServerFn({ method: "GET" }).handler(
     const verify = await readJson<{ ok?: boolean }>(config, "/api/evidence/verify", true);
 
     return {
-      samples: Array.isArray(recent?.samples) ? recent.samples : [],
+      samples: Array.isArray(observations?.samples) ? observations.samples : [],
       evidence: Array.isArray(evidence?.records) ? evidence.records : [],
       evidenceOk: typeof verify?.ok === "boolean" ? verify.ok : null,
-      ok: Boolean(recent || evidence || verify),
+      state: observations?.state ?? null,
+      ownerScope: observations?.owner_scope ?? null,
+      limitations: Array.isArray(observations?.limitations) ? observations.limitations : [],
+      ok: Boolean(observations || evidence || verify),
     };
   },
 );
