@@ -2,7 +2,7 @@
  * CIVINT ingest feed loaders.
  *
  * These read the dashboard-ready JSON produced by ingest/civint_ingest.py
- * (alerts.json, awards.json, alpr_overpass.json). In production the files
+ * (alerts.json, awards.json, alpr_overpass.json, surveillance.json, sources.json). In production the files
  * live under /data/civint/ or are served by a small static endpoint;
  * during local dev they can be dropped in public/civint/.
  *
