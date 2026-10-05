@@ -167,11 +167,7 @@ function ReadingRoomPage() {
                 Start with the CIVINT index to choose the right federal collection. Search and document retrieval remain
                 tied to the official publisher so provenance, metadata, and the original record stay visible.
               </p>
-              <button type="button" onClick={() => void openInside("https://www.cia.gov/readingroom/")"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-              >
+              <button type="button" onClick={() => void openInside("https://www.cia.gov/readingroom/")} className="mt-4 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
                 Read CIA collection inside CIVINT
                 <FileText className="size-3.5" />
               </button>
