@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "state": "unavailable",
+  "generated_at": null,
+  "source": {
+    "id": "atlas-of-surveillance",
+    "name": "Atlas of Surveillance",
+    "url": "https://www.atlasofsurveillance.org/download.csv",
+    "license": "CC-BY"
+  },
+  "count": 0,
+  "records": []
+}
