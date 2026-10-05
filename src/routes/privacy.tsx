@@ -71,7 +71,17 @@ function PrivacyPage() {
                   current operation, ownership, or unlawful interception.
                 </p>
               </div>
-              <Badge variant={surveillance.state === "snapshot" ? "warn" : "live"}>{surveillance.state}</Badge>
+              <Badge
+                variant={
+                  surveillance.state === "live"
+                    ? "live"
+                    : surveillance.state === "demo" || surveillance.state === "snapshot"
+                      ? "warn"
+                      : "outline"
+                }
+              >
+                {surveillance.state}
+              </Badge>
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-4">
               {[
