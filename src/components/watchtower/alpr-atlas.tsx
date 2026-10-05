@@ -1,6 +1,14 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import { useEffect, useRef, useState } from "react";
+import {
+  Map,
+  NavigationControl,
+  ScaleControl,
+  setWorkerUrl,
+  type Map as MapInstance,
+} from "maplibre-gl";
+import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { LocateFixed, MapPin, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "@tanstack/react-router";
@@ -38,7 +46,6 @@ const CAMERA_HEAT = "alpr-heat";
 const CAMERA_GLOW = "alpr-camera-glow";
 const CAMERA_POINT = "alpr-camera-point";
 
-type MapLibreRuntime = typeof import("maplibre-gl");
 
 function readObservation(feature: any): CameraObservation | null {
   if (!feature?.geometry || feature.geometry.type !== "Point") return null;
@@ -176,62 +183,79 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
     if (!mapNode.current || mapRef.current) return;
 
     let cancelled = false;
+    let map: MapInstance | null = null;
+    let moveTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const start = async () => {
+    // This MUST execute before Map() creates its worker pool.
+    // This is the exact Vite/TanStack Start worker pattern used by a
+    // production TanStack Start + MapLibre application that had the same
+    // blank-map/worker failure.
+    if (typeof window !== "undefined") {
+      setWorkerUrl(maplibreWorkerUrl);
+    }
+
+    const start = () => {
       setStatus("loading");
-      setStatusMessage("Loading bundled MapLibre renderer…");
+      setStatusMessage("Starting bundled MapLibre renderer…");
 
       try {
-        const maplibregl: MapLibreRuntime = await import("maplibre-gl");
-
-        if (cancelled || !mapNode.current || mapRef.current) return;
-
-        let map: any;
-
-        try {
-          map = new maplibregl.Map({
-            container: mapNode.current,
-            center: [-96, 38],
-            zoom: MIN_ZOOM,
-            minZoom: MIN_ZOOM,
-            maxZoom: MAX_ZOOM,
-            maxBounds: MAX_BOUNDS,
-            attributionControl: true,
-            cooperativeGestures: false,
-            style: createBasemapStyle(),
-          });
-        } catch (error) {
-          const message =
-            error instanceof Error ? error.message : String(error);
+        const canvas = document.createElement("canvas");
+        const webgl2 = canvas.getContext("webgl2");
+        if (!webgl2) {
           setStatus("failed");
-          setStatusMessage(`Renderer failed to start: ${message}`);
+          setStatusMessage(
+            "WebGL2 is unavailable in this browser or WebView. The map renderer cannot start.",
+          );
           return;
         }
+        webgl2.getExtension("WEBGL_lose_context")?.loseContext();
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : String(error);
+        setStatus("failed");
+        setStatusMessage(`WebGL2 probe failed: ${message}`);
+        return;
+      }
+
+      try {
+        map = new Map({
+          container: mapNode.current!,
+          center: [-96, 38],
+          zoom: MIN_ZOOM,
+          minZoom: MIN_ZOOM,
+          maxZoom: MAX_ZOOM,
+          maxBounds: MAX_BOUNDS,
+          attributionControl: true,
+          cooperativeGestures: false,
+          style: createBasemapStyle(),
+        });
 
         mapRef.current = map;
 
         watchdogRef.current = setTimeout(() => {
-          if (!map.loaded()) {
+          if (map && !map.loaded()) {
             setStatus("failed");
             setStatusMessage(
-              "Map did not initialize within 8 seconds. Check WebGL, CSP, or network access.",
+              "Map did not initialize within 8 seconds. The renderer worker or WebGL initialization is failing.",
             );
           }
         }, 8000);
 
         map.addControl(
-          new maplibregl.NavigationControl({ showCompass: false }),
+          new NavigationControl({ showCompass: false }),
           "top-right",
         );
         map.addControl(
-          new maplibregl.ScaleControl({
+          new ScaleControl({
             maxWidth: 120,
             unit: "imperial",
           }),
           "bottom-right",
         );
 
-        map.once("load", () => {
+        const initializeLayers = () => {
+          if (cancelled || !map) return;
+
           if (watchdogRef.current) {
             clearTimeout(watchdogRef.current);
             watchdogRef.current = null;
@@ -243,14 +267,14 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
               duration: 0,
             });
 
-            map.addSource(CAMERA_SOURCE, {
-              type: "vector",
-              url: PRIMARY_ALPR_PROVIDER.endpoint,
-              promoteId: "id",
-            });
+            if (!map.getSource(CAMERA_SOURCE)) {
+              map.addSource(CAMERA_SOURCE, {
+                type: "vector",
+                url: PRIMARY_ALPR_PROVIDER.endpoint,
+                promoteId: "id",
+              });
+            }
 
-            // DeFlock z0-z8 heat tiles are geometry-only. Never apply
-            // attribute filters to this layer.
             map.addLayer({
               id: CAMERA_HEAT,
               type: "heatmap",
@@ -260,48 +284,23 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
               paint: {
                 "heatmap-weight": 1,
                 "heatmap-intensity": [
-                  "interpolate",
-                  ["linear"],
-                  ["zoom"],
-                  2,
-                  0.5,
-                  8,
-                  1.35,
-                  10,
-                  2.1,
+                  "interpolate", ["linear"], ["zoom"],
+                  2, 0.5, 8, 1.35, 10, 2.1,
                 ],
                 "heatmap-radius": [
-                  "interpolate",
-                  ["linear"],
-                  ["zoom"],
-                  2,
-                  8,
-                  6,
-                  17,
-                  10,
-                  28,
+                  "interpolate", ["linear"], ["zoom"],
+                  2, 8, 6, 17, 10, 28,
                 ],
                 "heatmap-opacity": [
-                  "interpolate",
-                  ["linear"],
-                  ["zoom"],
-                  2,
-                  0.72,
-                  9,
-                  0.9,
-                  10.5,
-                  0,
+                  "interpolate", ["linear"], ["zoom"],
+                  2, 0.72, 9, 0.9, 10.5, 0,
                 ],
               },
             });
 
             const flockColor = [
               "case",
-              [
-                "in",
-                "flock",
-                ["downcase", ["coalesce", ["get", "brand"], ""]],
-              ],
+              ["in", "flock", ["downcase", ["coalesce", ["get", "brand"], ""]]],
               "#22c55e",
               "#fbbf24",
             ];
@@ -314,17 +313,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
               minzoom: 9,
               paint: {
                 "circle-color": flockColor,
-                "circle-radius": [
-                  "interpolate",
-                  ["linear"],
-                  ["zoom"],
-                  9,
-                  5,
-                  12,
-                  8,
-                  16,
-                  12,
-                ],
+                "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 5, 12, 8, 16, 12],
                 "circle-opacity": 0.16,
                 "circle-blur": 0.8,
               },
@@ -338,28 +327,8 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
               minzoom: 9,
               paint: {
                 "circle-color": flockColor,
-                "circle-radius": [
-                  "interpolate",
-                  ["linear"],
-                  ["zoom"],
-                  9,
-                  2.5,
-                  12,
-                  4,
-                  16,
-                  6,
-                ],
-                "circle-opacity": [
-                  "interpolate",
-                  ["linear"],
-                  ["zoom"],
-                  9,
-                  0.45,
-                  10.5,
-                  0.82,
-                  12,
-                  0.94,
-                ],
+                "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 2.5, 12, 4, 16, 6],
+                "circle-opacity": ["interpolate", ["linear"], ["zoom"], 9, 0.45, 10.5, 0.82, 12, 0.94],
                 "circle-stroke-color": "#071018",
                 "circle-stroke-width": 1.2,
               },
@@ -371,14 +340,15 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
             );
             refreshVisibleCount(map);
 
-            let moveTimer: ReturnType<typeof setTimeout> | null = null;
             map.on("moveend", () => {
               if (moveTimer) clearTimeout(moveTimer);
-              moveTimer = setTimeout(() => refreshVisibleCount(map), 120);
+              moveTimer = setTimeout(() => {
+                if (map) refreshVisibleCount(map);
+              }, 120);
             });
 
             map.on("idle", () => {
-              refreshVisibleCount(map);
+              if (map) refreshVisibleCount(map);
             });
 
             map.on("error", (event: any) => {
@@ -395,13 +365,14 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
                 setStatusMessage(
                   "OpenStreetMap tiles are temporarily unavailable. Camera data is not being fabricated.",
                 );
-              } else if (/webgl|worker|style/i.test(message)) {
+              } else if (/worker|webgl|gpu|style/i.test(message)) {
                 setStatus("failed");
                 setStatusMessage(`Map renderer error: ${message}`);
               }
             });
 
             map.on("click", CAMERA_POINT, (event: any) => {
+              if (!map) return;
               const feature = map.queryRenderedFeatures(event.point, {
                 layers: [CAMERA_POINT],
               })[0];
@@ -410,10 +381,10 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
             });
 
             map.on("mouseenter", CAMERA_POINT, () => {
-              map.getCanvas().style.cursor = "pointer";
+              if (map) map.getCanvas().style.cursor = "pointer";
             });
             map.on("mouseleave", CAMERA_POINT, () => {
-              map.getCanvas().style.cursor = "";
+              if (map) map.getCanvas().style.cursor = "";
             });
           } catch (error) {
             const message =
@@ -421,18 +392,29 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
             setStatus("failed");
             setStatusMessage(`Map layers failed to initialize: ${message}`);
           }
+        };
+
+        // style.load is the reliable initialization point for this app.
+        // Waiting for full load can hang forever when a nonessential remote
+        // resource is blocked.
+        map.once("style.load", initializeLayers);
+
+        map.on("error", (event: any) => {
+          const message = String(event?.error?.message ?? "");
+          if (/worker|webgl|gpu/i.test(message)) {
+            setStatus("failed");
+            setStatusMessage(`Map renderer error: ${message}`);
+          }
         });
       } catch (error) {
-        if (!cancelled) {
-          const message =
-            error instanceof Error ? error.message : String(error);
-          setStatus("failed");
-          setStatusMessage(`Bundled MapLibre could not load: ${message}`);
-        }
+        const message =
+          error instanceof Error ? error.message : String(error);
+        setStatus("failed");
+        setStatusMessage(`Map constructor failed: ${message}`);
       }
     };
 
-    void start();
+    start();
 
     return () => {
       cancelled = true;
@@ -440,11 +422,11 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
         clearTimeout(watchdogRef.current);
         watchdogRef.current = null;
       }
-      mapRef.current?.remove();
+      if (moveTimer) clearTimeout(moveTimer);
+      map?.remove();
       mapRef.current = null;
     };
   }, []);
-
   useEffect(() => {
     if (!mapRef.current || status !== "ready") return;
     applyPointFilter(mapRef.current, flockOnly, query);
