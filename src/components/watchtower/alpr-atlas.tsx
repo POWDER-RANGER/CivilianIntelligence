@@ -99,6 +99,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
   const [nearbyOnly, setNearbyOnly] = useState(false);
   const [locationUsed, setLocationUsed] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const fetchAbortRef = useRef<AbortController | null>(null);
   const filteredRef = useRef<Camera[]>([]);
 
   const filtered = useMemo(() => {
@@ -122,20 +123,31 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
   filteredRef.current = filtered;
   const [status, explanation] = statusText(feed, loading);
 
-  useEffect(() => {
+  const fetchViewport = (map: any) => {
+    const bounds = map.getBounds();
+    const params = new URLSearchParams({
+      west: String(bounds.getWest()),
+      south: String(bounds.getSouth()),
+      east: String(bounds.getEast()),
+      north: String(bounds.getNorth()),
+      limit: map.getZoom() < 5 ? "3500" : map.getZoom() < 8 ? "6000" : "10000",
+    });
+    fetchAbortRef.current?.abort();
     const controller = new AbortController();
-    fetch("/api/civint/alpr/data", { headers: { Accept: "application/json" }, cache: "force-cache", signal: controller.signal })
+    fetchAbortRef.current = controller;
+    setLoading(true);
+    fetch("/api/civint/alpr/data?" + params.toString(), {
+      headers: { Accept: "application/json" },
+      cache: "force-cache",
+      signal: controller.signal,
+    })
       .then((response) => {
         if (!response.ok) throw new Error("Server feed unavailable");
         return response.json() as Promise<Feed>;
       })
-      .catch(async (error) => {
-        if (error?.name === "AbortError") throw error;
-        throw error;
-      })
       .then(setFeed)
       .catch((error) => {
-        if (error?.name !== "AbortError") setFeed({
+        if (error?.name !== "AbortError") setFeed((current) => current ?? {
           state: "unavailable",
           generated_at: null,
           source: { name: "CIVINT upstream", method: "unavailable" },
@@ -143,9 +155,10 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
           features: [],
         });
       })
-      .finally(() => setLoading(false));
-    return () => controller.abort();
-  }, []);
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+  };
 
   useEffect(() => {
     if (!mapNode.current || mapRef.current) return;
@@ -170,6 +183,12 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
 
       map.on("load", () => {
         setMapReady(true);
+        fetchViewport(map);
+        let moveTimer: ReturnType<typeof setTimeout> | null = null;
+        map.on("moveend", () => {
+          if (moveTimer) clearTimeout(moveTimer);
+          moveTimer = setTimeout(() => fetchViewport(map), 180);
+        });
       map.addSource("cameras", {
         type: "geojson",
         data: featureCollection(filteredRef.current),
@@ -268,7 +287,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
 
     mapRef.current = map;
     }).catch(() => undefined);
-    return () => { cancelled = true; mapRef.current?.remove(); mapRef.current = null; };
+    return () => { cancelled = true; fetchAbortRef.current?.abort(); mapRef.current?.remove(); mapRef.current = null; };
   }, []);
 
   useEffect(() => {
@@ -302,7 +321,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
             <div className="flex flex-wrap items-center gap-2">
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Watchtower · spatial intelligence</p>
               <Badge variant={status === "live" ? "live" : "outline"}>{status}</Badge>
-              <span className="rounded-full border border-border bg-background/60 px-2 py-1 font-mono text-[9px] text-muted-foreground">{feed?.count?.toLocaleString() ?? "—"} observations · {feed?.cache_age_seconds != null ? `cache ${feed.cache_age_seconds}s` : "source check"}</span>
+              <span className="rounded-full border border-border bg-background/60 px-2 py-1 font-mono text-[9px] text-muted-foreground">{(feed?.total_count ?? feed?.count)?.toLocaleString() ?? "—"} observations · {feed?.cache_age_seconds != null ? `cache ${feed.cache_age_seconds}s` : "source check"}</span>
             </div>
             <h2 className="mt-1 font-display text-3xl md:text-4xl">Flock camera map</h2>
             <p className="mt-2 max-w-3xl text-xs leading-relaxed text-muted-foreground">
