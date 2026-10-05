@@ -1,0 +1,1 @@
+Temporary validation marker for Neon preview workflow. Not production code.
