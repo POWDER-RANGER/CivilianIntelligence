@@ -24,10 +24,16 @@ function stripHtml(html: string, baseUrl: URL) {
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<nav[\s\S]*?<\/nav>/gi, " ")
     .replace(/<footer[\s\S]*?<\/footer>/gi, " ")
+    .replace(/<(?:p|div|section|article|li|h[1-6]|br|tr|blockquote|pre)[^>]*>/gi, "\n")
+    .replace(/<\/[^>]+>/g, "\n")
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/gi, " ")
     .replace(/&amp;/gi, "&").replace(/&quot;/gi, '"').replace(/&#39;/gi, "'")
-    .replace(/\s+/g, " ").trim();
+    .split("\n")
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .join("\n\n")
+    .trim();
   const headings = [...html.matchAll(/<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/gi)]
     .map((m) => decode(m[1]))
     .filter(Boolean).slice(0, 20);
