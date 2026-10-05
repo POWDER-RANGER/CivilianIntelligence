@@ -80,7 +80,7 @@ export function SecRecordsPanel() {
             return (
               <a key={accession || index} href={accession ? `https://www.sec.gov/Archives/edgar/data/${cik}/${accession.replace(/-/g, "")}/${document}` : "https://www.sec.gov/edgar/searchedgar/companysearch"} target="_blank" rel="noreferrer" className="group rounded-xl border border-border bg-background p-4 hover:border-primary/40 hover:bg-accent/40">
                 <div className="flex items-center justify-between gap-2"><Badge variant="outline">{form}</Badge><ArrowUpRight className="size-3.5 text-muted-foreground group-hover:text-primary" /></div>
-                <p className="mt-3 text-sm font-medium">{filings.primaryDocDescription?.[index] ?? document || "SEC filing"}</p>
+                <p className="mt-3 text-sm font-medium">{filings.primaryDocDescription?.[index] ?? document ?? "SEC filing"}</p>
                 <p className="mt-1 text-xs text-muted-foreground">{date} · {accession || "accession not reported"}</p>
               </a>
             );
