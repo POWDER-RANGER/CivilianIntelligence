@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { upsertIndexedRecord } from "@/lib/record-index";
+
 const UPSTREAM = "https://flocklocations.com/api/cameras/export?format=geojson";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
@@ -14,43 +16,17 @@ type Camera = {
 };
 
 type Feed = {
-  state: "live" | "unavailable" | "degraded" | "awaiting_feed" | "caching";
+  state: "live" | "unavailable";
   generated_at: string | null;
   source: { id: string; name: string; method: string };
   count: number;
-  cache_age_seconds?: number;
-  error_class?: "timeout" | "upstream" | "schema" | "empty";
   civint_index?: { attempted: boolean; indexed: number; state: "indexed" | "partial" | "unavailable" };
-  total_count?: number;
   features: Camera[];
 };
 
 let cachedFeed: Feed | null = null;
 let cachedAt = 0;
 let inflight: Promise<Feed> | null = null;
-
-function selectViewport(features: Camera[], west: number, south: number, east: number, north: number, limit: number): Camera[] {
-  const inView = features.filter((camera) =>
-    camera.longitude >= west && camera.longitude <= east &&
-    camera.latitude >= south && camera.latitude <= north
-  );
-  if (inView.length <= limit) return inView;
-
-  // Preserve geographic coverage instead of taking the first N records.
-  const cols = Math.max(1, Math.ceil(Math.sqrt(limit * Math.max(0.35, Math.cos(((south + north) / 2) * Math.PI / 180)))));
-  const rows = Math.max(1, Math.ceil(limit / cols));
-  const cellW = Math.max((east - west) / cols, 0.0001);
-  const cellH = Math.max((north - south) / rows, 0.0001);
-  const picked = new Map<string, Camera>();
-  for (const camera of inView) {
-    const col = Math.min(cols - 1, Math.max(0, Math.floor((camera.longitude - west) / cellW)));
-    const row = Math.min(rows - 1, Math.max(0, Math.floor((camera.latitude - south) / cellH)));
-    const key = row + ":" + col;
-    if (!picked.has(key)) picked.set(key, camera);
-    if (picked.size >= limit) break;
-  }
-  return [...picked.values()];
-}
 
 function normalizeFeature(feature: any, index: number): Camera | null {
   const coords = feature?.geometry?.coordinates;
@@ -71,6 +47,31 @@ function normalizeFeature(feature: any, index: number): Camera | null {
   };
 }
 
+async function indexFeatures(features: Camera[]) {
+  let indexed = 0;
+  for (let start = 0; start < features.length; start += 40) {
+    const batch = features.slice(start, start + 40);
+    const results = await Promise.allSettled(batch.map(async (feature) => {
+      await upsertIndexedRecord({
+        sourceId: "alpr-flocklocations",
+        sourceRecordId: feature.id,
+        kind: "alpr-observation",
+        title: "Flock Locations camera report " + feature.id,
+        identifiers: [feature.id],
+        entities: [feature.type, feature.mounted_on].filter((value): value is string => Boolean(value)),
+        sourceUrl: "https://flocklocations.com/",
+        retrievalMethod: "feed",
+        adapterVersion: "flocklocations-geojson-v1",
+        rawContent: JSON.stringify(feature),
+        hashBasis: "observation",
+      });
+      return true;
+    }));
+    indexed += results.filter((result) => result.status === "fulfilled").length;
+  }
+  return indexed;
+}
+
 async function loadFeed(): Promise<Feed> {
   const now = Date.now();
   if (cachedFeed && now - cachedAt < CACHE_TTL_MS) return cachedFeed;
@@ -85,13 +86,12 @@ async function loadFeed(): Promise<Feed> {
     if (!upstream.ok) throw new Error("Upstream returned " + upstream.status);
 
     const payload = await upstream.json() as { features?: any[] };
-    if (!Array.isArray(payload.features)) throw Object.assign(new Error("Upstream schema missing features"), { code: "schema" });
     const features = (payload.features ?? [])
       .map(normalizeFeature)
       .filter((x): x is Camera => x !== null);
 
     const feed: Feed = {
-      state: features.length ? "live" : "degraded",
+      state: "live",
       generated_at: new Date().toISOString(),
       source: {
         id: "flock-locations",
@@ -105,6 +105,10 @@ async function loadFeed(): Promise<Feed> {
     cachedFeed = feed;
     cachedAt = Date.now();
 
+    // Indexing is deliberately decoupled from the user-facing request. The map
+    // should never wait on hundreds/thousands of database writes.
+    void indexFeatures(features).catch(() => undefined);
+
     return feed;
   })().finally(() => {
     inflight = null;
@@ -116,18 +120,11 @@ async function loadFeed(): Promise<Feed> {
 export const Route = createFileRoute("/api/civint/alpr/data")({
   server: {
     handlers: {
-      GET: async ({ request }) => {
+      GET: async () => {
         try {
           const feed = await loadFeed();
-          const url = new URL(request.url);
-          const bbox = ["west","south","east","north"].map((key) => Number(url.searchParams.get(key)));
-          const hasBbox = bbox.every(Number.isFinite) && bbox[0] < bbox[2] && bbox[1] < bbox[3];
-          const limitParam = Number(url.searchParams.get("limit") ?? "5000");
-          const limit = Math.min(Math.max(Number.isFinite(limitParam) ? limitParam : 5000, 500), 15000);
-          const visible = hasBbox ? selectViewport(feed.features, bbox[0], bbox[1], bbox[2], bbox[3], limit) : feed.features.slice(0, limit);
-          const responseFeed = { ...feed, count: visible.length, total_count: feed.features.length, features: visible };
           return Response.json(
-            responseFeed,
+            feed,
             {
               headers: {
                 "Cache-Control": "public, max-age=600, s-maxage=600, stale-while-revalidate=1800",
@@ -138,7 +135,7 @@ export const Route = createFileRoute("/api/civint/alpr/data")({
         } catch (error) {
           if (cachedFeed) {
             return Response.json(
-              { ...cachedFeed, state: "degraded", cache_age_seconds: Math.max(0, Math.round((Date.now() - cachedAt) / 1000)) },
+              { ...cachedFeed, state: "live" },
               {
                 headers: {
                   "Cache-Control": "public, max-age=60, s-maxage=60, stale-while-revalidate=300",
@@ -152,7 +149,6 @@ export const Route = createFileRoute("/api/civint/alpr/data")({
           return Response.json(
             {
               state: "unavailable",
-              error_class: (error as any)?.code === "schema" ? "schema" : (error as any)?.name === "TimeoutError" ? "timeout" : "upstream",
               error: error instanceof Error ? error.message : "Upstream unavailable",
               features: [],
             },
