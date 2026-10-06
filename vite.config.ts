@@ -157,6 +157,16 @@ export default defineConfig(({ command, isPreview }) => ({
     strictPort: true,
   },
   resolve: { tsconfigPaths: true },
+  optimizeDeps: {
+    // MapLibre's worker must stay out of Vite dependency pre-bundling.
+    // Pre-bundling can rewrite the worker URL and produce a production/dev
+    // blank map with no canvas, controls, or tile requests.
+    exclude: ["maplibre-gl"],
+  },
+  ssr: {
+    // TanStack Start SSR must let Vite transform MapLibre's ESM entry.
+    noExternal: ["maplibre-gl"],
+  },
   plugins: [
     pgliteBootstrapPlugin(),
     // Before tanstackStart so /auth/popup never falls through to the SPA.

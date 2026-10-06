@@ -1,7 +1,9 @@
+import { useMemo, useState } from "react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { createFileRoute } from "@tanstack/react-router";
-import { ExternalLink, Library, Search, ShieldCheck } from "lucide-react";
+import { ExternalLink, Library, Search, ShieldCheck, X, Loader2, FileText } from "lucide-react";
 
 export const Route = createFileRoute("/reading-room")({ component: ReadingRoomPage });
 
@@ -127,6 +129,43 @@ const SEARCH_TIPS = [
 ];
 
 function ReadingRoomPage() {
+  const [readerUrl, setReaderUrl] = useState<string | null>(null);
+  const [reader, setReader] = useState<{title:string;text:string;headings:string[];links:{label:string;url:string}[];source_url:string;fetched_at:string;content_type?:string}|null>(null);
+  const [readerPdf, setReaderPdf] = useState<string | null>(null);
+  const [readerLoading, setReaderLoading] = useState(false);
+  const [readerError, setReaderError] = useState("");
+  const [libraryQuery, setLibraryQuery] = useState("");
+  function resetReader() {
+    setReaderUrl(null); setReader(null); setReaderPdf(null); setReaderError(""); setReaderLoading(false);
+  }
+  const filteredLibraries = useMemo(() => {
+    const q = libraryQuery.trim().toLowerCase();
+    if (!q) return LIBRARIES;
+    return LIBRARIES.filter((library) => [library.name, library.agency, library.description, ...library.tags].join(" ").toLowerCase().includes(q));
+  }, [libraryQuery]);
+  const filteredCollections = useMemo(() => {
+    const q = libraryQuery.trim().toLowerCase();
+    if (!q) return CIA_COLLECTIONS;
+    return CIA_COLLECTIONS.filter((collection) => [collection.title, collection.description, ...collection.tags].join(" ").toLowerCase().includes(q));
+  }, [libraryQuery]);
+  async function openInside(url: string) {
+    setReaderUrl(url); setReader(null); setReaderPdf(null); setReaderError("");
+    if (/\.pdf(?:[?#]|$)/i.test(url)) {
+      setReaderPdf("/api/civint/reading-room/source?url="+encodeURIComponent(url));
+      return;
+    }
+    setReaderLoading(true);
+    try {
+      const response = await fetch("/api/civint/reading-room/source?url="+encodeURIComponent(url), { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message ?? "Source unavailable");
+      setReader(data);
+    } catch (error) {
+      setReaderError(error instanceof Error ? error.message : "Source unavailable.");
+    } finally {
+      setReaderLoading(false);
+    }
+  }
   return (
     <AppShell>
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
@@ -145,6 +184,37 @@ function ReadingRoomPage() {
           </div>
         </div>
 
+        {readerUrl && <section className="mt-8 rounded-2xl border border-primary/30 bg-card shadow-sm overflow-hidden" aria-label="CIVINT in-page source reader">
+          <header className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
+            <div className="flex items-center gap-2"><FileText className="size-4 text-primary" /><div><p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">CIVINT source reader</p><p className="text-sm font-medium">{reader?.title ?? (readerPdf ? "PDF document" : "Loading source…")}</p></div></div>
+            <button type="button" onClick={resetReader} className="rounded-md p-2 hover:bg-muted" aria-label="Close reader"><X className="size-4" /></button>
+          </header>
+          {readerLoading && <div className="flex items-center gap-2 p-6 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />Retrieving the public source…</div>}
+          {readerError && <div className="p-6 text-sm text-muted-foreground">{readerError}<div className="mt-3"><a href={readerUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Open the original source <ExternalLink className="inline size-3" /></a></div></div>}
+          {readerPdf && <div className="bg-muted/20 p-2"><iframe title="CIVINT PDF reader" src={readerPdf} className="h-[75vh] min-h-[520px] w-full rounded-lg border border-border bg-background" /></div>}
+          {reader && <div className="grid gap-0 lg:grid-cols-[220px_minmax(0,1fr)]">
+            <aside className="border-b border-border bg-muted/30 p-4 lg:border-b-0 lg:border-r">
+              {reader.headings.length ? <><p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Sections</p><ul className="mt-2 space-y-2">{reader.headings.map((h,i)=><li key={h+i} className="text-xs text-muted-foreground">{h}</li>)}</ul></> : <p className="text-xs text-muted-foreground">Source text retrieved from the official publisher.</p>}
+              {reader.links.length > 0 && <div className="mt-6"><p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Documents & links</p><div className="mt-2 space-y-2">{reader.links.slice(0,20).map((link,i)=><button key={link.url+i} type="button" onClick={()=>void openInside(link.url)} className="block w-full rounded-md px-2 py-1.5 text-left text-xs text-primary hover:bg-muted">{link.label}</button>)}</div></div>}
+            </aside>
+            <article className="max-h-[70vh] overflow-auto p-5">
+              <p className="whitespace-pre-wrap text-sm leading-7 text-foreground">{reader.text}</p>
+              <div className="mt-6 border-t border-border pt-4 text-xs text-muted-foreground">
+                Retrieved {new Date(reader.fetched_at).toLocaleString()} from the official source. CIVINT provides a reading surface and context; the publisher remains the source of record.
+                <div className="mt-2 flex flex-wrap gap-3"><a href={reader.source_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Original source <ExternalLink className="inline size-3" /></a><button type="button" onClick={()=>void openInside(reader.source_url)} className="text-primary hover:underline">Refresh inside CIVINT</button></div>
+              </div>
+            </article>
+          </div>}
+        </section>}
+
+        <section className="mt-8 rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div><h2 className="font-display text-2xl">Find a collection</h2><p className="mt-1 text-xs text-muted-foreground">Filter CIVINT’s indexed entry points before opening an official source.</p></div>
+            <div className="w-full sm:max-w-sm"><Input value={libraryQuery} onChange={(event) => setLibraryQuery(event.target.value)} placeholder="Agency, topic, collection…" aria-label="Filter reading-room collections" /></div>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2"><Badge variant="outline">{filteredLibraries.length} libraries</Badge><Badge variant="outline">{filteredCollections.length} CIA collections</Badge>{libraryQuery && <button type="button" onClick={() => setLibraryQuery("")} className="text-xs text-primary hover:underline">Clear filter</button>}</div>
+        </section>
+
         <section className="mt-8 rounded-2xl border border-border bg-card p-5 shadow-sm">
           <div className="flex items-start gap-3">
             <div className="rounded-lg bg-muted p-2"><Search className="size-5" /></div>
@@ -154,15 +224,10 @@ function ReadingRoomPage() {
                 Start with the CIVINT index to choose the right federal collection. Search and document retrieval remain
                 tied to the official publisher so provenance, metadata, and the original record stay visible.
               </p>
-              <a
-                href="https://www.cia.gov/readingroom/search/site/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-              >
-                Open CIA Reading Room search
-                <ExternalLink className="size-3.5" />
-              </a>
+              <button type="button" onClick={() => void openInside("https://www.cia.gov/readingroom/")} className="mt-4 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
+                Read CIA collection inside CIVINT
+                <FileText className="size-3.5" />
+              </button>
             </div>
           </div>
         </section>
@@ -173,10 +238,10 @@ function ReadingRoomPage() {
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Federal libraries</p>
               <h2 className="mt-1 font-display text-2xl">Where the records live</h2>
             </div>
-            <Badge variant="outline">{LIBRARIES.length} indexed libraries</Badge>
+            <Badge variant="outline">{filteredLibraries.length} indexed libraries</Badge>
           </div>
           <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {LIBRARIES.map((library) => (
+            {filteredLibraries.map((library) => (
               <article
                 key={library.name}
                 className="group flex flex-col rounded-xl border border-border bg-card p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md"
@@ -192,10 +257,10 @@ function ReadingRoomPage() {
                   {library.tags.map((tag) => <Badge key={tag} variant="outline">{tag}</Badge>)}
                 </div>
                 <div className="mt-5 flex flex-wrap gap-3">
-                  <a href={library.searchUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
+                  <button type="button" onClick={() => void openInside(library.searchUrl)} className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
                     {library.searchLabel}
-                    <ExternalLink className="size-3.5" />
-                  </a>
+                    <FileText className="size-3.5" />
+                  </button>
                   <a href={library.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground hover:underline">
                     Source home
                     <ExternalLink className="size-3.5" />
@@ -212,27 +277,21 @@ function ReadingRoomPage() {
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">CIA collections</p>
               <h2 className="mt-1 font-display text-2xl">Start with high-value collections</h2>
             </div>
-            <Badge variant="outline">{CIA_COLLECTIONS.length} entry points</Badge>
+            <Badge variant="outline">{filteredCollections.length} entry points</Badge>
           </div>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {CIA_COLLECTIONS.map((collection) => (
-              <a
-                key={collection.title}
-                href={collection.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group rounded-xl border border-border bg-card p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md"
-              >
+            {filteredCollections.map((collection) => (
+              <button type="button" onClick={() => void openInside(collection.url)} className="group w-full text-left rounded-xl border border-border bg-card p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md">
                 <div className="flex items-start justify-between gap-4">
                   <div className="rounded-lg bg-muted p-2"><Library className="size-4 text-primary" /></div>
-                  <ExternalLink className="size-4 text-muted-foreground transition group-hover:text-foreground" />
+                  <FileText className="size-4 text-muted-foreground transition group-hover:text-foreground" />
                 </div>
                 <h3 className="mt-4 font-display text-xl">{collection.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{collection.description}</p>
                 <div className="mt-4 flex flex-wrap gap-1.5">
                   {collection.tags.map((tag) => <Badge key={tag} variant="outline">{tag}</Badge>)}
                 </div>
-              </a>
+              </button>
             ))}
           </div>
         </section>
