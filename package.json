@@ -79,9 +79,7 @@
     "zod": "^4.4.0",
     "zustand": "^5.0.0",
     "@neon/config": "^1.8.3",
-    "maplibre-gl": "^6.11.2",
-    "topojson-client": "^3.1.0",
-    "us-atlas": "^3.0.1"
+    "maplibre-gl": "6.3.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.20.0",

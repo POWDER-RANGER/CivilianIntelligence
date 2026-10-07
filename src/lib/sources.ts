@@ -15,6 +15,18 @@ export type SourceDefinition = {
 
 export const SOURCES: SourceDefinition[] = [
   {
+    id: "alpr-deflock-tiles",
+    name: "DeFlock / FlockHopper ALPR vector tiles",
+    category: "surveillance infrastructure",
+    endpoint: "https://tiles.dontgetflocked.com/cameras-us-hourly.json",
+    healthcheckUrl: "https://dontgetflocked.com/",
+    accessMethod: "Viewport-native vector tiles",
+    license: "OpenStreetMap ODbL; provider processing terms apply",
+    attribution: "OpenStreetMap contributors / DeFlock community",
+    cadence: "Hourly",
+    nativeSurface: "Watchtower / ALPR Atlas",
+  },
+  {
     id: "alpr-flocklocations",
     name: "Flock Locations",
     category: "surveillance infrastructure",
@@ -24,6 +36,18 @@ export const SOURCES: SourceDefinition[] = [
     license: "CC BY 4.0",
     attribution: "Independent community-run dataset",
     cadence: "Published feed",
+    nativeSurface: "Watchtower / ALPR Atlas",
+  },
+  {
+    id: "openstreetmap-alpr",
+    name: "OpenStreetMap ALPR",
+    category: "surveillance infrastructure",
+    endpoint: "https://www.openstreetmap.org/",
+    healthcheckUrl: "https://www.openstreetmap.org/",
+    accessMethod: "Public mapped observations",
+    license: "Open Database License (ODbL)",
+    attribution: "OpenStreetMap contributors",
+    cadence: "Continuously edited",
     nativeSurface: "Watchtower / ALPR Atlas",
   },
   {
