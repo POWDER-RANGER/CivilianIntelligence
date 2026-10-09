@@ -156,6 +156,11 @@ export default defineConfig(({ command, isPreview }) => ({
     port: 8081,
     strictPort: true,
   },
+  // MapLibre's ESM worker is configured by the browser component below.
+  // Bundle MapLibre for SSR too; otherwise TanStack Start can resolve its
+  // CommonJS entry on the server and leave the hydrated map without a usable
+  // browser renderer.
+  ssr: { noExternal: ["maplibre-gl"] },
   resolve: { tsconfigPaths: true },
   plugins: [
     pgliteBootstrapPlugin(),
