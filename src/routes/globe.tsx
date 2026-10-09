@@ -4,8 +4,8 @@ import { ExternalLink, Globe2, ShieldAlert } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 
 const GODS_EYE_EMBED_URL =
-  "https://civintelligence-gods-eye-view.onrender.com/?embed=1";
-const GODS_EYE_URL = "https://civintelligence-gods-eye-view.onrender.com";
+  "https://civintelligence-gods-eye-prod.onrender.com/?embed=1";
+const GODS_EYE_URL = "https://civintelligence-gods-eye-prod.onrender.com";
 
 export const Route = createFileRoute("/globe")({ component: GlobalViewPage });
 
