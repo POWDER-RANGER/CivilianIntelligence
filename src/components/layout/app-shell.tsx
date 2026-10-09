@@ -26,6 +26,7 @@ const NAV_GROUPS = [
   ] },
   { label: "Tools", items: [
     { to: "/watchtower", label: "Watchtower", hint: "Places & infrastructure" },
+    { to: "/globe", label: "Global View", hint: "God's Eye 3D globe" },
     { to: "/signal", label: "Signal vs Record", hint: "Attention & evidence" },
     { to: "/veil", label: "VEIL", hint: "Briefing" },
     { to: "/titan", label: "Cell Titan", hint: "User-owned RF" },
