@@ -42,11 +42,22 @@ function cameraData(cameras: Camera[]): GeoJSON.FeatureCollection<GeoJSON.Point,
 const STYLE: maplibregl.StyleSpecification = {
   version: 8,
   sources: {
+    // Keep a real, attributed basemap underneath the civic data. The previous
+    // style only rendered a dark background and state outlines, which looked
+    // like a failed map even when MapLibre itself had initialized correctly.
+    osm: {
+      type: "raster",
+      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      tileSize: 256,
+      attribution: "© OpenStreetMap contributors",
+      maxzoom: 19,
+    },
     usa: { type: "geojson", data: USA },
     cameras: { type: "geojson", data: EMPTY, cluster: true, clusterMaxZoom: 11, clusterRadius: 46 },
   },
   layers: [
     { id: "background", type: "background", paint: { "background-color": "#0b1016" } },
+    { id: "osm-raster", type: "raster", source: "osm", paint: { "raster-opacity": 0.88, "raster-fade-duration": 0 } },
     { id: "usa-fill", type: "fill", source: "usa", paint: { "fill-color": "#d7e3ea", "fill-opacity": 0.055 } },
     { id: "usa-line", type: "line", source: "usa", paint: { "line-color": "#d7e3ea", "line-opacity": 0.34, "line-width": ["interpolate", ["linear"], ["zoom"], 2, 0.7, 7, 1.6] } },
     { id: "cluster-halo", type: "circle", source: "cameras", filter: ["has", "point_count"], paint: { "circle-color": "#9ee7bd", "circle-opacity": 0.08, "circle-radius": ["step", ["get", "point_count"], 17, 20, 22, 100, 27, 500, 33] } },
