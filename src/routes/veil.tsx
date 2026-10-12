@@ -50,7 +50,6 @@ function VeilPage() {
   const [sourceRegistry, setSourceRegistry] = useState<CivintSource[]>([]);
 
   const indexedSources = countLeaves(FRAMEWORK);
-  const liveMovement = MOVEMENT_EVENTS.filter((e) => e.status === "live").length;
   const alerts = OVERSIGHT_ITEMS.filter((i) => i.severity === "alert").length;
   const expanding = PRIVACY_SYSTEMS.filter((s) => s.risk === "expanding").length;
 
