@@ -100,6 +100,11 @@ function VeilPage() {
           </div>
         </div>
 
+        <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm" role="note">
+          <p className="font-medium">Static reference content is not a live intelligence feed</p>
+          <p className="mt-1 text-muted-foreground">The movement timeline, oversight examples, privacy-system summaries, signal cards, and derived counts below include hardcoded reference data that has not been verified as current. Only panels explicitly marked as fetched from a source represent a successful live request.</p>
+        </div>
+
         <section className="mt-6 rounded-xl border border-border bg-card p-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
@@ -166,7 +171,7 @@ function VeilPage() {
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { label: "Indexed sources", value: String(indexedSources) },
-            { label: "Live movement", value: String(liveMovement) },
+            { label: "Sample movement entries", value: String(MOVEMENT_EVENTS.length) },
             { label: "Oversight alerts", value: String(alerts) },
             { label: "Expanding systems", value: String(expanding) },
           ].map((m) => (
