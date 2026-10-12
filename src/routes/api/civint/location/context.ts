@@ -14,11 +14,34 @@ type Geography = {
   STATEFP?: string;
 };
 
-function firstName(group: Record<string, Geography> | undefined): string | null {
-  if (!group) return null;
-  const first = Object.values(group)[0];
-  const value = first?.NAME ?? first?.BASENAME;
-  return value ? String(value) : null;
+function firstName(group: unknown): string | null {
+  // The Census Geocoder returns geography groups as arrays of geography
+  // objects. Accept object maps as well so a response-shape change does not
+  // silently turn valid coordinates into an empty location context.
+  const entries = Array.isArray(group)
+    ? group
+    : group && typeof group === "object"
+      ? Object.values(group as Record<string, unknown>)
+      : [];
+  for (const entry of entries) {
+    if (!entry || typeof entry !== "object") continue;
+    const geography = entry as Geography;
+    const value = geography.NAME ?? geography.BASENAME;
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return null;
+}
+
+function geographyGroup(
+  groups: Record<string, unknown> | undefined,
+  ...names: string[]
+): unknown {
+  if (!groups) return undefined;
+  for (const name of names) {
+    const value = groups[name];
+    if (value !== undefined && value !== null) return value;
+  }
+  return undefined;
 }
 
 function uniqueResults(groups: Array<Awaited<ReturnType<typeof searchIndexedRecords>>>): Array<Awaited<ReturnType<typeof searchIndexedRecords>>[number]> {
@@ -52,21 +75,17 @@ export const Route = createFileRoute("/api/civint/location/context")({
           const upstream = await fetch(
             CENSUS + "?x=" + encodeURIComponent(lon) +
             "&y=" + encodeURIComponent(lat) +
-            "&benchmark=Public_AR_Current&vintage=Current_Current&format=json",
+            "&benchmark=Public_AR_Current&vintage=Current_Current&layers=States,Counties,Places&format=json",
             { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(8000) },
           );
           if (!upstream.ok) throw new Error(`Census geocoder returned ${upstream.status}`);
           const payload = await upstream.json() as {
-            result?: { geographies?: {
-              "States (Census)": Record<string, Geography>;
-              "Counties (Census)": Record<string, Geography>;
-              "Places (Census)": Record<string, Geography>;
-            } };
+            result?: { geographies?: Record<string, unknown> };
           };
           const geographies = payload.result?.geographies;
-          const city = firstName(geographies?.["Places (Census)"]);
-          const county = firstName(geographies?.["Counties (Census)"]);
-          const state = firstName(geographies?.["States (Census)"]);
+          const city = firstName(geographyGroup(geographies, "Places", "Incorporated Places", "Census Designated Places", "Places (Census)"));
+          const county = firstName(geographyGroup(geographies, "Counties", "Counties (Census)"));
+          const state = firstName(geographyGroup(geographies, "States", "States (Census)"));
 
           const [cityRecords, countyRecords, stateRecords] = await Promise.all([
             city ? searchIndexedRecords({ query: city, limit: 5 }) : Promise.resolve([]),
