@@ -15,7 +15,13 @@ export const Route = createFileRoute("/api/health")({
             checkedAt: new Date().toISOString(),
             uptimeSeconds: Math.round(process.uptime()),
           }, { headers: { "Cache-Control": "no-store" } });
-        } catch {
+        } catch (error) {
+          console.error("[health] database readiness check failed", {
+            message: error instanceof Error ? error.message : String(error),
+            code: typeof error === "object" && error !== null && "code" in error
+              ? String((error as { code?: unknown }).code ?? "")
+              : undefined,
+          });
           return Response.json({
             status: "degraded",
             service: "civintelligence",
