@@ -1,21 +1,42 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { getSql } from "@/lib/db";
 
-// render.yaml sets healthCheckPath: /api/health, but no route existed, so every
-// health probe returned 404 (live audit P1-19). This reports process liveness
-// only; per-source health lives on /sources and the pillar bridge.
 export const Route = createFileRoute("/api/health")({
   server: {
     handlers: {
-      GET: async () =>
-        Response.json(
-          {
-            status: "ok",
-            service: "civintelligence",
-            checkedAt: new Date().toISOString(),
-            uptimeSeconds: Math.round(process.uptime()),
-          },
-          { headers: { "Cache-Control": "no-store" } },
-        ),
+      GET: async () => {
+        try {
+          const db = await getSql();
+          await db.query("select 1");
+          return Response.json(
+            {
+              status: "ok",
+              service: "civintelligence",
+              database: "available",
+              checkedAt: new Date().toISOString(),
+              uptimeSeconds: Math.round(process.uptime()),
+            },
+            { headers: { "Cache-Control": "no-store" } },
+          );
+        } catch (error) {
+          console.error("[health] database readiness check failed", {
+            message: error instanceof Error ? error.message : String(error),
+            code:
+              typeof error === "object" && error !== null && "code" in error
+                ? String((error as { code?: unknown }).code ?? "")
+                : undefined,
+          });
+          return Response.json(
+            {
+              status: "degraded",
+              service: "civintelligence",
+              database: "unavailable",
+              checkedAt: new Date().toISOString(),
+            },
+            { status: 503, headers: { "Cache-Control": "no-store" } },
+          );
+        }
+      },
     },
   },
 });
