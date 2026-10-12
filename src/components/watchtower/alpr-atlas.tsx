@@ -85,10 +85,18 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
       renderWorldCopies: false,
     });
     map.current = instance;
+    // The route panel can transition from zero size during mount. Keep the
+    // canvas synchronized with its actual responsive host dimensions.
+    const resizeObserver = new ResizeObserver(() => instance.resize());
+    resizeObserver.observe(container);
     instance.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     instance.addControl(new maplibregl.ScaleControl({ maxWidth: 120, unit: "imperial" }), "bottom-left");
 
-    instance.on("load", () => { setReady(true); setError(null); });
+    instance.on("load", () => {
+      instance.resize();
+      setReady(true);
+      setError(null);
+    });
     instance.on("error", (event) => {
       if (!instance.isStyleLoaded()) setError(event.error?.message ?? "Map renderer failed to initialize");
     });
@@ -118,7 +126,11 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
       instance.on("mouseenter", layer, () => { instance.getCanvas().style.cursor = "pointer"; });
       instance.on("mouseleave", layer, () => { instance.getCanvas().style.cursor = ""; });
     }
-    return () => { instance.remove(); map.current = null; };
+    return () => {
+      resizeObserver.disconnect();
+      instance.remove();
+      map.current = null;
+    };
   }, []);
 
   useEffect(() => {
@@ -189,7 +201,12 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
       </header>
 
       <div className="relative h-[min(68vh,650px)] min-h-[430px] overflow-hidden bg-[#0b1016]">
-        <div ref={node} className="absolute inset-0" aria-label="Interactive U.S. Flock ALPR camera map" />
+        <div
+          ref={node}
+          className="absolute inset-0 h-full w-full"
+          style={{ width: "100%", height: "100%", minHeight: "430px" }}
+          aria-label="Interactive U.S. Flock ALPR camera map"
+        />
         <div className="pointer-events-none absolute left-4 top-4 rounded-xl border border-white/10 bg-black/55 px-3 py-2 text-white shadow-lg backdrop-blur">
           <div className="flex items-center gap-2"><MapPin className="size-3.5 text-emerald-300" /><p className="font-mono text-[10px] uppercase tracking-wider text-white/70">Public camera observations</p></div>
           <p className="mt-1 text-[10px] text-white/50">Bundled U.S. geography · real published camera records</p>
