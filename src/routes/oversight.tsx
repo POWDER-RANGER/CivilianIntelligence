@@ -41,6 +41,11 @@ function OversightPage() {
           registrations, and the watchdogs who read them so you do not have to live in PDFs.
         </p>
 
+        <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm" role="note">
+          <p className="font-medium">Reference examples — not a verified live filing feed</p>
+          <p className="mt-1 text-muted-foreground">Rows below are static examples. Confirm dates, findings, and source documents at the linked official sites before relying on them.</p>
+        </div>
+
         <div className="mt-6 flex flex-wrap gap-2">
           {KINDS.map((k) => (
             <Button key={k} size="sm" variant={kind === k ? "default" : "outline"} onClick={() => setKind(k)} className="capitalize">
