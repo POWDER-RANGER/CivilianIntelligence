@@ -69,9 +69,10 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!node.current || map.current) return;
+    const container = node.current;
+    if (!container || map.current) return;
     const instance = new maplibregl.Map({
-      container: node.current,
+      container,
       style: STYLE,
       center: [-98.5, 38.5],
       zoom: 3.2,
