@@ -7,6 +7,11 @@ export const Route = createFileRoute("/api/civint/oversight/foia")({
       if (!key) return Response.json({ state: "unconfigured", source: "FOIA.gov", message: "FOIA_API_KEY is not configured." }, { status: 503 });
       const url = new URL(request.url);
       const endpoint = url.searchParams.get("endpoint") || "annual_foia_report";
+      // The API key rides along with every forwarded call; only forward simple
+      // FOIA.gov endpoint names.
+      if (!/^[a-z0-9_/-]{1,80}$/i.test(endpoint) || endpoint.includes("..")) {
+        return Response.json({ state: "invalid", message: "Unsupported FOIA.gov endpoint." }, { status: 400 });
+      }
       const year = url.searchParams.get("year");
       const query = new URLSearchParams({ "api-key": key });
       if (year) query.set("filter[report_year]", year);

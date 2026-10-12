@@ -14,6 +14,19 @@ services:
         value: "node-server"
       - key: CIVINT_DEPLOYMENT
         value: "production"
+      # Disables the third-party grok.com extensions.js injection (read at
+      # runtime by scripts/grok-pwa-shared.mjs). Live audit P1-6.
+      - key: VITE_GROK_EXTENSIONS
+        value: "0"
+      # Optional keys; each feature reports "unconfigured" until set.
+      - key: CONGRESS_API_KEY
+        sync: false
+      - key: FOIA_API_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: WATCHTOWER_BASE_URL
+        sync: false
       - key: DATABASE_URL
         sync: false
       - key: CELL_TITAN_BASE_URL

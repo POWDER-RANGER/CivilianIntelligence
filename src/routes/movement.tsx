@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { MOVEMENT_EVENTS, type MovementEvent } from "@/data/desks";
 import { getRegisterFeed, type RegisterDoc } from "@/lib/feeds";
 import { cn } from "@/lib/utils";
+import { ExampleBadge, IllustrativeNotice } from "@/components/illustrative-notice";
 
 export const Route = createFileRoute("/movement")({ component: MovementPage });
 
@@ -70,22 +71,21 @@ function MovementPage() {
         </div>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-3">
+          <IllustrativeNotice feed="public calendar" />
           <ol className="relative space-y-3 border-l border-border pl-5">
             {events.map((event) => (
               <li key={event.id} className="relative">
                 <span
                   className={cn(
                     "absolute -left-[25px] top-2 size-2.5 rounded-full border",
-                    event.status === "live"
-                      ? "border-live bg-live"
-                      : event.status === "completed"
-                        ? "border-border bg-muted"
-                        : "border-steel bg-background",
+                    // Fixture status is not observed state: neutral dot only.
+                    "border-border bg-muted",
                   )}
                 />
                 <article className="rounded-lg border border-border bg-card p-4">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={event.status === "live" ? "live" : "outline"}>{event.status}</Badge>
+                    <ExampleBadge />
                     <Badge variant="default">{event.kind}</Badge>
                     <span className="font-mono text-[11px] text-muted-foreground">{formatWhen(event.when)}</span>
                   </div>
@@ -105,12 +105,13 @@ function MovementPage() {
               </li>
             ))}
           </ol>
+          </div>
 
           <aside className="space-y-4">
             <div className="rounded-xl border border-border bg-card p-5">
               <div className="flex items-center justify-between">
                 <h2 className="font-display text-2xl">Federal Register</h2>
-                <Badge variant={live ? "live" : "outline"}>{live ? "Live" : "Queued"}</Badge>
+                <Badge variant={live ? "live" : "outline"}>{register === null ? "Loading" : live ? "API" : "Unavailable"}</Badge>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 Newest public inspection from the daily journal of the federal government.
@@ -120,6 +121,7 @@ function MovementPage() {
                   <li key={doc.html_url} className="border-t border-border pt-3">
                     <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
                       {doc.publication_date} · {doc.type}
+                      {doc.duplicateCount ? ` · ${doc.duplicateCount} same-day documents` : ""}
                     </p>
                     <a
                       href={doc.html_url}
@@ -135,7 +137,11 @@ function MovementPage() {
                   </li>
                 ))}
                 {register && register.length === 0 && (
-                  <li className="text-sm text-muted-foreground">Register feed is unavailable. Use the framework tree.</li>
+                  <li className="text-sm text-muted-foreground">
+                    {live
+                      ? "The Federal Register returned no new documents."
+                      : "The Federal Register API is unavailable right now. Nothing is substituted."}
+                  </li>
                 )}
               </ul>
             </div>

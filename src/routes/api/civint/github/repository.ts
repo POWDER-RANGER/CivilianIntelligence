@@ -1,15 +1,35 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { parseRepoInput as parseRepo } from "@/lib/github-repo-input";
 
 const GITHUB_API = "https://api.github.com";
 const MANIFESTS = new Set(["package.json","package-lock.json","pnpm-lock.yaml","yarn.lock","requirements.txt","pyproject.toml","Cargo.toml","Cargo.lock","go.mod","Gemfile","Dockerfile"]);
-function parseRepo(input: string) {
-  const value = input.trim().replace(/^https?:\/\/(www\.)?github\.com\//i, "").replace(/\.git\/?$/, "").replace(/^\/+|\/+$/g, "");
-  const parts = value.split("/").filter(Boolean);
-  return parts.length === 2 && parts.every((part) => /^[A-Za-z0-9_.-]+$/.test(part)) ? { owner: parts[0], repo: parts[1] } : null;
+class GitHubError extends Error {
+  status: number;
+  constructor(message: string, status: number) { super(message); this.status = status; }
 }
+// Live audit P1-7: every inspection returned "GitHub returned 403". Unauthenticated
+// GitHub API calls share a 60/hour budget per egress IP, and Render's free tier
+// shares egress IPs, so the budget is exhausted by other tenants. A server-side
+// GITHUB_TOKEN (public-read only; never sent to the browser) lifts the limit to
+// 5,000/hour. Without one, rate limiting is reported as such instead of a bare 403.
 async function gh(path: string) {
-  const response = await fetch(GITHUB_API + path, { headers: { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "CIVINTELLIGENCE-Reading-Room" }, signal: AbortSignal.timeout(10000) });
-  if (!response.ok) throw new Error("GitHub returned " + response.status);
+  const headers: Record<string, string> = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "CIVINTELLIGENCE-Reading-Room" };
+  const token = process.env.GITHUB_TOKEN?.trim();
+  if (token) headers.Authorization = "Bearer " + token;
+  const response = await fetch(GITHUB_API + path, { headers, signal: AbortSignal.timeout(10000) });
+  if (!response.ok) {
+    const remaining = response.headers.get("x-ratelimit-remaining");
+    if ((response.status === 403 || response.status === 429) && remaining === "0") {
+      const reset = Number(response.headers.get("x-ratelimit-reset"));
+      const when = Number.isFinite(reset) && reset > 0 ? new Date(reset * 1000).toISOString() : "later";
+      throw new GitHubError(
+        "GitHub's API rate limit for this server is exhausted" + (token ? "" : " (no GITHUB_TOKEN configured)") + ". Resets " + when + ".",
+        429,
+      );
+    }
+    if (response.status === 404) throw new GitHubError("Repository not found or not public.", 404);
+    throw new GitHubError("GitHub returned " + response.status, 502);
+  }
   return response.json();
 }
 async function readFile(owner: string, repo: string, path: string) {
@@ -40,9 +60,9 @@ export const Route = createFileRoute("/api/civint/github/repository")({ server: 
     const readme = await readFile(parsed.owner, parsed.repo, "README.md");
     const manifestPaths = files.filter((item) => item.type === "file" && MANIFESTS.has(item.path.split("/").pop() ?? "")).slice(0,12).map((item) => item.path);
     const manifests = (await Promise.all(manifestPaths.map((path) => readFile(parsed.owner, parsed.repo, path)))).filter((item): item is {path:string;content:string} => item !== null);
-    let workflowRaw:any[] = []; try { workflowRaw = await gh("/repos/" + owner + "/" + repo + "/contents/.github/workflows") as any[]; } catch {}
+    let workflowRaw:any[] = []; try { workflowRaw = await gh("/repos/" + owner + "/" + repo + "/contents/.github/workflows") as any[]; } catch { /* Workflow listings are optional for repositories without Actions. */ }
     const workflowPaths = workflowRaw.filter((item) => item?.type === "file" && typeof item.path === "string").slice(0,20).map((item) => item.path as string);
     const workflows = (await Promise.all(workflowPaths.map((path) => readFile(parsed.owner, parsed.repo, path)))).filter((item): item is {path:string;content:string} => item !== null);
     return Response.json({ repository:{ full_name:root.full_name, html_url:root.html_url, description:root.description ?? null, default_branch:root.default_branch, created_at:root.created_at, updated_at:root.updated_at, archived:Boolean(root.archived), fork:Boolean(root.fork), stargazers_count:Number(root.stargazers_count ?? 0), forks_count:Number(root.forks_count ?? 0), open_issues_count:Number(root.open_issues_count ?? 0), license:root.license?.spdx_id ?? root.license?.name ?? null }, readme:readme ? { path:readme.path, content:readme.content.slice(0,12000) } : null, files, workflows:workflows.map(({path})=>({path,type:"file"})), manifests:manifests.map(({path})=>({path,type:"file"})), signals:signals([...manifests,...workflows]), checked_at:new Date().toISOString() }, { headers:{"Cache-Control":"public, max-age=300, s-maxage=300, stale-while-revalidate=900"} });
-  } catch (error) { return Response.json({ message:error instanceof Error ? error.message : "GitHub repository unavailable." }, { status:502 }); }
+  } catch (error) { return Response.json({ message:error instanceof Error ? error.message : "GitHub repository unavailable." }, { status:error instanceof GitHubError ? error.status : 502 }); }
 }}}});

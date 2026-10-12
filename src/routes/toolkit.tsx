@@ -7,7 +7,26 @@ import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/toolkit")({ component: ToolkitPage });
 
+import { OTHER_STATE, STATE_RECORDS_LAWS } from "@/data/state-records-laws";
+
 type TemplateId = "foia" | "privacy" | "state";
+
+// Starting points for the request people most often need. Each is a description
+// of records, not a conclusion, so an agency can locate and produce them.
+const PRESETS = [
+  {
+    label: "ALPR / Flock contract & policy",
+    text: "All contracts, purchase orders, quotes, invoices, renewals, and amendments with Flock Safety (or any automated license plate reader vendor) from January 1, 2020 to the present; the agency's ALPR use policy and data-retention schedule; any data-sharing agreements or lists of outside agencies granted access to ALPR data; and audit logs or annual reports of ALPR searches.",
+  },
+  {
+    label: "Gunshot / acoustic sensors",
+    text: "All contracts, invoices, and renewals for acoustic gunshot detection (e.g. ShotSpotter/SoundThinking) from January 1, 2020 to the present; sensor placement or coverage-area maps provided by the vendor; and any performance, accuracy, or alert-outcome reports.",
+  },
+  {
+    label: "Surveillance tech approvals",
+    text: "Agendas, minutes, staff reports, and votes of the governing body concerning the acquisition or approval of surveillance technology (including license plate readers, cameras, drones, and acoustic sensors) from January 1, 2020 to the present.",
+  },
+];
 
 const TEMPLATES: Record<TemplateId, { label: string; cite: string; intro: string }> = {
   foia: {
@@ -58,6 +77,8 @@ function ToolkitPage() {
   const [template, setTemplate] = useState<TemplateId>("foia");
   const [requester, setRequester] = useState("");
   const [agency, setAgency] = useState(AGENCIES[0].name);
+  const [stateCode, setStateCode] = useState("IL");
+  const [localAgency, setLocalAgency] = useState("");
   const [description, setDescription] = useState("");
   const [feeWaiver, setFeeWaiver] = useState(true);
   const [expedited, setExpedited] = useState(false);
@@ -65,12 +86,21 @@ function ToolkitPage() {
 
   const letter = useMemo(() => {
     const t = TEMPLATES[template];
+    const stateLaw = STATE_RECORDS_LAWS.find((law) => law.code === stateCode) ?? OTHER_STATE;
     const lines: string[] = [];
-    lines.push(`To: Office of FOIA Services, ${agency}`);
-    lines.push("");
-    lines.push(`Re: Records request — ${t.cite}`);
-    lines.push("");
-    lines.push(`${t.intro}`);
+    if (template === "state") {
+      lines.push(`To: Records Custodian, ${localAgency.trim() || "[Agency name — e.g. city police department, county sheriff, city clerk]"}`);
+      lines.push("");
+      lines.push(`Re: Public records request — ${stateLaw.law} (${stateLaw.cite})`);
+      lines.push("");
+      lines.push(`Pursuant to ${stateLaw.code === "OTHER" ? stateLaw.law : `the ${stateLaw.law}, ${stateLaw.cite}`}, I request copies of the following records:`);
+    } else {
+      lines.push(`To: FOIA Officer, ${agency}`);
+      lines.push("");
+      lines.push(`Re: Records request — ${t.cite}`);
+      lines.push("");
+      lines.push(`${t.intro}`);
+    }
     lines.push("");
     lines.push(
       description.trim()
@@ -106,7 +136,7 @@ function ToolkitPage() {
     lines.push("Thank you,");
     lines.push(requester.trim() || "[Your name, mailing address, email, and phone]");
     return lines.join("\n");
-  }, [template, requester, agency, description, feeWaiver, expedited]);
+  }, [template, requester, agency, description, feeWaiver, expedited, stateCode, localAgency]);
 
   async function copyLetter() {
     try {
@@ -148,6 +178,31 @@ function ToolkitPage() {
               Your name / signature block
               <Input value={requester} onChange={(e) => setRequester(e.target.value)} placeholder="Full name, address, email" />
             </label>
+            {template === "state" ? (
+              <div className="grid gap-4 sm:grid-cols-[10rem_1fr]">
+                <label className="grid gap-1.5 text-xs text-muted-foreground">
+                  State
+                  <select
+                    value={stateCode}
+                    onChange={(e) => setStateCode(e.target.value)}
+                    className="h-9 rounded-md border border-border bg-card px-3 text-sm text-foreground"
+                  >
+                    {STATE_RECORDS_LAWS.map((law) => (
+                      <option key={law.code} value={law.code}>{law.state}</option>
+                    ))}
+                    <option value={OTHER_STATE.code}>{OTHER_STATE.state}</option>
+                  </select>
+                </label>
+                <label className="grid gap-1.5 text-xs text-muted-foreground">
+                  State or local agency
+                  <Input
+                    value={localAgency}
+                    onChange={(e) => setLocalAgency(e.target.value)}
+                    placeholder="e.g. Carthage Police Department"
+                  />
+                </label>
+              </div>
+            ) : (
             <label className="grid gap-1.5 text-xs text-muted-foreground">
               Agency
               <select
@@ -160,6 +215,19 @@ function ToolkitPage() {
                 ))}
               </select>
             </label>
+            )}
+            <div className="flex flex-wrap gap-2">
+              {PRESETS.map((preset) => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => setDescription(preset.text)}
+                  className="rounded-full border border-border bg-background px-3 py-1 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
             <label className="grid gap-1.5 text-xs text-muted-foreground">
               Records you want
               <textarea
@@ -187,7 +255,9 @@ function ToolkitPage() {
           <div className="grid gap-3">
             <div className="flex items-center justify-between">
               <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                Draft — {TEMPLATES[template].cite}
+                Draft — {template === "state"
+                  ? (STATE_RECORDS_LAWS.find((law) => law.code === stateCode) ?? OTHER_STATE).cite
+                  : TEMPLATES[template].cite}
               </p>
               <Button size="sm" onClick={copyLetter} className="font-mono text-[11px] uppercase tracking-wider">
                 {copied ? "Copied" : "Copy letter"}

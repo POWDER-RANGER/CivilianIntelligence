@@ -1,0 +1,84 @@
+{
+ "result": {
+  "geographies": {
+   "States": [
+    {
+     "NAME": "Illinois",
+     "BASENAME": "Illinois",
+     "GEOID": "17",
+     "STUSAB": "IL"
+    }
+   ],
+   "Combined Statistical Areas": [
+    {
+     "NAME": "Chicago-Naperville, IL-IN-WI CSA",
+     "BASENAME": "Chicago-Naperville, IL-IN-WI",
+     "GEOID": "176"
+    }
+   ],
+   "County Subdivisions": [
+    {
+     "NAME": "Palos township",
+     "BASENAME": "Palos",
+     "GEOID": "1703157355"
+    }
+   ],
+   "Urban Areas": [
+    {
+     "NAME": "Chicago, IL--IN Urban Area",
+     "BASENAME": "Chicago, IL--IN",
+     "GEOID": "16264"
+    }
+   ],
+   "Incorporated Places": [
+    {
+     "NAME": "Palos Hills city",
+     "BASENAME": "Palos Hills",
+     "GEOID": "1757394"
+    }
+   ],
+   "Counties": [
+    {
+     "NAME": "Cook County",
+     "BASENAME": "Cook",
+     "GEOID": "17031"
+    }
+   ],
+   "2026 State Legislative Districts - Upper": [
+    {
+     "NAME": "State Senate District 18",
+     "BASENAME": "18",
+     "GEOID": "17018"
+    }
+   ],
+   "120th Congressional Districts": [
+    {
+     "NAME": "Congressional District 6",
+     "BASENAME": "6",
+     "GEOID": "1706"
+    }
+   ],
+   "2026 State Legislative Districts - Lower": [
+    {
+     "NAME": "State House District 36",
+     "BASENAME": "36",
+     "GEOID": "17036"
+    }
+   ],
+   "2020 Census Blocks": [
+    {
+     "NAME": "Block 4009",
+     "BASENAME": "4009",
+     "GEOID": "170318238034009"
+    }
+   ],
+   "Census Tracts": [
+    {
+     "NAME": "Census Tract 8238.03",
+     "BASENAME": "8238.03",
+     "GEOID": "17031823803"
+    }
+   ]
+  }
+ }
+}

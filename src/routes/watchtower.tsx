@@ -9,7 +9,7 @@ export const Route = createFileRoute("/watchtower")({ component: WatchtowerPage 
 
 function statusVariant(status: PillarStatus["status"]) {
   if (status === "online") return "live" as const;
-  if (status === "degraded") return "warn" as const;
+  if (status === "degraded" || status === "unreachable") return "warn" as const;
   return "outline" as const;
 }
 
@@ -26,7 +26,16 @@ function WatchtowerPage() {
       setHealth(statuses.find((item) => item.id === "watchtower") ?? null);
       setFeatures(data.features);
       setCount(data.count);
-      setError(data.ok ? null : "Watchtower is unavailable or not configured.");
+      setError(
+        data.ok
+          ? null
+          : (() => {
+              const status = statuses.find((item) => item.label === "Watchtower")?.status;
+              if (status === "unconfigured") return "Watchtower endpoint is not configured on this deployment.";
+              if (status === "unreachable") return "Watchtower is configured but not responding.";
+              return "Watchtower responded but did not return verified data.";
+            })(),
+      );
     }).catch((e) => {
       if (!cancelled) setError(String(e));
     });
@@ -89,7 +98,7 @@ function WatchtowerPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm font-medium">{String(feature.properties.label ?? feature.id)}</p>
                       <Badge variant="outline">{feature.category}</Badge>
-                      {feature.properties.note && (
+                      {feature.properties.note != null && feature.properties.note !== "" && (
                         <Badge variant="warn">{String(feature.properties.note)}</Badge>
                       )}
                     </div>

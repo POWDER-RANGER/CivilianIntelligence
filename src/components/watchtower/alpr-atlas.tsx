@@ -7,6 +7,8 @@ import {
   ScaleControl,
   setWorkerUrl,
   type Map as MapInstance,
+  type ExpressionSpecification,
+  type StyleSpecification,
 } from "maplibre-gl";
 import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { LocateFixed, MapPin, Search } from "lucide-react";
@@ -129,7 +131,7 @@ function applyPointFilter(map: any, flockOnly: boolean, query: string) {
   }
 }
 
-function createBasemapStyle() {
+function createBasemapStyle(): StyleSpecification {
   return {
     version: 8,
     sources: {
@@ -170,9 +172,11 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
   const [status, setStatus] = useState<MapStatus>("initializing");
   const [statusMessage, setStatusMessage] = useState("Starting map renderer…");
   const [visibleCount, setVisibleCount] = useState(0);
+  const [zoomLevel, setZoomLevel] = useState(MIN_ZOOM);
 
   const refreshVisibleCount = (map: any) => {
     try {
+      setZoomLevel(map.getZoom());
       setVisibleCount(currentVisibleObservations(map).length);
     } catch {
       setVisibleCount(0);
@@ -185,6 +189,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
     let cancelled = false;
     let map: MapInstance | null = null;
     let moveTimer: ReturnType<typeof setTimeout> | null = null;
+    let resizeObserver: ResizeObserver | null = null;
 
     // This MUST execute before Map() creates its worker pool.
     // This is the exact Vite/TanStack Start worker pattern used by a
@@ -225,12 +230,19 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
           minZoom: MIN_ZOOM,
           maxZoom: MAX_ZOOM,
           maxBounds: MAX_BOUNDS,
-          attributionControl: true,
+          attributionControl: {},
           cooperativeGestures: false,
           style: createBasemapStyle(),
         });
 
         mapRef.current = map;
+
+        if (typeof ResizeObserver !== "undefined" && mapNode.current) {
+          resizeObserver = new ResizeObserver(() => {
+            if (!cancelled && map) map.resize();
+          });
+          resizeObserver.observe(mapNode.current);
+        }
 
         watchdogRef.current = setTimeout(() => {
           if (map && !map.loaded()) {
@@ -262,6 +274,9 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
           }
 
           try {
+            // Re-measure before fitting: fitting against a stale/zero-size
+            // canvas lands on minZoom and hides the national view.
+            map.resize();
             map.fitBounds(NATIONAL_BOUNDS, {
               padding: 16,
               duration: 0,
@@ -283,13 +298,24 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
               maxzoom: 10.5,
               paint: {
                 "heatmap-weight": 1,
+                // Tuned so national scale shows regional density gradients
+                // instead of a saturated CONUS-wide red field.
                 "heatmap-intensity": [
                   "interpolate", ["linear"], ["zoom"],
-                  2, 0.5, 8, 1.35, 10, 2.1,
+                  2, 0.12, 5, 0.35, 8, 0.9, 10, 1.4,
                 ],
                 "heatmap-radius": [
                   "interpolate", ["linear"], ["zoom"],
-                  2, 8, 6, 17, 10, 28,
+                  2, 3, 5, 7, 8, 14, 10, 22,
+                ],
+                "heatmap-color": [
+                  "interpolate", ["linear"], ["heatmap-density"],
+                  0, "rgba(14,165,233,0)",
+                  0.15, "rgba(14,165,233,0.45)",
+                  0.4, "rgba(34,197,94,0.65)",
+                  0.65, "rgba(250,204,21,0.8)",
+                  0.85, "rgba(249,115,22,0.88)",
+                  1, "rgba(220,38,38,0.92)",
                 ],
                 "heatmap-opacity": [
                   "interpolate", ["linear"], ["zoom"],
@@ -298,7 +324,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
               },
             });
 
-            const flockColor = [
+            const flockColor: ExpressionSpecification = [
               "case",
               ["in", "flock", ["downcase", ["coalesce", ["get", "brand"], ""]]],
               "#22c55e",
@@ -423,6 +449,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
         watchdogRef.current = null;
       }
       if (moveTimer) clearTimeout(moveTimer);
+      resizeObserver?.disconnect();
       map?.remove();
       mapRef.current = null;
     };
@@ -467,9 +494,9 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                 Watchtower · spatial intelligence
               </p>
-              <Badge variant={status === "ready" ? "live" : "outline"}>
+              <Badge variant="outline">
                 {status === "ready"
-                  ? "LIVE"
+                  ? "HOURLY TILES"
                   : status === "failed"
                     ? "FAILED"
                     : status === "degraded"
@@ -477,8 +504,9 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
                       : "LOADING"}
               </Badge>
               <span className="rounded-full border border-border bg-background/60 px-2 py-1 font-mono text-[9px] text-muted-foreground">
-                {visibleCount.toLocaleString()} mapped observations in loaded
-                view
+                {zoomLevel < 9
+                  ? "Zoom to 9+ to list individual observations"
+                  : `${visibleCount.toLocaleString()} mapped observations in loaded view`}
               </span>
             </div>
 
@@ -517,7 +545,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
                 Loaded
               </p>
               <p className="font-display text-2xl tabular-nums">
-                {visibleCount.toLocaleString()}
+                {zoomLevel < 9 ? "—" : visibleCount.toLocaleString()}
               </p>
             </div>
             <div className="rounded-xl border border-border bg-background/70 px-4 py-2">
@@ -565,11 +593,17 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
       </header>
 
       <div className="relative h-[min(72vh,720px)] min-h-[460px] bg-slate-100">
-        <div
-          ref={mapNode}
-          className="absolute inset-0"
-          aria-label="Interactive ALPR infrastructure map"
-        />
+        {/* maplibre-gl.css sets `.maplibregl-map { position: relative }` on the
+            host element, which overrides `absolute inset-0` and collapses the
+            host to 0px. Keep positioning on a wrapper; give MapLibre a plain
+            full-size host inside it. */}
+        <div className="absolute inset-0">
+          <div
+            ref={mapNode}
+            className="h-full w-full"
+            aria-label="Interactive ALPR infrastructure map"
+          />
+        </div>
 
         {status === "failed" && (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-100/95 p-6">

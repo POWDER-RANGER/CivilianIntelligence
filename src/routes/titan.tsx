@@ -8,7 +8,7 @@ export const Route = createFileRoute("/titan")({ component: TitanPage });
 
 function statusVariant(status: PillarStatus["status"]) {
   if (status === "online") return "live" as const;
-  if (status === "degraded") return "warn" as const;
+  if (status === "degraded" || status === "unreachable") return "warn" as const;
   return "outline" as const;
 }
 
@@ -29,7 +29,16 @@ function TitanPage() {
       setEvidence(data.evidence);
       setEvidenceOk(data.evidenceOk);
       setObservationState(data.state);
-      setError(data.ok ? null : "Cell Titan is unavailable, unauthorized, or not configured.");
+      setError(
+        data.ok
+          ? null
+          : (() => {
+              const status = statuses.find((item) => item.label === "Cell Titan")?.status;
+              if (status === "unconfigured") return "Cell Titan endpoint is not configured on this deployment.";
+              if (status === "unreachable") return "Cell Titan is configured but not responding.";
+              return "Cell Titan responded but did not return verified data.";
+            })(),
+      );
     }).catch((e) => {
       if (!cancelled) setError(String(e));
     });

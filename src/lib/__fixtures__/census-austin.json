@@ -1,0 +1,77 @@
+{
+ "result": {
+  "geographies": {
+   "States": [
+    {
+     "NAME": "Texas",
+     "BASENAME": "Texas",
+     "GEOID": "48",
+     "STUSAB": "TX"
+    }
+   ],
+   "County Subdivisions": [
+    {
+     "NAME": "Austin CCD",
+     "BASENAME": "Austin",
+     "GEOID": "4845390165"
+    }
+   ],
+   "Urban Areas": [
+    {
+     "NAME": "Austin, TX Urban Area",
+     "BASENAME": "Austin, TX",
+     "GEOID": "04384"
+    }
+   ],
+   "Incorporated Places": [
+    {
+     "NAME": "Austin city",
+     "BASENAME": "Austin",
+     "GEOID": "4805000"
+    }
+   ],
+   "Counties": [
+    {
+     "NAME": "Travis County",
+     "BASENAME": "Travis",
+     "GEOID": "48453"
+    }
+   ],
+   "2026 State Legislative Districts - Upper": [
+    {
+     "NAME": "State Senate District 14",
+     "BASENAME": "14",
+     "GEOID": "48014"
+    }
+   ],
+   "120th Congressional Districts": [
+    {
+     "NAME": "Congressional District 10",
+     "BASENAME": "10",
+     "GEOID": "4810"
+    }
+   ],
+   "2026 State Legislative Districts - Lower": [
+    {
+     "NAME": "State House District 49",
+     "BASENAME": "49",
+     "GEOID": "48049"
+    }
+   ],
+   "2020 Census Blocks": [
+    {
+     "NAME": "Block 2008",
+     "BASENAME": "2008",
+     "GEOID": "484530011032008"
+    }
+   ],
+   "Census Tracts": [
+    {
+     "NAME": "Census Tract 11.03",
+     "BASENAME": "11.03",
+     "GEOID": "48453001103"
+    }
+   ]
+  }
+ }
+}

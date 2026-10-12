@@ -13,8 +13,8 @@ test("reachable non-healthy pillar reports degraded", () => {
   assert.equal(getPillarHealthStatus({}), "degraded");
 });
 
-test("unreachable pillar reports degraded", () => {
-  assert.equal(getPillarHealthStatus(null), "degraded");
+test("unreachable pillar reports unreachable, not degraded", () => {
+  assert.equal(getPillarHealthStatus(null), "unreachable");
 });
 
 test("Titan evidence must explicitly verify before reporting healthy", () => {

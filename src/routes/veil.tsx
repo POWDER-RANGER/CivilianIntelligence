@@ -3,7 +3,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { VEIL_METRICS, VEIL_SIGNALS, MOVEMENT_EVENTS, OVERSIGHT_ITEMS, PRIVACY_SYSTEMS } from "@/data/desks";
+import { VEIL_SIGNALS, PRIVACY_SYSTEMS } from "@/data/desks";
+import { SOURCES } from "@/lib/sources";
+import { ExampleBadge, IllustrativeNotice } from "@/components/illustrative-notice";
 import { getRegisterFeed, type RegisterDoc } from "@/lib/feeds";
 import {
   getCivintAlerts,
@@ -21,11 +23,6 @@ import { getPillarStatus, type PillarStatus } from "@/lib/pillars";
 
 export const Route = createFileRoute("/veil")({ component: VeilPage });
 
-function pillarVariant(p: (typeof VEIL_SIGNALS)[number]["pillar"]) {
-  if (p === "privacy") return "danger" as const;
-  if (p === "oversight") return "warn" as const;
-  return "live" as const;
-}
 
 function severityVariant(s: string) {
   const lower = s.toLowerCase();
@@ -36,7 +33,7 @@ function severityVariant(s: string) {
 
 function pillarStatusVariant(s: PillarStatus["status"]) {
   if (s === "online") return "live" as const;
-  if (s === "degraded") return "warn" as const;
+  if (s === "degraded" || s === "unreachable") return "warn" as const;
   return "outline" as const;
 }
 
@@ -49,9 +46,12 @@ function VeilPage() {
   const [pillars, setPillars] = useState<PillarStatus[]>([]);
   const [sourceRegistry, setSourceRegistry] = useState<CivintSource[]>([]);
 
-  const indexedSources = countLeaves(FRAMEWORK);
-  const liveMovement = MOVEMENT_EVENTS.filter((e) => e.status === "live").length;
-  const alerts = OVERSIGHT_ITEMS.filter((i) => i.severity === "alert").length;
+  // Every counter is computed from a real collection, and each label says what
+  // it counts. Fixture-derived counters ("live movement", "oversight alerts")
+  // were removed: they counted hand-written examples (live audit P0-5/P1-17).
+  const frameworkReferences = countLeaves(FRAMEWORK);
+  const registeredSources = SOURCES.length;
+  const privacySystems = PRIVACY_SYSTEMS.length;
   const expanding = PRIVACY_SYSTEMS.filter((s) => s.risk === "expanding").length;
 
   useEffect(() => {
@@ -93,9 +93,9 @@ function VeilPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Badge variant={live ? "live" : "outline"}>{live ? "Register live" : "Register standby"}</Badge>
+            <Badge variant={live ? "live" : "outline"}>{live ? "Register API" : "Register unavailable"}</Badge>
             <Badge variant={civintLive ? "live" : "outline"}>
-              {civintLive ? "CIVINT live" : "CIVINT standby"}
+              {civintLive ? "CIVINT ingest" : "CIVINT ingest empty"}
             </Badge>
           </div>
         </div>
@@ -119,7 +119,13 @@ function VeilPage() {
                   <div>
                     <p className="font-medium">{p.label}</p>
                     <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-                      {p.version ? "v" + p.version : "endpoint not configured"}{p.latencyMs != null ? " · " + p.latencyMs + "ms" : ""}
+                      {p.version
+                        ? "v" + p.version
+                        : p.status === "unconfigured"
+                          ? "endpoint not configured"
+                          : p.status === "unreachable"
+                            ? "configured · not responding"
+                            : "responding · unhealthy"}{p.latencyMs != null ? " · " + p.latencyMs + "ms" : ""}
                     </p>
                   </div>
                   <Badge variant={pillarStatusVariant(p.status)}>{p.status}</Badge>
@@ -165,9 +171,9 @@ function VeilPage() {
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: "Indexed sources", value: String(indexedSources) },
-            { label: "Live movement", value: String(liveMovement) },
-            { label: "Oversight alerts", value: String(alerts) },
+            { label: "Registered sources", value: String(registeredSources) },
+            { label: "Framework references", value: String(frameworkReferences) },
+            { label: "Privacy systems mapped", value: String(privacySystems) },
             { label: "Expanding systems", value: String(expanding) },
           ].map((m) => (
             <div key={m.label} className="rounded-xl border border-border bg-card px-5 py-4">
@@ -235,9 +241,9 @@ function VeilPage() {
           <section className="rounded-xl border border-border bg-card">
             <header className="border-b border-border px-5 py-4">
               <h2 className="font-display text-2xl">Signal tape</h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Composite public-record brief for 28–30 Sep 2026.
-              </p>
+              <div className="mt-3">
+                <IllustrativeNotice feed="daily brief" />
+              </div>
             </header>
             <ul>
               {VEIL_SIGNALS.map((s) => (
@@ -247,7 +253,10 @@ function VeilPage() {
                     className="flex flex-col gap-2 px-5 py-4 hover:bg-muted md:flex-row md:items-start md:gap-4"
                   >
                     <div className="md:w-28">
-                      <Badge variant={pillarVariant(s.pillar)}>{s.pillar}</Badge>
+                      <div className="flex flex-wrap gap-1">
+                        <Badge variant="outline">{s.pillar}</Badge>
+                        <ExampleBadge />
+                      </div>
                       <p className="mt-2 font-mono text-[10px] text-muted-foreground">{s.tag}</p>
                     </div>
                     <div className="min-w-0 flex-1">
@@ -283,7 +292,11 @@ function VeilPage() {
             <div className="rounded-xl border border-border bg-card p-5">
               <h2 className="font-display text-2xl">Three rails</h2>
               <ul className="mt-4 space-y-3 text-sm">
-                {VEIL_METRICS.map((m) => (
+                {[
+                  { label: "Registered machine-readable sources", value: String(registeredSources) },
+                  { label: "Framework references (links)", value: String(frameworkReferences) },
+                  { label: "Privacy systems mapped", value: String(privacySystems) },
+                ].map((m) => (
                   <li key={m.label} className="flex items-baseline justify-between gap-3">
                     <span className="text-muted-foreground">{m.label}</span>
                     <span className="font-mono tabular-nums text-foreground">{m.value}</span>

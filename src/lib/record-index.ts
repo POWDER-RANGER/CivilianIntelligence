@@ -87,12 +87,14 @@ export type RecordDossier = {
 export const RECORD_ID_PREFIX = "rec_";
 
 export function normalizeIdentifiers(values: string[] = []): string[] {
-  return [...new Map(
-    values
-      .map((value) => value.trim())
-      .filter(Boolean)
-      .map((value) => [value.toLowerCase(), value] as const),
-  ).values()].sort((a, b) => a.localeCompare(b));
+  // Keep the first-seen spelling of each identifier (as the source printed it);
+  // later case variants are duplicates, not replacements.
+  const byKey = new Map<string, string>();
+  for (const raw of values) {
+    const value = raw.trim();
+    if (value && !byKey.has(value.toLowerCase())) byKey.set(value.toLowerCase(), value);
+  }
+  return [...byKey.values()].sort((a, b) => a.localeCompare(b));
 }
 
 export function normalizeEntities(values: string[] = []): string[] {
@@ -244,7 +246,7 @@ export async function searchIndexedRecords(
     queryParam = params.push(filters.query.trim());
     clauses.push([
       "(",
-      "r.tsv @@ websearch_to_tsquery('english', $" + queryParam,
+      "r.tsv @@ websearch_to_tsquery('english', $" + queryParam + ")",
       "or exists (select 1 from jsonb_array_elements_text(r.identifiers) value",
       "where lower(value) = lower($" + queryParam + "))",
       ")",

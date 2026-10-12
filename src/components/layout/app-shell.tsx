@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState, type KeyboardEvent, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Eye, Menu, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -33,6 +33,9 @@ const NAV_GROUPS = [
   ] },
 ] as const;
 
+type NavItem = (typeof NAV_GROUPS)[number]["items"][number];
+const NAV_ITEMS: readonly NavItem[] = NAV_GROUPS.flatMap((group) => [...group.items] as NavItem[]);
+
 export function AppShell({
   children,
   flush = false,
@@ -46,14 +49,91 @@ export function AppShell({
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
 
-  const hits = query.trim().length >= 2 ? searchNodes(FRAMEWORK, query).slice(0, 8) : [];
+  // Live audit P1-12: the box only matched framework nodes, gave no feedback on
+  // a miss, and Enter did nothing. It now matches desks too, always offers a
+  // Record Index search, and Enter takes the first result.
+  const term = query.trim();
+  const needle = term.toLowerCase();
+  const deskHits = term.length >= 2
+    ? NAV_ITEMS.filter((item) =>
+        `${item.label} ${item.hint}`.toLowerCase().includes(needle),
+      ).slice(0, 4)
+    : [];
+  const hits = term.length >= 2 ? searchNodes(FRAMEWORK, query).slice(0, 6) : [];
 
-  function jump(id: string) {
+  function reset() {
     setQuery("");
     setFocused(false);
     setOpen(false);
+  }
+
+  function jump(id: string) {
+    reset();
     void navigate({ to: "/", search: { node: id, q: undefined, view: undefined } });
   }
+
+  function goDesk(to: NavItem["to"]) {
+    reset();
+    void navigate({ to });
+  }
+
+  function searchRecords() {
+    if (term.length < 2) return;
+    const q = term;
+    reset();
+    void navigate({ to: "/records", search: { q } });
+  }
+
+  function onSearchKey(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Escape") return reset();
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (deskHits[0]) goDesk(deskHits[0].to);
+    else if (hits[0]) jump(hits[0].node.id);
+    else searchRecords();
+  }
+
+  const results = term.length >= 2 && (
+    <>
+      {deskHits.map((item) => (
+        <button
+          key={item.to}
+          type="button"
+          className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left hover:bg-muted"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => goDesk(item.to)}
+        >
+          <span className="text-sm text-foreground">{item.label}</span>
+          <span className="text-[11px] text-muted-foreground">Desk · {item.hint}</span>
+        </button>
+      ))}
+      {hits.map(({ node, path }) => (
+        <button
+          key={node.id}
+          type="button"
+          className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left hover:bg-muted"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => jump(node.id)}
+        >
+          <span className="text-sm text-foreground">{node.name}</span>
+          <span className="text-[11px] text-muted-foreground">
+            {path.filter((p) => p !== "CIVWATCH").join(" / ")}
+          </span>
+        </button>
+      ))}
+      <button
+        type="button"
+        className="flex w-full items-center gap-2 border-t border-border px-3 py-2 text-left text-sm hover:bg-muted"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={searchRecords}
+      >
+        <Search className="size-3.5 text-muted-foreground" />
+        <span>
+          Search the Record Index for <strong className="font-medium">“{term}”</strong>
+        </span>
+      </button>
+    </>
+  );
 
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
@@ -99,26 +179,14 @@ export function AppShell({
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => setFocused(true)}
               onBlur={() => setTimeout(() => setFocused(false), 180)}
-              placeholder="Search the framework"
+              onKeyDown={onSearchKey}
+              placeholder="Search desks, sources, records"
               className="h-9 border-border bg-card pl-9"
               aria-label="Search CIVINTELLIGENCE"
             />
-            {focused && hits.length > 0 && (
+            {focused && term.length >= 2 && (
               <div className="absolute right-0 top-[calc(100%+6px)] z-50 w-full overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
-                {hits.map(({ node, path }) => (
-                  <button
-                    key={node.id}
-                    type="button"
-                    className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left hover:bg-muted"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => jump(node.id)}
-                  >
-                    <span className="text-sm text-foreground">{node.name}</span>
-                    <span className="text-[11px] text-muted-foreground">
-                      {path.filter((p) => p !== "CIVWATCH").join(" / ")}
-                    </span>
-                  </button>
-                ))}
+                {results}
               </div>
             )}
           </div>
@@ -141,23 +209,13 @@ export function AppShell({
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search the framework"
+                onKeyDown={onSearchKey}
+                placeholder="Search desks, sources, records"
+                aria-label="Search CIVINTELLIGENCE"
                 className="h-10 pl-9"
               />
             </div>
-            {hits.map(({ node, path }) => (
-              <button
-                key={node.id}
-                type="button"
-                className="flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-2 text-left hover:bg-muted"
-                onClick={() => jump(node.id)}
-              >
-                <span className="text-sm">{node.name}</span>
-                <span className="text-[11px] text-muted-foreground">
-                  {path.filter((p) => p !== "CIVWATCH").join(" / ")}
-                </span>
-              </button>
-            ))}
+            {term.length >= 2 && <div className="overflow-hidden rounded-lg border border-border">{results}</div>}
             <nav className="mt-2 grid gap-4" aria-label="Main navigation">
               {NAV_GROUPS.map((group) => (
                 <section key={group.label}>

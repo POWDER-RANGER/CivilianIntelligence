@@ -5,7 +5,8 @@ export type PillarId = "watchtower" | "cell-titan";
 export type PillarStatus = {
   id: PillarId;
   label: string;
-  status: "online" | "degraded" | "unconfigured";
+  /** online: healthy · degraded: reachable but unhealthy · unreachable: configured but no response · unconfigured: no endpoint set */
+  status: "online" | "degraded" | "unreachable" | "unconfigured";
   configured: boolean;
   checkedAt: string;
   latencyMs: number | null;
@@ -19,10 +20,13 @@ export type WatchtowerFeature = {
   category: string;
   longitude: number;
   latitude: number;
-  properties: Record<string, unknown>;
+  properties: Record<string, JsonValue>;
   confidence: number | null;
   createdAt: string;
 };
+
+/** JSON-serializable value: server functions must return serializable data. */
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
 export type WatchtowerFeatureResponse = {
   features: WatchtowerFeature[];
@@ -34,14 +38,14 @@ export type TitanSample = {
   domain: string;
   sensor_id: string;
   ts: string;
-  metrics: Record<string, unknown>;
+  metrics: Record<string, JsonValue>;
 };
 
 export type TitanEvidenceRecord = {
   seq: number;
   kind: string;
   hash: string;
-  [key: string]: unknown;
+  [key: string]: JsonValue;
 };
 
 export type TitanTelemetryResponse = {
@@ -114,8 +118,12 @@ async function readJson<T>(config: PillarConfig, path: string, authenticated = f
   }
 }
 
-export function getPillarHealthStatus(body: Record<string, unknown> | null): "online" | "degraded" {
-  if (!body) return "degraded";
+export function getPillarHealthStatus(
+  body: Record<string, unknown> | null,
+): "online" | "degraded" | "unreachable" {
+  // Live audit P1-18: a configured-but-silent pillar was labeled "degraded"
+  // beside the copy "endpoint not configured". No response is its own state.
+  if (!body) return "unreachable";
   return body.status === "ok" || body.status === "online" ? "online" : "degraded";
 }
 
