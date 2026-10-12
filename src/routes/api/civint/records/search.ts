@@ -33,9 +33,17 @@ export const Route = createFileRoute("/api/civint/records/search")({
         try {
           return jsonResult(await searchIndexedRecords(parseFilters(new URL(request.url))));
         } catch (error) {
+          // Keep the public response stable and non-sensitive while preserving
+          // the actual database error in Render logs for production diagnosis.
+          console.error("[records/search] GET failed", {
+            message: error instanceof Error ? error.message : String(error),
+            code: typeof error === "object" && error !== null && "code" in error
+              ? String((error as { code?: unknown }).code ?? "")
+              : undefined,
+          });
           return Response.json(
-            { state: "unavailable", error: error instanceof Error ? error.message : "Record Index unavailable" },
-            { status: 503 },
+            { state: "unavailable", error: "Record index temporarily unavailable" },
+            { status: 503, headers: { "Cache-Control": "no-store" } },
           );
         }
       },
@@ -44,9 +52,15 @@ export const Route = createFileRoute("/api/civint/records/search")({
           const body = await request.json() as RecordSearchFilters;
           return jsonResult(await searchIndexedRecords(body));
         } catch (error) {
+          console.error("[records/search] POST failed", {
+            message: error instanceof Error ? error.message : String(error),
+            code: typeof error === "object" && error !== null && "code" in error
+              ? String((error as { code?: unknown }).code ?? "")
+              : undefined,
+          });
           return Response.json(
-            { state: "unavailable", error: error instanceof Error ? error.message : "Record Index unavailable" },
-            { status: 503 },
+            { state: "unavailable", error: "Record index temporarily unavailable" },
+            { status: 503, headers: { "Cache-Control": "no-store" } },
           );
         }
       },
