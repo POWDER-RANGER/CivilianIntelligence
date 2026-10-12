@@ -69,23 +69,26 @@ function MovementPage() {
           ))}
         </div>
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="mt-8 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm" role="note">
+          <p className="font-medium">Illustrative reference entries — not a live government calendar</p>
+          <p className="mt-1 text-muted-foreground">The timeline below contains static examples and may be outdated. Do not treat event times or status labels as verified current information. The Federal Register panel is fetched separately from its public API.</p>
+        </div>
+
+        <div className="mt-4 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
           <ol className="relative space-y-3 border-l border-border pl-5">
             {events.map((event) => (
               <li key={event.id} className="relative">
                 <span
                   className={cn(
                     "absolute -left-[25px] top-2 size-2.5 rounded-full border",
-                    event.status === "live"
-                      ? "border-live bg-live"
-                      : event.status === "completed"
-                        ? "border-border bg-muted"
-                        : "border-steel bg-background",
+                    event.status === "completed"
+                      ? "border-border bg-muted"
+                      : "border-steel bg-background",
                   )}
                 />
                 <article className="rounded-lg border border-border bg-card p-4">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={event.status === "live" ? "live" : "outline"}>{event.status}</Badge>
+                    <Badge variant="outline">Sample · {event.status}</Badge>
                     <Badge variant="default">{event.kind}</Badge>
                     <span className="font-mono text-[11px] text-muted-foreground">{formatWhen(event.when)}</span>
                   </div>
