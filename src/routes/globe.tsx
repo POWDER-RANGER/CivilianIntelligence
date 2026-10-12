@@ -28,7 +28,7 @@ function CameraFeedPortal() {
                   Camera & Public Feeds Portal
                 </h1>
                 <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-                  Explore documented ALPR infrastructure alongside a separate globe for publicly available camera and geospatial layers.
+                  Explore U.S.-focused ALPR infrastructure alongside a separate God's Eye viewer. The embedded viewer is currently global; a U.S. starting position does not filter its feeds.
                 </p>
               </div>
             </div>
@@ -73,9 +73,9 @@ function CameraFeedPortal() {
             <header className="flex items-center gap-3 border-b border-white/10 px-4 py-4">
               <Globe2 className="size-5 shrink-0 text-emerald-300" />
               <div className="min-w-0">
-                <h2 className="text-lg font-semibold">Public camera feeds & global signals</h2>
+                <h2 className="text-lg font-semibold">Separate God's Eye viewer</h2>
                 <p className="mt-1 text-xs text-slate-400">
-                  Separate open-source viewer · source availability varies by layer
+                  Global feed viewer · not yet restricted to U.S. data
                 </p>
               </div>
               <span className="ml-auto shrink-0 rounded-full border border-white/15 px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-slate-300">
@@ -95,7 +95,7 @@ function CameraFeedPortal() {
                 </div>
               )}
               <iframe
-                title="Interactive public camera and global signal viewer"
+                title="Separate God's Eye global viewer"
                 src={PUBLIC_FEEDS_EMBED_URL}
                 className="absolute inset-0 size-full border-0"
                 loading="eager"
