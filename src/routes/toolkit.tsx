@@ -5,7 +5,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export const Route = createFileRoute("/toolkit")({ component: ToolkitPage });
+type ToolkitSearch = { template?: "foia" | "privacy" | "state"; state?: string; agency?: string; preset?: number };
+
+export const Route = createFileRoute("/toolkit")({
+  component: ToolkitPage,
+  // Deep links from the place dossier: /toolkit?template=state&state=IL&agency=…&preset=0
+  validateSearch: (search: Record<string, unknown>): ToolkitSearch => {
+    const template = search.template === "foia" || search.template === "privacy" || search.template === "state" ? search.template : undefined;
+    const state = typeof search.state === "string" && /^[A-Z]{2}$/.test(search.state) ? search.state : undefined;
+    const agency = typeof search.agency === "string" && search.agency.trim() ? search.agency.trim().slice(0, 160) : undefined;
+    const presetNum = Number(search.preset);
+    const preset = Number.isInteger(presetNum) && presetNum >= 0 && presetNum < 3 ? presetNum : undefined;
+    return { template, state, agency, preset };
+  },
+});
 
 import { OTHER_STATE, STATE_RECORDS_LAWS } from "@/data/state-records-laws";
 
@@ -74,12 +87,15 @@ const LOOKUPS = [
 ];
 
 function ToolkitPage() {
-  const [template, setTemplate] = useState<TemplateId>("foia");
+  const initial = Route.useSearch();
+  const [template, setTemplate] = useState<TemplateId>(initial.template ?? "foia");
   const [requester, setRequester] = useState("");
   const [agency, setAgency] = useState(AGENCIES[0].name);
-  const [stateCode, setStateCode] = useState("IL");
-  const [localAgency, setLocalAgency] = useState("");
-  const [description, setDescription] = useState("");
+  const [stateCode, setStateCode] = useState(
+    initial.state && STATE_RECORDS_LAWS.some((law) => law.code === initial.state) ? initial.state : "IL",
+  );
+  const [localAgency, setLocalAgency] = useState(initial.agency ?? "");
+  const [description, setDescription] = useState(initial.preset === undefined ? "" : PRESETS[initial.preset].text);
   const [feeWaiver, setFeeWaiver] = useState(true);
   const [expedited, setExpedited] = useState(false);
   const [copied, setCopied] = useState(false);

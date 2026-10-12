@@ -15,6 +15,7 @@ import { Route as GithubReadingRoomRouteImport } from './routes/github-reading-r
 import { Route as GlobeRouteImport } from './routes/globe'
 import { Route as MovementRouteImport } from './routes/movement'
 import { Route as OversightRouteImport } from './routes/oversight'
+import { Route as PlaceRouteImport } from './routes/place'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ReadingRoomRouteImport } from './routes/reading-room'
 import { Route as RecordsRouteImport } from './routes/records'
@@ -34,6 +35,7 @@ import { Route as ApiCivintGithubRepositoryRouteImport } from './routes/api/civi
 import { Route as ApiCivintLegislationCongressRouteImport } from './routes/api/civint/legislation/congress'
 import { Route as ApiCivintLocationContextRouteImport } from './routes/api/civint/location/context'
 import { Route as ApiCivintOversightFoiaRouteImport } from './routes/api/civint/oversight/foia'
+import { Route as ApiCivintPlaceDossierRouteImport } from './routes/api/civint/place/dossier'
 import { Route as ApiCivintRecordsIdRouteImport } from './routes/api/civint/records/$id'
 import { Route as ApiCivintRecordsSearchRouteImport } from './routes/api/civint/records/search'
 
@@ -65,6 +67,11 @@ const MovementRoute = MovementRouteImport.update({
 const OversightRoute = OversightRouteImport.update({
   id: '/oversight',
   path: '/oversight',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlaceRoute = PlaceRouteImport.update({
+  id: '/place',
+  path: '/place',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -165,6 +172,11 @@ const ApiCivintOversightFoiaRoute = ApiCivintOversightFoiaRouteImport.update({
   path: '/api/civint/oversight/foia',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCivintPlaceDossierRoute = ApiCivintPlaceDossierRouteImport.update({
+  id: '/api/civint/place/dossier',
+  path: '/api/civint/place/dossier',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCivintRecordsIdRoute = ApiCivintRecordsIdRouteImport.update({
   id: '/api/civint/records/$id',
   path: '/api/civint/records/$id',
@@ -183,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/globe': typeof GlobeRoute
   '/movement': typeof MovementRoute
   '/oversight': typeof OversightRoute
+  '/place': typeof PlaceRoute
   '/privacy': typeof PrivacyRoute
   '/reading-room': typeof ReadingRoomRoute
   '/records': typeof RecordsRouteWithChildren
@@ -202,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/api/civint/legislation/congress': typeof ApiCivintLegislationCongressRoute
   '/api/civint/location/context': typeof ApiCivintLocationContextRoute
   '/api/civint/oversight/foia': typeof ApiCivintOversightFoiaRoute
+  '/api/civint/place/dossier': typeof ApiCivintPlaceDossierRoute
   '/api/civint/records/$id': typeof ApiCivintRecordsIdRoute
   '/api/civint/records/search': typeof ApiCivintRecordsSearchRoute
 }
@@ -212,6 +226,7 @@ export interface FileRoutesByTo {
   '/globe': typeof GlobeRoute
   '/movement': typeof MovementRoute
   '/oversight': typeof OversightRoute
+  '/place': typeof PlaceRoute
   '/privacy': typeof PrivacyRoute
   '/reading-room': typeof ReadingRoomRoute
   '/records': typeof RecordsRouteWithChildren
@@ -231,6 +246,7 @@ export interface FileRoutesByTo {
   '/api/civint/legislation/congress': typeof ApiCivintLegislationCongressRoute
   '/api/civint/location/context': typeof ApiCivintLocationContextRoute
   '/api/civint/oversight/foia': typeof ApiCivintOversightFoiaRoute
+  '/api/civint/place/dossier': typeof ApiCivintPlaceDossierRoute
   '/api/civint/records/$id': typeof ApiCivintRecordsIdRoute
   '/api/civint/records/search': typeof ApiCivintRecordsSearchRoute
 }
@@ -242,6 +258,7 @@ export interface FileRoutesById {
   '/globe': typeof GlobeRoute
   '/movement': typeof MovementRoute
   '/oversight': typeof OversightRoute
+  '/place': typeof PlaceRoute
   '/privacy': typeof PrivacyRoute
   '/reading-room': typeof ReadingRoomRoute
   '/records': typeof RecordsRouteWithChildren
@@ -261,6 +278,7 @@ export interface FileRoutesById {
   '/api/civint/legislation/congress': typeof ApiCivintLegislationCongressRoute
   '/api/civint/location/context': typeof ApiCivintLocationContextRoute
   '/api/civint/oversight/foia': typeof ApiCivintOversightFoiaRoute
+  '/api/civint/place/dossier': typeof ApiCivintPlaceDossierRoute
   '/api/civint/records/$id': typeof ApiCivintRecordsIdRoute
   '/api/civint/records/search': typeof ApiCivintRecordsSearchRoute
 }
@@ -273,6 +291,7 @@ export interface FileRouteTypes {
     | '/globe'
     | '/movement'
     | '/oversight'
+    | '/place'
     | '/privacy'
     | '/reading-room'
     | '/records'
@@ -292,6 +311,7 @@ export interface FileRouteTypes {
     | '/api/civint/legislation/congress'
     | '/api/civint/location/context'
     | '/api/civint/oversight/foia'
+    | '/api/civint/place/dossier'
     | '/api/civint/records/$id'
     | '/api/civint/records/search'
   fileRoutesByTo: FileRoutesByTo
@@ -302,6 +322,7 @@ export interface FileRouteTypes {
     | '/globe'
     | '/movement'
     | '/oversight'
+    | '/place'
     | '/privacy'
     | '/reading-room'
     | '/records'
@@ -321,6 +342,7 @@ export interface FileRouteTypes {
     | '/api/civint/legislation/congress'
     | '/api/civint/location/context'
     | '/api/civint/oversight/foia'
+    | '/api/civint/place/dossier'
     | '/api/civint/records/$id'
     | '/api/civint/records/search'
   id:
@@ -331,6 +353,7 @@ export interface FileRouteTypes {
     | '/globe'
     | '/movement'
     | '/oversight'
+    | '/place'
     | '/privacy'
     | '/reading-room'
     | '/records'
@@ -350,6 +373,7 @@ export interface FileRouteTypes {
     | '/api/civint/legislation/congress'
     | '/api/civint/location/context'
     | '/api/civint/oversight/foia'
+    | '/api/civint/place/dossier'
     | '/api/civint/records/$id'
     | '/api/civint/records/search'
   fileRoutesById: FileRoutesById
@@ -361,6 +385,7 @@ export interface RootRouteChildren {
   GlobeRoute: typeof GlobeRoute
   MovementRoute: typeof MovementRoute
   OversightRoute: typeof OversightRoute
+  PlaceRoute: typeof PlaceRoute
   PrivacyRoute: typeof PrivacyRoute
   ReadingRoomRoute: typeof ReadingRoomRoute
   RecordsRoute: typeof RecordsRouteWithChildren
@@ -379,6 +404,7 @@ export interface RootRouteChildren {
   ApiCivintLegislationCongressRoute: typeof ApiCivintLegislationCongressRoute
   ApiCivintLocationContextRoute: typeof ApiCivintLocationContextRoute
   ApiCivintOversightFoiaRoute: typeof ApiCivintOversightFoiaRoute
+  ApiCivintPlaceDossierRoute: typeof ApiCivintPlaceDossierRoute
   ApiCivintRecordsIdRoute: typeof ApiCivintRecordsIdRoute
   ApiCivintRecordsSearchRoute: typeof ApiCivintRecordsSearchRoute
 }
@@ -425,6 +451,13 @@ declare module '@tanstack/react-router' {
       path: '/oversight'
       fullPath: '/oversight'
       preLoaderRoute: typeof OversightRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/place': {
+      id: '/place'
+      path: '/place'
+      fullPath: '/place'
+      preLoaderRoute: typeof PlaceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -560,6 +593,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCivintOversightFoiaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/civint/place/dossier': {
+      id: '/api/civint/place/dossier'
+      path: '/api/civint/place/dossier'
+      fullPath: '/api/civint/place/dossier'
+      preLoaderRoute: typeof ApiCivintPlaceDossierRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/civint/records/$id': {
       id: '/api/civint/records/$id'
       path: '/api/civint/records/$id'
@@ -595,6 +635,7 @@ const rootRouteChildren: RootRouteChildren = {
   GlobeRoute: GlobeRoute,
   MovementRoute: MovementRoute,
   OversightRoute: OversightRoute,
+  PlaceRoute: PlaceRoute,
   PrivacyRoute: PrivacyRoute,
   ReadingRoomRoute: ReadingRoomRoute,
   RecordsRoute: RecordsRouteWithChildren,
@@ -613,6 +654,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCivintLegislationCongressRoute: ApiCivintLegislationCongressRoute,
   ApiCivintLocationContextRoute: ApiCivintLocationContextRoute,
   ApiCivintOversightFoiaRoute: ApiCivintOversightFoiaRoute,
+  ApiCivintPlaceDossierRoute: ApiCivintPlaceDossierRoute,
   ApiCivintRecordsIdRoute: ApiCivintRecordsIdRoute,
   ApiCivintRecordsSearchRoute: ApiCivintRecordsSearchRoute,
 }
