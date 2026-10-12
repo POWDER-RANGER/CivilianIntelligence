@@ -7,6 +7,11 @@ export const Route = createFileRoute("/api/civint/legislation/congress")({
       if (!key) return Response.json({ state: "unconfigured", source: "Congress.gov", message: "CONGRESS_API_KEY is not configured." }, { status: 503 });
       const url = new URL(request.url);
       const path = url.searchParams.get("path") || "bill";
+      // The server's API key is attached to whatever path is forwarded; allow
+      // only plain Congress.gov v3 resource paths (no dot segments or queries).
+      if (!/^[A-Za-z0-9][A-Za-z0-9/_-]{0,120}$/.test(path) || path.includes("..")) {
+        return Response.json({ state: "invalid", message: "Unsupported Congress.gov path." }, { status: 400 });
+      }
       const limit = Math.min(Number(url.searchParams.get("limit") || 20), 50);
       const endpoint = `https://api.congress.gov/v3/${path.replace(/^\/+/, "")}`;
       try {

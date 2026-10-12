@@ -1,25 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { searchIndexedRecords } from "@/lib/record-index";
+import { resolveGeography } from "@/lib/census-geography";
 
 const CENSUS = "https://geocoding.geo.census.gov/geocoder/geographies/coordinates";
-
-type Geography = {
-  NAME?: string;
-  BASENAME?: string;
-  STATE?: string;
-  COUNTY?: string;
-  PLACE?: string;
-  PLACEFP?: string;
-  COUNTYFP?: string;
-  STATEFP?: string;
-};
-
-function firstName(group: Record<string, Geography> | undefined): string | null {
-  if (!group) return null;
-  const first = Object.values(group)[0];
-  const value = first?.NAME ?? first?.BASENAME;
-  return value ? String(value) : null;
-}
 
 function uniqueResults(groups: Array<Awaited<ReturnType<typeof searchIndexedRecords>>>): Array<Awaited<ReturnType<typeof searchIndexedRecords>>[number]> {
   const seen = new Set<string>();
@@ -56,28 +39,31 @@ export const Route = createFileRoute("/api/civint/location/context")({
             { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(8000) },
           );
           if (!upstream.ok) throw new Error(`Census geocoder returned ${upstream.status}`);
-          const payload = await upstream.json() as {
-            result?: { geographies?: {
-              "States (Census)": Record<string, Geography>;
-              "Counties (Census)": Record<string, Geography>;
-              "Places (Census)": Record<string, Geography>;
-            } };
-          };
-          const geographies = payload.result?.geographies;
-          const city = firstName(geographies?.["Places (Census)"]);
-          const county = firstName(geographies?.["Counties (Census)"]);
-          const state = firstName(geographies?.["States (Census)"]);
+          const geo = resolveGeography(await upstream.json());
+          const { city, county, state } = geo;
+          let indexFailed = false;
 
           const [cityRecords, countyRecords, stateRecords] = await Promise.all([
-            city ? searchIndexedRecords({ query: city, limit: 5 }) : Promise.resolve([]),
-            county ? searchIndexedRecords({ query: county, limit: 5 }) : Promise.resolve([]),
-            state ? searchIndexedRecords({ query: state, limit: 8 }) : Promise.resolve([]),
+            city ? searchIndexedRecords({ query: city, limit: 5 }).catch(() => { indexFailed = true; return []; }) : Promise.resolve([]),
+            county ? searchIndexedRecords({ query: county, limit: 5 }).catch(() => { indexFailed = true; return []; }) : Promise.resolve([]),
+            state ? searchIndexedRecords({ query: state, limit: 8 }).catch(() => { indexFailed = true; return []; }) : Promise.resolve([]),
           ]);
 
           return Response.json(
             {
               state: "available",
-              geography: { city, county, state },
+              geography: {
+                city,
+                county,
+                state,
+                stateAbbr: geo.stateAbbr,
+                geoids: { city: geo.cityGeoid, county: geo.countyGeoid, state: geo.stateGeoid },
+                districts: {
+                  congressional: geo.congressionalDistrict,
+                  stateSenate: geo.stateSenateDistrict,
+                  stateHouse: geo.stateHouseDistrict,
+                },
+              },
               coverage: {
                 city: cityRecords.length > 0,
                 county: countyRecords.length > 0,
@@ -90,6 +76,7 @@ export const Route = createFileRoute("/api/civint/location/context")({
                 state: stateRecords,
                 federal: uniqueResults([stateRecords]),
               },
+              recordIndex: indexFailed ? "unavailable" : "available",
               provenance: {
                 geography: "U.S. Census Bureau Geocoder",
                 evidence: "CIVINT Record Index",

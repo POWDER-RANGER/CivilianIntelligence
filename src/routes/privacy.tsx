@@ -82,6 +82,12 @@ function PrivacyPage() {
               </div>
               <Badge variant={atlas.state === "snapshot" ? "warn" : "outline"}>{atlas.state}</Badge>
             </div>
+            {atlas.state === "unavailable" || atlas.count === 0 ? (
+              <div className="mt-4 rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+                No Atlas of Surveillance snapshot has been ingested for this deployment yet, so no counts are
+                shown. The source dataset is public at the link below.
+              </div>
+            ) : (
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {[
                 ["Records", atlas.count],
@@ -94,6 +100,7 @@ function PrivacyPage() {
                 </div>
               ))}
             </div>
+            )}
             <p className="mt-4 text-[11px] text-muted-foreground">
               Source snapshot:{" "}
               <a href={atlas.source.url} target="_blank" rel="noreferrer" className="text-steel hover:underline">
@@ -127,6 +134,18 @@ function PrivacyPage() {
                 {surveillance.state}
               </Badge>
             </div>
+            {surveillance.state === "unavailable" || surveillance.elements.length === 0 ? (
+              // Live audit P1-10: an unavailable snapshot rendered as four "0"
+              // counts, which reads as "no cameras". Show the state instead.
+              <div className="mt-4 rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+                The OpenStreetMap ingest has not produced a snapshot for this deployment yet, so no counts are
+                shown — zeros here would be false. The{" "}
+                <Link to="/watchtower" className="text-steel underline underline-offset-2">
+                  national ALPR map
+                </Link>{" "}
+                reads the DeFlock / OSM camera tiles directly and is available now.
+              </div>
+            ) : (
             <div className="mt-4 grid gap-3 sm:grid-cols-4">
               {[
                 ["ALPR", surveillance.counts.alpr ?? 0],
@@ -140,6 +159,7 @@ function PrivacyPage() {
                 </div>
               ))}
             </div>
+            )}
             <p className="mt-4 text-[11px] text-muted-foreground">
               {surveillance.elements.length} normalized observations · as of {surveillance.as_of ?? "unknown"} ·{" "}
               <a href={surveillance.source.url} target="_blank" rel="noreferrer" className="text-steel hover:underline">

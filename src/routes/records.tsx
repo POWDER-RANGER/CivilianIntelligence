@@ -18,11 +18,22 @@ type RecordResult = {
   matchReason: string;
 };
 
-export const Route = createFileRoute("/records")({ component: RecordsPage });
+export const Route = createFileRoute("/records")({
+  // `?q=` lets the global search hand a query straight to the Record Index.
+  validateSearch: (search: Record<string, unknown>): { q?: string } =>
+    typeof search.q === "string" && search.q.trim() ? { q: search.q.slice(0, 200) } : {},
+  component: RecordsPage,
+});
 
 function RecordsPage() {
-  const [query, setQuery] = useState("");
-  const [submitted, setSubmitted] = useState("");
+  const { q: initialQuery = "" } = Route.useSearch();
+  const [query, setQuery] = useState(initialQuery);
+  const [submitted, setSubmitted] = useState(initialQuery);
+
+  useEffect(() => {
+    setQuery(initialQuery);
+    setSubmitted(initialQuery);
+  }, [initialQuery]);
   const [state, setState] = useState<"idle" | "loading" | "available" | "empty" | "unavailable">("idle");
   const [results, setResults] = useState<RecordResult[]>([]);
 

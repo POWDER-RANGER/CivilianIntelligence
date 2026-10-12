@@ -2,7 +2,9 @@ import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-r
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import appCss from "../styles.css?url";
+// Side-effect import: Start's manifest emits the client-built hash for SSR.
+// A `?url` import is hashed separately by the SSR build and 404s in production.
+import "../styles.css";
 
 const APP_NAME = "CIVINTELLIGENCE";
 
@@ -21,7 +23,6 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
-      { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/__grok/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },

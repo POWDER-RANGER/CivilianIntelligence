@@ -1,0 +1,84 @@
+{
+ "result": {
+  "geographies": {
+   "States": [
+    {
+     "NAME": "New York",
+     "BASENAME": "New York",
+     "GEOID": "36",
+     "STUSAB": "NY"
+    }
+   ],
+   "Combined Statistical Areas": [
+    {
+     "NAME": "New York-Newark, NY-NJ-CT-PA CSA",
+     "BASENAME": "New York-Newark, NY-NJ-CT-PA",
+     "GEOID": "408"
+    }
+   ],
+   "County Subdivisions": [
+    {
+     "NAME": "Manhattan borough",
+     "BASENAME": "Manhattan",
+     "GEOID": "3606144919"
+    }
+   ],
+   "Urban Areas": [
+    {
+     "NAME": "New York--Jersey City--Newark, NY--NJ Urban Area",
+     "BASENAME": "New York--Jersey City--Newark, NY--NJ",
+     "GEOID": "63217"
+    }
+   ],
+   "Incorporated Places": [
+    {
+     "NAME": "New York city",
+     "BASENAME": "New York",
+     "GEOID": "3651000"
+    }
+   ],
+   "Counties": [
+    {
+     "NAME": "New York County",
+     "BASENAME": "New York",
+     "GEOID": "36061"
+    }
+   ],
+   "2026 State Legislative Districts - Upper": [
+    {
+     "NAME": "State Senate District 27",
+     "BASENAME": "27",
+     "GEOID": "36027"
+    }
+   ],
+   "120th Congressional Districts": [
+    {
+     "NAME": "Congressional District 10",
+     "BASENAME": "10",
+     "GEOID": "3610"
+    }
+   ],
+   "2026 State Legislative Districts - Lower": [
+    {
+     "NAME": "Assembly District 66",
+     "BASENAME": "66",
+     "GEOID": "36066"
+    }
+   ],
+   "2020 Census Blocks": [
+    {
+     "NAME": "Block 2008",
+     "BASENAME": "2008",
+     "GEOID": "360610031002008"
+    }
+   ],
+   "Census Tracts": [
+    {
+     "NAME": "Census Tract 31",
+     "BASENAME": "31",
+     "GEOID": "36061003100"
+    }
+   ]
+  }
+ }
+}

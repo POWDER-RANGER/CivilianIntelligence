@@ -34,7 +34,10 @@ export const Route = createFileRoute("/api/civint/finance/federal")({
                   agency: award["Awarding Agency"] == null ? null : String(award["Awarding Agency"]),
                   identifiers: [id],
                   entities: [String(award["Recipient Name"] ?? "").trim(), String(award["Awarding Agency"] ?? "").trim()].filter(Boolean),
-                  sourceUrl: "https://www.usaspending.gov/",
+                  // Link the record to its own award page, not the site root.
+                  sourceUrl: award.generated_internal_id
+                    ? "https://www.usaspending.gov/award/" + encodeURIComponent(String(award.generated_internal_id))
+                    : "https://www.usaspending.gov/",
                   retrievalMethod: "api",
                   adapterVersion: "usaspending-award-v1",
                   rawContent: JSON.stringify(award),
