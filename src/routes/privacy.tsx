@@ -61,6 +61,11 @@ function PrivacyPage() {
           desk.
         </p>
 
+        <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm" role="note">
+          <p className="font-medium">Reference taxonomy — not a live inventory</p>
+          <p className="mt-1 text-muted-foreground">The technology summaries below are static reference material, not a verified, current inventory of deployments. Use linked public records for agency-specific claims.</p>
+        </div>
+
         <div className="mt-6 flex flex-wrap gap-2">
           {CATS.map((c) => (
             <Button key={c} size="sm" variant={cat === c ? "default" : "outline"} onClick={() => setCat(c)} className="capitalize">
