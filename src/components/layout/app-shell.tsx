@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 const NAV_GROUPS = [
   { label: "Start", items: [
     { to: "/", label: "Open Desk", hint: "Local context & map" },
+    { to: "/place", label: "Place Dossier", hint: "Who watches an address" },
     { to: "/toolkit", label: "Toolkit", hint: "Request & verify" },
   ] },
   { label: "Desks", items: [
