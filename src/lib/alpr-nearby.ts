@@ -133,7 +133,7 @@ async function fetchTile(z: number, x: number, y: number): Promise<Uint8Array | 
   if (hit && Date.now() - hit.at < TILE_TTL_MS) return hit.bytes;
   const url = TILE_TEMPLATE.replace("{z}", String(z)).replace("{x}", String(x)).replace("{y}", String(y));
   const res = await fetch(url, {
-    headers: { Accept: "application/x-protobuf", "User-Agent": "CIVINT/1.0 (+https://civintelligence.onrender.com)" },
+    headers: { Accept: "application/x-protobuf", "User-Agent": "CIVWATCH/1.0 (+https://civintelligence.onrender.com)" },
     signal: AbortSignal.timeout(10_000),
   });
   if (res.status === 204 || res.status === 404) {

@@ -9,7 +9,7 @@ export const Route = createFileRoute("/api/civint/records/$id")({
           const dossier = await getRecordDossier(params.id);
           if (!dossier) {
             return Response.json(
-              { state: "not-found", message: "Record not found in the CIVINT index." },
+              { state: "not-found", message: "Record not found in the CIVWATCH index." },
               { status: 404 },
             );
           }

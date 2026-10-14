@@ -30,10 +30,10 @@ function WatchtowerPage() {
         data.ok
           ? null
           : (() => {
-              const status = statuses.find((item) => item.label === "Watchtower")?.status;
-              if (status === "unconfigured") return "Watchtower endpoint is not configured on this deployment.";
-              if (status === "unreachable") return "Watchtower is configured but not responding.";
-              return "Watchtower responded but did not return verified data.";
+              const status = statuses.find((item) => item.label === "Platform")?.status;
+              if (status === "unconfigured") return "The CIVWATCH Platform service is not configured on this deployment.";
+              if (status === "unreachable") return "The CIVWATCH Platform service is configured but not responding.";
+              return "The CIVWATCH Platform service responded but did not return verified data.";
             })(),
       );
     }).catch((e) => {
@@ -47,10 +47,10 @@ function WatchtowerPage() {
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Pillar 01</p>
-            <h1 className="mt-2 font-display text-4xl md:text-5xl">Watchtower</h1>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">CIVWATCH Map</p>
+            <h1 className="mt-2 font-display text-4xl md:text-5xl">Map</h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              Map-first civic oversight, reports, and geospatial signals connected to the unified CIVINTELLIGENCE hub.
+              Documented surveillance infrastructure and the platform records behind it. Every point shows its source and verification status.
             </p>
           </div>
           <Badge variant={statusVariant(health?.status ?? "unconfigured")}>
@@ -66,15 +66,15 @@ function WatchtowerPage() {
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-border bg-card p-5">
-            <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">API</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">API</p>
             <p className="mt-2 font-display text-3xl">{health?.service ?? "—"}</p>
           </div>
           <div className="rounded-xl border border-border bg-card p-5">
-            <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Version</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Version</p>
             <p className="mt-2 font-display text-3xl">{health?.version ? "v" + health.version : "—"}</p>
           </div>
           <div className="rounded-xl border border-border bg-card p-5">
-            <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Features</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Features</p>
             <p className="mt-2 font-display text-3xl tabular-nums">{count}</p>
           </div>
         </div>
@@ -85,7 +85,7 @@ function WatchtowerPage() {
           <header className="border-b border-border px-5 py-4">
             <h2 className="font-display text-2xl">Map feature rail</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Server-side fetch from Watchtower; only sourced observations are displayed.
+              Server-side fetch from the CIVWATCH Platform; only sourced observations are displayed.
             </p>
           </header>
           <div className="divide-y divide-border">
@@ -106,7 +106,7 @@ function WatchtowerPage() {
                       {feature.latitude.toFixed(5)}, {feature.longitude.toFixed(5)} · {feature.sourceId ?? "unknown source"}
                     </p>
                   </div>
-                  <p className="font-mono text-[10px] text-muted-foreground">
+                  <p className="font-mono text-xs text-muted-foreground">
                     confidence {feature.confidence == null ? "—" : feature.confidence.toFixed(2)}
                   </p>
                 </div>
@@ -122,10 +122,10 @@ function WatchtowerPage() {
             rel="noreferrer"
             className="text-steel hover:underline"
           >
-            Watchtower repository
+            Platform repository (civwatch-watchtower)
           </a>
           {" · "}
-          The hub never exposes the Watchtower service URL to the browser.
+          The site never exposes the Platform service URL to the browser.
         </p>
       </div>
     </AppShell>

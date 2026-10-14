@@ -79,8 +79,8 @@ export function FederalSpendingPanel() {
       <header className="border-b border-border p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Native federal records</p>
-            <h2 className="mt-1 font-display text-3xl">Federal spending intelligence</h2>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Native federal records</p>
+            <h2 className="mt-1 font-display text-3xl">Federal spending</h2>
           </div>
           <Badge variant={state === "live" ? "live" : "outline"}>
             {state === "live" ? "USAspending API" : state}
@@ -115,7 +115,7 @@ export function FederalSpendingPanel() {
                   {[a["Awarding Agency"], a["Contract Award Type"], `${a["Start Date"] ?? "—"} → ${a["End Date"] ?? "—"}`].filter(Boolean).join(" · ")}
                 </p>
                 {a.Description && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{a.Description}</p>}
-                <p className="mt-2 font-mono text-[10px] text-muted-foreground">
+                <p className="mt-2 font-mono text-xs text-muted-foreground">
                   Award {a["Award ID"] ?? "—"}
                   {href && (
                     <>
@@ -131,7 +131,7 @@ export function FederalSpendingPanel() {
                 <p className="font-display text-2xl tabular-nums">
                   {typeof a["Award Amount"] === "number" ? "$" + Math.round(a["Award Amount"]).toLocaleString() : "—"}
                 </p>
-                <p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">Total award value</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Total award value</p>
               </div>
             </div>
           );
@@ -140,8 +140,8 @@ export function FederalSpendingPanel() {
         {state === "unavailable" && <p className="p-8 text-sm text-muted-foreground">USAspending source unavailable. No synthetic records are shown.</p>}
         {state === "live" && !data?.results?.length && <p className="p-8 text-sm text-muted-foreground">No records returned for this query.</p>}
       </div>
-      <footer className="border-t border-border px-5 py-3 text-[10px] text-muted-foreground">
-        Source: USAspending.gov API · server-proxied by CIVINT · amounts are total award value as reported to USAspending
+      <footer className="border-t border-border px-5 py-3 text-xs text-muted-foreground">
+        Source: USAspending.gov API · server-proxied by CIVWATCH · amounts are total award value as reported to USAspending
       </footer>
     </section>
   );

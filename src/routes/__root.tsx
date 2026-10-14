@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 // A `?url` import is hashed separately by the SSR build and 404s in production.
 import "../styles.css";
 
-const APP_NAME = "CIVINTELLIGENCE";
+const APP_NAME = "CIVWATCH";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -17,9 +17,9 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "Civilian intelligence platform — public access to government movement, oversight, money in politics, privacy systems, and the tools to request records.",
+          "CIVWATCH documents public surveillance infrastructure and the records that fund and govern it: camera maps, contracts, legislation and the tools to request records. Every record links to its source.",
       },
-      { name: "theme-color", content: "#09090b" },
+      { name: "theme-color", content: "#f7f6f2" },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
@@ -29,7 +29,7 @@ export const Route = createRootRoute({
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&display=swap",
       },
     ],
   }),

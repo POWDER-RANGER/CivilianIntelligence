@@ -64,11 +64,11 @@ function Home() {
         <div className="mx-auto max-w-[1600px] px-4 pb-4 pt-5 md:px-6">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">The Open Desk</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">The Open Desk</p>
               <h1 className="mt-1 font-display text-3xl md:text-4xl">What is happening around you?</h1>
               <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
                 Start with public infrastructure, then move outward through city, county, state, and federal records.
-                CIVINT surfaces evidence; the original publisher remains the source of record.
+                CIVWATCH surfaces evidence; the original publisher remains the source of record.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -112,14 +112,14 @@ function Home() {
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Local lens</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Local lens</p>
               <h2 className="mt-1 font-display text-2xl">Public records in your civic context</h2>
             </div>
             {geography && <Badge variant="live">{[geography.city, geography.county, geography.state].filter(Boolean).join(" · ")}</Badge>}
           </div>
           {!context && (
             <p className="mt-4 text-sm text-muted-foreground">
-              Allow location above to resolve your civic geography. CIVINT will use the coordinates only to find the relevant public-record context.
+              Allow location above to resolve your civic geography. CIVWATCH will use the coordinates only to find the relevant public-record context.
             </p>
           )}
           {context?.state === "unavailable" && <p className="mt-4 text-sm text-muted-foreground">Local context is temporarily unavailable. No inferred location or synthetic records are shown.</p>}
@@ -129,7 +129,7 @@ function Home() {
                 const records = context.records?.[level.key] ?? [];
                 return (
                   <div key={level.key} className="rounded-xl border border-border bg-background p-4">
-                    <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{level.label}</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">{level.label}</p>
                     <p className="mt-1 text-sm font-medium">{level.value ?? "Not resolved"}</p>
                     <p className="mt-3 text-xs text-muted-foreground">
                       {records.length ? `${records.length} indexed record${records.length === 1 ? "" : "s"}` : "No matching indexed records found"}
@@ -142,15 +142,15 @@ function Home() {
               })}
             </div>
           )}
-          <p className="mt-5 border-t border-border pt-4 text-[11px] leading-relaxed text-muted-foreground">
-            Location is permission-based. CIVINT does not fingerprint the device, sell location data, or treat proximity as evidence about a person.
+          <p className="mt-5 border-t border-border pt-4 text-xs leading-relaxed text-muted-foreground">
+            Location is permission-based. CIVWATCH does not fingerprint the device, sell location data, or treat proximity as evidence about a person.
           </p>
         </div>
 
         <aside className="rounded-2xl border border-border bg-card p-5 shadow-sm">
           <div className="flex items-center gap-2">
             <ShieldCheck className="size-4 text-primary" />
-            <h2 className="font-display text-2xl">Recent CIVINT activity</h2>
+            <h2 className="font-display text-2xl">Recent CIVWATCH activity</h2>
           </div>
           {recent.length === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">Records you open can appear here on your next visit. This memory stays in this browser.</p>
@@ -159,7 +159,7 @@ function Home() {
               {recent.map((record) => (
                 <Link key={record.id} to="/records/$id" params={{ id: record.id }} className="block rounded-lg border border-border p-3 hover:bg-muted">
                   <p className="text-sm font-medium">{record.title}</p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">{record.sourceName} · {new Date(record.viewedAt).toLocaleString()}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{record.sourceName} · {new Date(record.viewedAt).toLocaleString()}</p>
                 </Link>
               ))}
             </div>

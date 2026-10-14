@@ -55,7 +55,7 @@ function MovementPage() {
   return (
     <AppShell>
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
-        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Desk 01</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Desk 01</p>
         <h1 className="mt-2 font-display text-4xl md:text-5xl">Government movement</h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           Public calendars of power: the floor, the briefing room, the bench, the advisory committee, the CODEL.
@@ -87,7 +87,7 @@ function MovementPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <ExampleBadge />
                     <Badge variant="default">{event.kind}</Badge>
-                    <span className="font-mono text-[11px] text-muted-foreground">{formatWhen(event.when)}</span>
+                    <span className="font-mono text-xs text-muted-foreground">{formatWhen(event.when)}</span>
                   </div>
                   <h2 className="mt-2 text-base font-medium">{event.title}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">
@@ -119,7 +119,7 @@ function MovementPage() {
               <ul className="mt-4 space-y-3">
                 {(register ?? []).slice(0, 6).map((doc) => (
                   <li key={doc.html_url} className="border-t border-border pt-3">
-                    <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                       {doc.publication_date} · {doc.type}
                       {doc.duplicateCount ? ` · ${doc.duplicateCount} same-day documents` : ""}
                     </p>

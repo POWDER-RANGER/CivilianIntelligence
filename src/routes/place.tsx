@@ -18,7 +18,7 @@ export const Route = createFileRoute("/place")({
   },
   head: () => ({
     meta: [
-      { title: "Local Surveillance Dossier — CIVINT" },
+      { title: "Local Surveillance Dossier — CIVWATCH" },
       { name: "description", content: "Enter an address: see the license plate readers around it, who operates them, the federal money tied to surveillance tech there, and a ready-to-file records request." },
     ],
   }),
@@ -112,7 +112,7 @@ function PlacePage() {
           }}
         />
         <div className="relative mx-auto w-full max-w-6xl px-4 pb-8 pt-10 md:pt-14">
-          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">Local surveillance dossier</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Local surveillance dossier</p>
           <h1 className="mt-3 max-w-3xl font-display text-4xl leading-[1.05] md:text-6xl">
             Who is watching here, <span className="italic text-primary">and who paid for it.</span>
           </h1>
@@ -169,7 +169,7 @@ function PlacePage() {
         {loading && <DossierSkeleton />}
         {!loading && result && result.state !== "available" && (
           <div className="rounded-2xl border border-warn/40 bg-warn/5 p-6">
-            <p className="font-mono text-[10px] uppercase tracking-wider text-warn">{result.state === "not-found" ? "No match" : "Unavailable"}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-warn">{result.state === "not-found" ? "No match" : "Unavailable"}</p>
             <p className="mt-2 text-sm">{result.message}</p>
           </div>
         )}
@@ -183,9 +183,9 @@ function PlacePage() {
 function Stat({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: "danger" | "primary" }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
-      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">{label}</p>
       <p className={cn("mt-2 font-display text-4xl leading-none tabular-nums", tone === "danger" && "text-danger", tone === "primary" && "text-primary")}>{value}</p>
-      {hint && <p className="mt-2 text-[11px] leading-snug text-muted-foreground">{hint}</p>}
+      {hint && <p className="mt-2 text-xs leading-snug text-muted-foreground">{hint}</p>}
     </div>
   );
 }
@@ -217,7 +217,7 @@ function SectionHead({ kicker, title, children }: { kicker: string; title: strin
   return (
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div>
-        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{kicker}</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">{kicker}</p>
         <h2 className="mt-1 font-display text-2xl md:text-3xl">{title}</h2>
       </div>
       {children}
@@ -246,7 +246,7 @@ function DossierView({ d }: { d: Dossier }) {
       <header>
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="live">Dossier</Badge>
-          <span className="font-mono text-[11px] text-muted-foreground">{d.place.latitude.toFixed(4)}, {d.place.longitude.toFixed(4)}</span>
+          <span className="font-mono text-xs text-muted-foreground">{d.place.latitude.toFixed(4)}, {d.place.longitude.toFixed(4)}</span>
         </div>
         <h2 className="mt-3 font-display text-4xl md:text-5xl">{title}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{d.place.label}</p>
@@ -276,11 +276,11 @@ function DossierView({ d }: { d: Dossier }) {
         </div>
         <aside className="space-y-4">
           <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Who operates them</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Who operates them</p>
             <div className="mt-4">{cams ? <Bars items={cams.operators} total={cams.total} /> : <p className="text-sm text-muted-foreground">—</p>}</div>
           </div>
           <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Hardware brand</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Hardware brand</p>
             <div className="mt-4">{cams ? <Bars items={cams.brands} total={cams.total} /> : <p className="text-sm text-muted-foreground">—</p>}</div>
           </div>
         </aside>
@@ -291,7 +291,7 @@ function DossierView({ d }: { d: Dossier }) {
           <SectionHead kicker="Nearest" title="Closest mapped readers" />
           <div className="mt-4 overflow-x-auto rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-border bg-muted/50 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              <thead className="border-b border-border bg-muted/50 text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                 <tr><th className="px-4 py-2.5">Distance</th><th className="px-4 py-2.5">Operator</th><th className="px-4 py-2.5">Brand</th><th className="hidden px-4 py-2.5 sm:table-cell">Facing</th><th className="hidden px-4 py-2.5 md:table-cell">Mount</th><th className="px-4 py-2.5">Record</th></tr>
               </thead>
               <tbody>
@@ -330,12 +330,12 @@ function DossierView({ d }: { d: Dossier }) {
                   <div className="min-w-0">
                     <Badge variant={a.kind === "grant" ? "steel" : "default"}>{a.kind}</Badge>
                     <p className="mt-2 truncate text-sm font-medium group-hover:underline">{a.recipient}</p>
-                    <p className="text-[11px] text-muted-foreground">{a.agency ?? "Agency not listed"}{a.startDate ? ` · ${a.startDate.slice(0, 4)}` : ""}</p>
+                    <p className="text-xs text-muted-foreground">{a.agency ?? "Agency not listed"}{a.startDate ? ` · ${a.startDate.slice(0, 4)}` : ""}</p>
                   </div>
                   <p className="shrink-0 font-display text-2xl tabular-nums">{a.amount != null ? usd(a.amount) : "—"}</p>
                 </div>
                 {a.description && <p className="mt-3 line-clamp-3 text-[13px] leading-relaxed text-muted-foreground">{a.description.charAt(0) + a.description.slice(1).toLowerCase()}</p>}
-                <p className="mt-auto break-all pt-3 font-mono text-[10px] text-muted-foreground">{a.id}</p>
+                <p className="mt-auto break-all pt-3 font-mono text-xs text-muted-foreground">{a.id}</p>
               </a>
             ))}
           </div>
@@ -370,8 +370,8 @@ function DossierView({ d }: { d: Dossier }) {
         </div>
       </section>
 
-      <footer className="border-t border-border pt-5 text-[11px] leading-relaxed text-muted-foreground">
-        <p className="font-mono uppercase tracking-wider">Method & sources</p>
+      <footer className="border-t border-border pt-5 text-xs leading-relaxed text-muted-foreground">
+        <p className="uppercase tracking-[0.06em]">Method & sources</p>
         <p className="mt-2 max-w-4xl">
           Location: {d.place.sources.map((s) => s.name).join(" → ")} ({d.place.method}). Cameras: {cams?.source.name ?? "DeFlock tiles"}, read at zoom 12 around the point
           {cams ? ` (${cams.tilesRequested} tiles${cams.tilesFailed ? `, ${cams.tilesFailed} failed` : ""})` : ""}; attribution {cams?.source.attribution ?? "OpenStreetMap contributors"}. A mapped camera is a community report,
@@ -405,7 +405,7 @@ function HowItWorks() {
         <div key={s.title} className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
           <div className="flex items-center justify-between">
             <s.icon className="size-5 text-primary" />
-            <span className="font-mono text-[10px] text-muted-foreground">0{i + 1}</span>
+            <span className="font-mono text-xs text-muted-foreground">0{i + 1}</span>
           </div>
           <p className="mt-4 font-medium">{s.title}</p>
           <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{s.text}</p>

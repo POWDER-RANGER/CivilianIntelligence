@@ -36,10 +36,10 @@ export function SecRecordsPanel() {
     <section className="mt-8 rounded-2xl border border-border bg-card p-5 shadow-sm">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Native corporate records</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Native corporate records</p>
           <h2 className="mt-1 font-display text-3xl">SEC filing desk</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Search an entity by CIK and read its filing history inside CIVINT. No private market feed is implied.
+            Search an entity by CIK and read its filing history inside CIVWATCH. No private market feed is implied.
           </p>
         </div>
         <Badge variant={state === "live" ? "live" : "outline"}>{state === "idle" ? "ready" : state}</Badge>

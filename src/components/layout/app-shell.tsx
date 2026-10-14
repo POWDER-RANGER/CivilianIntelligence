@@ -1,11 +1,12 @@
 import { useState, type KeyboardEvent, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Eye, Menu, Search, X } from "lucide-react";
+import { Menu, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FRAMEWORK } from "@/data/catalog";
 import { searchNodes } from "@/lib/intel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { BrandLockup } from "@/components/layout/brand";
 
 const NAV_GROUPS = [
   { label: "Start", items: [
@@ -26,11 +27,11 @@ const NAV_GROUPS = [
     { to: "/github-reading-room", label: "GitHub Reading Room", hint: "Inspect repositories safely" },
   ] },
   { label: "Tools", items: [
-    { to: "/watchtower", label: "Watchtower", hint: "Places & infrastructure" },
-    { to: "/globe", label: "ALPR & Feeds", hint: "Camera map and public feeds" },
+    { to: "/watchtower", label: "Map", hint: "Places & infrastructure" },
+    { to: "/globe", label: "Globe", hint: "Camera map and public feeds" },
     { to: "/signal", label: "Signal vs Record", hint: "Attention & evidence" },
-    { to: "/veil", label: "VEIL", hint: "Briefing" },
-    { to: "/titan", label: "Cell Titan", hint: "User-owned RF" },
+    { to: "/veil", label: "Briefing", hint: "Executive brief" },
+    { to: "/titan", label: "Cell Monitor", hint: "Your device and nearby cells" },
   ] },
 ] as const;
 
@@ -105,7 +106,7 @@ export function AppShell({
           onClick={() => goDesk(item.to)}
         >
           <span className="text-sm text-foreground">{item.label}</span>
-          <span className="text-[11px] text-muted-foreground">Desk · {item.hint}</span>
+          <span className="text-xs text-muted-foreground">Desk · {item.hint}</span>
         </button>
       ))}
       {hits.map(({ node, path }) => (
@@ -117,7 +118,7 @@ export function AppShell({
           onClick={() => jump(node.id)}
         >
           <span className="text-sm text-foreground">{node.name}</span>
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             {path.filter((p) => p !== "CIVWATCH").join(" / ")}
           </span>
         </button>
@@ -140,12 +141,8 @@ export function AppShell({
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-sm">
         <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-3 px-4">
-          <Link to="/" className="flex shrink-0 items-center gap-2.5">
-            <span className="flex size-7 items-center justify-center rounded-sm border border-border">
-              <Eye className="size-3.5 text-steel" strokeWidth={1.75} />
-            </span>
-            <span className="font-display text-xl leading-none tracking-tight">CIVINTELLIGENCE</span>
-
+          <Link to="/" className="flex shrink-0 items-center" aria-label="CIVWATCH home">
+            <BrandLockup />
           </Link>
 
           <nav className="ml-2 hidden items-center gap-1 lg:flex" aria-label="Main navigation">
@@ -164,7 +161,7 @@ export function AppShell({
                         (item.to === "/" ? pathname === "/" : pathname.startsWith(item.to)) ? "bg-muted" : "",
                       )}>
                         <span className="text-sm text-foreground">{item.label}</span>
-                        <span className="text-[11px] text-muted-foreground">{item.hint}</span>
+                        <span className="text-xs text-muted-foreground">{item.hint}</span>
                       </Link>
                     ))}
                   </div>
@@ -183,7 +180,7 @@ export function AppShell({
               onKeyDown={onSearchKey}
               placeholder="Search desks, sources, records"
               className="h-9 border-border bg-card pl-9"
-              aria-label="Search CIVINTELLIGENCE"
+              aria-label="Search CIVWATCH"
             />
             {focused && term.length >= 2 && (
               <div className="absolute right-0 top-[calc(100%+6px)] z-50 w-full overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
@@ -212,7 +209,7 @@ export function AppShell({
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={onSearchKey}
                 placeholder="Search desks, sources, records"
-                aria-label="Search CIVINTELLIGENCE"
+                aria-label="Search CIVWATCH"
                 className="h-10 pl-9"
               />
             </div>
@@ -220,7 +217,7 @@ export function AppShell({
             <nav className="mt-2 grid gap-4" aria-label="Main navigation">
               {NAV_GROUPS.map((group) => (
                 <section key={group.label}>
-                  <h2 className="px-2 pb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{group.label}</h2>
+                  <h2 className="px-2 pb-1 text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">{group.label}</h2>
                   <div className="grid gap-0.5">
                     {group.items.map((item) => (
                       <Link key={item.to} to={item.to} onClick={() => setOpen(false)} className="flex items-baseline justify-between rounded-md px-2 py-2.5 hover:bg-muted">
@@ -237,12 +234,44 @@ export function AppShell({
       </header>
 
       <div className="border-b border-border bg-card">
-        <p className="mx-auto max-w-[1600px] px-4 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-          Unclassified // public records // civilian access
+        <p className="mx-auto max-w-[1600px] px-4 py-1.5 text-xs text-muted-foreground">
+          Public records and open data only. Every record links to its source.
         </p>
       </div>
 
       <main className={cn("flex min-h-0 flex-1 flex-col", flush ? "lg:overflow-hidden" : "")}>{children}</main>
+
+      {!flush && (
+        <footer className="border-t border-border bg-card">
+          <div className="mx-auto grid max-w-[1600px] gap-3 px-4 py-6 text-xs leading-relaxed text-muted-foreground md:grid-cols-[minmax(0,1fr)_auto] md:gap-8">
+            <p className="max-w-3xl">
+              CIVWATCH documents publicly visible infrastructure and public records about government surveillance
+              technology. Locations come from public records, open data (OpenStreetMap) and volunteer reports; each shows
+              its source and verification status. We do not access camera feeds, intercept communications, or track
+              individuals.
+            </p>
+            <nav aria-label="About this site" className="flex flex-wrap items-start gap-x-4 gap-y-2">
+              <Link to="/sources" className="text-foreground underline underline-offset-2">Sources</Link>
+              <a
+                href="https://github.com/POWDER-RANGER/CivilianIntelligence/issues/new?title=Correction%3A%20"
+                target="_blank"
+                rel="noreferrer"
+                className="text-foreground underline underline-offset-2"
+              >
+                Report an error
+              </a>
+              <a
+                href="https://github.com/POWDER-RANGER/CivilianIntelligence"
+                target="_blank"
+                rel="noreferrer"
+                className="text-foreground underline underline-offset-2"
+              >
+                Source code
+              </a>
+            </nav>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }

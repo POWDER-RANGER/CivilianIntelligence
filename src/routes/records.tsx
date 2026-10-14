@@ -65,10 +65,10 @@ function RecordsPage() {
     <AppShell>
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <div className="max-w-3xl">
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Evidence layer</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Evidence layer</p>
           <h1 className="mt-2 font-display text-4xl md:text-5xl">Record Index</h1>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Find the record, then read it yourself. Search returns pointers into the CIVINT index; it does not replace the source with a summary.
+            Find the record, then read it yourself. Search returns pointers into the CIVWATCH index; it does not replace the source with a summary.
           </p>
         </div>
 
@@ -108,7 +108,7 @@ function RecordsPage() {
           <div className="mt-6 rounded-xl border border-dashed border-border bg-card p-8 text-center">
             <h2 className="font-display text-2xl">No matching indexed record found.</h2>
             <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">
-              This does not establish that no record exists. CIVINT may not have the relevant source, document, or indexing coverage yet.
+              This does not establish that no record exists. CIVWATCH may not have the relevant source, document, or indexing coverage yet.
             </p>
             <Link to="/toolkit" className="mt-4 inline-flex text-sm font-medium text-primary hover:underline">Open Toolkit for a public-record request</Link>
           </div>
@@ -128,7 +128,7 @@ function RecordsPage() {
                 <div className="mt-4 flex flex-wrap gap-2">
                   {record.identifiers.slice(0, 5).map((identifier) => <Badge key={identifier} variant="outline">{identifier}</Badge>)}
                 </div>
-                <p className="mt-3 text-[11px] text-muted-foreground">Published {record.publishedAt ?? "—"} · Retrieved {record.retrievedAt}</p>
+                <p className="mt-3 text-xs text-muted-foreground">Published {record.publishedAt ?? "—"} · Retrieved {record.retrievedAt}</p>
               </Link>
             ))}
           </div>

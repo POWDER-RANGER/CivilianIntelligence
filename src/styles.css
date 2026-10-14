@@ -1,41 +1,107 @@
 @import "tailwindcss";
 
+/*
+ * CIVWATCH Design Standard v2.
+ * Values come from the canonical token set (civwatch-tokens.v2.json); the
+ * semantic names below are the ones this app's components already use.
+ * Editorial (light) is the default register. Wrap a region in
+ * data-theme="ops" for the dark map / globe / cell-monitor register.
+ */
 @theme {
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Instrument Serif", ui-serif, Georgia, "Times New Roman", serif;
+  --font-display: "Source Serif 4", ui-serif, Georgia, "Times New Roman", serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  --color-background: #f6f7f2;
-  --color-foreground: #20303a;
+  /* Surfaces and text (editorial) */
+  --color-background: #f7f6f2;
+  --color-foreground: #111418;
   --color-card: #ffffff;
-  --color-card-foreground: #20303a;
+  --color-card-foreground: #111418;
   --color-popover: #ffffff;
-  --color-popover-foreground: #20303a;
-  --color-muted: #edf1ec;
-  --color-muted-foreground: #60717a;
-  --color-border: #d8dfda;
-  --color-input: #d2dbd5;
-  --color-primary: #176b63;
+  --color-popover-foreground: #111418;
+  --color-muted: #efede7;
+  --color-muted-foreground: #5f6773;
+  --color-border: #d9d6ce;
+  --color-input: #7a808a;
+  --color-primary: #0e6e85;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #e7eeea;
-  --color-secondary-foreground: #20303a;
-  --color-accent: #e5f1ed;
-  --color-accent-foreground: #176b63;
-  --color-ring: #68a69d;
-  --color-steel: #3e5963;
-  --color-live: #2d7a59;
-  --color-warn: #9a6d1d;
-  --color-danger: #aa4c3d;
-  --color-destructive: #aa4c3d;
-  --color-destructive-foreground: #ffffff;
+  --color-secondary: #efede7;
+  --color-secondary-foreground: #111418;
+  --color-accent: #e4f0f2;
+  --color-accent-foreground: #0e6e85;
+  --color-ring: #0e6e85;
+  --color-steel: #4a5260;
 
-  --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-2xl: 28px;
-  --shadow-card: 0 10px 30px rgb(32 48 58 / 6%);
+  /* Status: always paired with a word and a glyph */
+  --color-live: #1f7a4d;
+  --color-success: #1f7a4d;
+  --color-success-subtle: #e6f2eb;
+  --color-warn: #8a5a00;
+  --color-warn-subtle: #fbf1dc;
+  --color-danger: #b42318;
+  --color-danger-subtle: #fbeae8;
+  --color-info: #2b5cb8;
+  --color-info-subtle: #e8eef9;
+  --color-destructive: #b42318;
+  --color-destructive-foreground: #ffffff;
+  --color-marker-stroke: #111418;
+
+  /* Map categories (Okabe-Ito, fixed order, never color alone) */
+  --color-dv-alpr-fixed: #e69f00;
+  --color-dv-alpr-mobile-ptz: #56b4e9;
+  --color-dv-acoustic-gunshot: #cc79a7;
+  --color-dv-public-mic: #009e73;
+  --color-dv-contract-geo: #f0e442;
+  --color-dv-cell-anomaly: #d55e00;
+  --color-dv-other-device: #0072b2;
+  --color-dv-unclassified: #a8b0bc;
+
+  /* Shape: square, quiet. Utility names keep working at the new sizes. */
+  --radius-xs: 2px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-2xl: 8px;
+  --radius-3xl: 8px;
+  --shadow-card: none;
+}
+
+/* Dark operational register: Map, Globe, Cell Monitor. */
+[data-theme="ops"] {
+  color-scheme: dark;
+  --color-background: #0a0c10;
+  --color-foreground: #e6eaf0;
+  --color-card: #111418;
+  --color-card-foreground: #e6eaf0;
+  --color-popover: #161b22;
+  --color-popover-foreground: #e6eaf0;
+  --color-muted: #161b22;
+  --color-muted-foreground: #8b949e;
+  --color-border: #2a313b;
+  --color-input: #6b7684;
+  --color-primary: #56c2d6;
+  --color-primary-foreground: #0a0c10;
+  --color-secondary: #161b22;
+  --color-secondary-foreground: #e6eaf0;
+  --color-accent: #0d2328;
+  --color-accent-foreground: #56c2d6;
+  --color-ring: #e6eaf0;
+  --color-steel: #a8b0bc;
+  --color-live: #3fb37f;
+  --color-success: #3fb37f;
+  --color-success-subtle: #10241b;
+  --color-warn: #e8a33d;
+  --color-warn-subtle: #2a2112;
+  --color-danger: #f2685f;
+  --color-danger-subtle: #2a1517;
+  --color-info: #7aa7ff;
+  --color-info-subtle: #121d33;
+  --color-destructive: #f2685f;
+  --color-destructive-foreground: #0a0c10;
+  --color-marker-stroke: #0a0c10;
+  background: var(--color-background);
+  color: var(--color-foreground);
 }
 
 @layer base {
@@ -62,6 +128,11 @@
     cursor: pointer;
   }
 
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
   h1,
   h2,
   h3 {
@@ -70,6 +141,11 @@
 
   p {
     text-wrap: pretty;
+  }
+
+  .tabular-nums,
+  .font-mono {
+    font-variant-numeric: tabular-nums slashed-zero;
   }
 }
 

@@ -125,12 +125,12 @@ function configuredUrl(value: string | undefined, localFallback: string): string
 const CONFIG: PillarConfig[] = [
   {
     id: "watchtower",
-    label: "Watchtower",
+    label: "Platform",
     baseUrl: configuredUrl(process.env.WATCHTOWER_BASE_URL, "http://127.0.0.1:3000"),
   },
   {
     id: "cell-titan",
-    label: "Cell Titan",
+    label: "Cell Monitor",
     baseUrl: configuredUrl(process.env.CELL_TITAN_BASE_URL, "http://127.0.0.1:8000"),
     token: process.env.CELL_TITAN_API_TOKEN ?? process.env.TITAN_API_TOKEN ?? "",
   },
@@ -214,7 +214,7 @@ export function describeTitanProblem(
     return {
       kind: "unconfigured",
       retryable: false,
-      message: "Cell Titan endpoint is not configured on this deployment.",
+      message: "Cell Monitor endpoint is not configured on this deployment.",
     };
   }
   const d = telemetry?.diagnostics;
@@ -225,7 +225,7 @@ export function describeTitanProblem(
       kind: "waking",
       retryable: true,
       message:
-        "Cell Titan is not responding yet. Free hosting puts idle services to sleep and waking takes up to a minute — retrying automatically.",
+        "Cell Monitor is not responding yet. Free hosting puts idle services to sleep and waking takes up to a minute — retrying automatically.",
     };
   }
   if (outcomes.includes("unauthorized")) {
@@ -233,7 +233,7 @@ export function describeTitanProblem(
       kind: "unauthorized",
       retryable: false,
       message:
-        "Cell Titan rejected this portal's server credentials. The portal's CELL_TITAN_API_TOKEN must match TITAN_API_TOKEN on the Cell Titan service.",
+        "Cell Monitor rejected this portal's server credentials. The portal's CELL_TITAN_API_TOKEN must match TITAN_API_TOKEN on the Cell Monitor service.",
     };
   }
   if (d?.observations === "not_found") {
@@ -241,27 +241,27 @@ export function describeTitanProblem(
       kind: "outdated_service",
       retryable: false,
       message:
-        "Cell Titan is reachable but is running a build without the observation contract (/api/observations). Redeploy Cell Titan from main (v0.1.3 or later).",
+        "Cell Monitor is reachable but is running a build without the observation contract (/api/observations). Redeploy Cell Monitor from main (v0.1.3 or later).",
     };
   }
   if (outcomes.some(transient)) {
     return {
       kind: "waking",
       retryable: true,
-      message: "Cell Titan responded to its health check but telemetry timed out. Retrying automatically.",
+      message: "Cell Monitor responded to its health check but telemetry timed out. Retrying automatically.",
     };
   }
   if (telemetry?.evidenceOk === false) {
     return {
       kind: "unverified",
       retryable: false,
-      message: "Cell Titan evidence chain verification failed. Treat returned records as unverified.",
+      message: "Cell Monitor evidence chain verification failed. Treat returned records as unverified.",
     };
   }
   return {
     kind: "unknown",
     retryable: false,
-    message: "Cell Titan data is not verified. Review service status and evidence verification below.",
+    message: "Cell Monitor data is not verified. Review service status and evidence verification below.",
   };
 }
 
