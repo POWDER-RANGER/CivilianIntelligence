@@ -2,6 +2,22 @@ import { createServerFn } from "@tanstack/react-start";
 
 export type PillarId = "watchtower" | "cell-titan";
 
+/**
+ * Why a server-side pillar request did or did not return data. Kept separate
+ * from PillarStatus.status so the UI can tell a sleeping free-tier service
+ * ("timeout"/"network" — retry) from a misconfiguration ("unauthorized",
+ * "not_found" — operator action required).
+ */
+export type FetchOutcome =
+  | "ok"
+  | "timeout"
+  | "network"
+  | "unauthorized"
+  | "not_found"
+  | "http_error"
+  | "invalid_json"
+  | "unconfigured";
+
 export type PillarStatus = {
   id: PillarId;
   label: string;
@@ -12,6 +28,8 @@ export type PillarStatus = {
   latencyMs: number | null;
   service: string | null;
   version: string | null;
+  /** Classified cause of the most recent health probe. */
+  reason?: FetchOutcome | null;
 };
 
 export type WatchtowerFeature = {
@@ -56,6 +74,26 @@ export type TitanTelemetryResponse = {
   ownerScope: "user_device" | null;
   limitations: string[];
   ok: boolean;
+  diagnostics?: TitanDiagnostics;
+};
+
+export type TitanDiagnostics = {
+  observations: FetchOutcome;
+  evidence: FetchOutcome;
+  verify: FetchOutcome;
+};
+
+export type TitanProblem = {
+  kind:
+    | "unconfigured"
+    | "waking"
+    | "unauthorized"
+    | "outdated_service"
+    | "unverified"
+    | "unknown";
+  /** True when retrying shortly is the correct response (cold start). */
+  retryable: boolean;
+  message: string;
 };
 
 export type TitanTelemetryInputs = {
@@ -102,20 +140,55 @@ function getConfig(id: PillarId): PillarConfig {
   return CONFIG.find((item) => item.id === id)!;
 }
 
-async function readJson<T>(config: PillarConfig, path: string, authenticated = false): Promise<T | null> {
-  if (!config.baseUrl) return null;
+/**
+ * Per-request timeout. Render Free services sleep when idle and take
+ * 30-60s to wake; the first request triggers the wake, so a short timeout
+ * plus client-side retry beats one long blocking request.
+ */
+const PILLAR_TIMEOUT_MS = 8000;
+
+type ReadResult<T> = { body: T | null; outcome: FetchOutcome; httpStatus: number | null };
+
+export function outcomeForHttpStatus(status: number): FetchOutcome {
+  if (status >= 200 && status < 300) return "ok";
+  if (status === 401 || status === 403) return "unauthorized";
+  if (status === 404) return "not_found";
+  return "http_error";
+}
+
+export function outcomeForFetchError(error: unknown): FetchOutcome {
+  const name = (error as { name?: unknown } | null)?.name;
+  return name === "TimeoutError" || name === "AbortError" ? "timeout" : "network";
+}
+
+async function readJsonResult<T>(
+  config: PillarConfig,
+  path: string,
+  authenticated = false,
+): Promise<ReadResult<T>> {
+  if (!config.baseUrl) return { body: null, outcome: "unconfigured", httpStatus: null };
   const headers: Record<string, string> = { Accept: "application/json" };
   if (authenticated && config.token) headers.Authorization = "Bearer " + config.token;
+  let res: Response;
   try {
-    const res = await fetch(config.baseUrl + path, {
+    res = await fetch(config.baseUrl + path, {
       headers,
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(PILLAR_TIMEOUT_MS),
     });
-    if (!res.ok) return null;
-    return (await res.json()) as T;
-  } catch {
-    return null;
+  } catch (error) {
+    return { body: null, outcome: outcomeForFetchError(error), httpStatus: null };
   }
+  const outcome = outcomeForHttpStatus(res.status);
+  if (outcome !== "ok") return { body: null, outcome, httpStatus: res.status };
+  try {
+    return { body: (await res.json()) as T, outcome: "ok", httpStatus: res.status };
+  } catch {
+    return { body: null, outcome: "invalid_json", httpStatus: res.status };
+  }
+}
+
+async function readJson<T>(config: PillarConfig, path: string, authenticated = false): Promise<T | null> {
+  return (await readJsonResult<T>(config, path, authenticated)).body;
 }
 
 export function getPillarHealthStatus(
@@ -125,6 +198,71 @@ export function getPillarHealthStatus(
   // beside the copy "endpoint not configured". No response is its own state.
   if (!body) return "unreachable";
   return body.status === "ok" || body.status === "online" ? "online" : "degraded";
+}
+
+/**
+ * Turn a health probe plus per-endpoint outcomes into one actionable
+ * explanation. Order matters: configuration first, then reachability, then
+ * credentials, then contract version, then evidence integrity.
+ */
+export function describeTitanProblem(
+  health: Pick<PillarStatus, "status" | "reason"> | null,
+  telemetry: Pick<TitanTelemetryResponse, "ok" | "evidenceOk" | "diagnostics"> | null,
+): TitanProblem | null {
+  if (telemetry?.ok) return null;
+  if (!health || health.status === "unconfigured") {
+    return {
+      kind: "unconfigured",
+      retryable: false,
+      message: "Cell Titan endpoint is not configured on this deployment.",
+    };
+  }
+  const d = telemetry?.diagnostics;
+  const outcomes = d ? [d.observations, d.evidence, d.verify] : [];
+  const transient = (o: FetchOutcome | null | undefined) => o === "timeout" || o === "network";
+  if (health.status === "unreachable" && (transient(health.reason) || health.reason == null)) {
+    return {
+      kind: "waking",
+      retryable: true,
+      message:
+        "Cell Titan is not responding yet. Free hosting puts idle services to sleep and waking takes up to a minute — retrying automatically.",
+    };
+  }
+  if (outcomes.includes("unauthorized")) {
+    return {
+      kind: "unauthorized",
+      retryable: false,
+      message:
+        "Cell Titan rejected this portal's server credentials. The portal's CELL_TITAN_API_TOKEN must match TITAN_API_TOKEN on the Cell Titan service.",
+    };
+  }
+  if (d?.observations === "not_found") {
+    return {
+      kind: "outdated_service",
+      retryable: false,
+      message:
+        "Cell Titan is reachable but is running a build without the observation contract (/api/observations). Redeploy Cell Titan from main (v0.1.3 or later).",
+    };
+  }
+  if (outcomes.some(transient)) {
+    return {
+      kind: "waking",
+      retryable: true,
+      message: "Cell Titan responded to its health check but telemetry timed out. Retrying automatically.",
+    };
+  }
+  if (telemetry?.evidenceOk === false) {
+    return {
+      kind: "unverified",
+      retryable: false,
+      message: "Cell Titan evidence chain verification failed. Treat returned records as unverified.",
+    };
+  }
+  return {
+    kind: "unknown",
+    retryable: false,
+    message: "Cell Titan data is not verified. Review service status and evidence verification below.",
+  };
 }
 
 export function summarizeTitanTelemetry(inputs: TitanTelemetryInputs): TitanTelemetryResponse {
@@ -139,8 +277,10 @@ export function summarizeTitanTelemetry(inputs: TitanTelemetryInputs): TitanTele
     state: observation?.state ?? null,
     ownerScope: observation?.owner_scope ?? null,
     limitations: Array.isArray(observation?.limitations) ? observation.limitations : [],
-    // A reachable pillar is not healthy unless the evidence verifier explicitly passes.
-    ok: reachable && evidenceOk === true,
+    // Healthy requires BOTH the observation contract response and an explicit
+    // evidence-verifier pass. Evidence alone must not mask a missing contract
+    // (e.g. an outdated Titan build that 404s /api/observations).
+    ok: reachable && Boolean(recent) && evidenceOk === true,
   };
 }
 
@@ -157,11 +297,13 @@ async function probe(config: PillarConfig): Promise<PillarStatus> {
       latencyMs: null,
       service: null,
       version: null,
+      reason: "unconfigured",
     };
   }
 
   const started = performance.now();
-  const body = await readJson<Record<string, unknown>>(config, "/api/health");
+  const result = await readJsonResult<Record<string, unknown>>(config, "/api/health");
+  const body = result.body;
   const latencyMs = Math.round(performance.now() - started);
   const reachable = Boolean(body);
 
@@ -174,6 +316,7 @@ async function probe(config: PillarConfig): Promise<PillarStatus> {
     latencyMs: reachable ? latencyMs : null,
     service: typeof body?.service === "string" ? body.service : null,
     version: typeof body?.version === "string" ? body.version : null,
+    reason: result.outcome,
   };
 }
 
@@ -199,19 +342,29 @@ export const getWatchtowerFeatures = createServerFn({ method: "GET" }).handler(
 export const getTitanTelemetry = createServerFn({ method: "GET" }).handler(
   async (): Promise<TitanTelemetryResponse> => {
     const config = getConfig("cell-titan");
-    const observations = await readJson<{
-      samples?: TitanSample[];
-      state?: "live" | "demo" | "snapshot" | "unavailable";
-      owner_scope?: "user_device";
-      limitations?: string[];
-    }>(config, "/api/observations?n=50", true);
-    const evidence = await readJson<{ records?: TitanEvidenceRecord[] }>(
-      config,
-      "/api/evidence/tail?n=20",
-      true,
-    );
-    const verify = await readJson<{ ok?: boolean }>(config, "/api/evidence/verify", true);
+    const [observations, evidence, verify] = await Promise.all([
+      readJsonResult<{
+        samples?: TitanSample[];
+        state?: "live" | "demo" | "snapshot" | "unavailable";
+        owner_scope?: "user_device";
+        limitations?: string[];
+      }>(config, "/api/observations?n=50", true),
+      readJsonResult<{ records?: TitanEvidenceRecord[] }>(config, "/api/evidence/tail?n=20", true),
+      readJsonResult<{ ok?: boolean }>(config, "/api/evidence/verify", true),
+    ]);
 
-    return summarizeTitanTelemetry({ recent: observations, evidence, verify, observation: observations });
+    return {
+      ...summarizeTitanTelemetry({
+        recent: observations.body,
+        evidence: evidence.body,
+        verify: verify.body,
+        observation: observations.body,
+      }),
+      diagnostics: {
+        observations: observations.outcome,
+        evidence: evidence.outcome,
+        verify: verify.outcome,
+      },
+    };
   },
 );

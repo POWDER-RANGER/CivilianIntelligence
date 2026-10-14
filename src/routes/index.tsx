@@ -71,10 +71,15 @@ function Home() {
                 CIVINT surfaces evidence; the original publisher remains the source of record.
               </p>
             </div>
+            <div className="flex flex-wrap gap-2">
+            <Link to="/place" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm hover:brightness-110">
+              Build a place dossier <span aria-hidden="true">→</span>
+            </Link>
             <button type="button" onClick={useMyLocation} disabled={locationState === "requesting"} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-medium shadow-sm hover:bg-muted disabled:opacity-60">
               <LocateFixed className="size-4" />
               {locationState === "requesting" ? "Locating…" : locationState === "granted" ? "Location enabled" : "Use my location"}
             </button>
+            </div>
           </div>
           {locationState === "denied" && (
             <p className="mt-3 text-xs text-muted-foreground">Location permission was not granted. You can still search and explore the map normally.</p>

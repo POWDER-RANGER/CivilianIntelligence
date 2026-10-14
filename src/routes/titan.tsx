@@ -2,9 +2,20 @@ import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
-import { getPillarStatus, getTitanTelemetry, type PillarStatus, type TitanEvidenceRecord, type TitanSample } from "@/lib/pillars";
+import {
+  describeTitanProblem,
+  getPillarStatus,
+  getTitanTelemetry,
+  type PillarStatus,
+  type TitanEvidenceRecord,
+  type TitanSample,
+} from "@/lib/pillars";
 
 export const Route = createFileRoute("/titan")({ component: TitanPage });
+
+/** Render Free cold starts take up to ~60s; retry on a fixed cadence for ~90s. */
+const WAKE_RETRY_DELAY_MS = 10_000;
+const WAKE_MAX_ATTEMPTS = 8;
 
 function statusVariant(status: PillarStatus["status"]) {
   if (status === "online") return "live" as const;
@@ -23,6 +34,8 @@ function TitanPage() {
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [lastChecked, setLastChecked] = useState<string | null>(null);
+  const [wakeAttempt, setWakeAttempt] = useState(0);
+  const [waking, setWaking] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -37,14 +50,17 @@ function TitanPage() {
         setEvidenceOk(data.evidenceOk);
         setObservationState(data.state);
         setLimitations(data.limitations);
+        const problem = describeTitanProblem(titanStatus, data);
+        const keepWaking = Boolean(problem?.retryable) && wakeAttempt + 1 < WAKE_MAX_ATTEMPTS;
+        setWaking(keepWaking);
         setError(
-          data.ok
-            ? null
-            : (() => {
-                if (titanStatus?.status === "unconfigured") return "Cell Titan endpoint is not configured on this deployment.";
-                if (titanStatus?.status === "unreachable") return "Cell Titan is configured but not responding.";
-                return "Cell Titan data is not verified. Review service status and evidence verification below.";
-              })(),
+          problem
+            ? keepWaking
+              ? problem.message + " (attempt " + (wakeAttempt + 1) + " of " + WAKE_MAX_ATTEMPTS + ")"
+              : problem.retryable
+                ? "Cell Titan did not respond after " + WAKE_MAX_ATTEMPTS + " attempts. Use Refresh to try again."
+                : problem.message
+            : null,
         );
         setLastChecked(new Date().toISOString());
       })
@@ -55,7 +71,13 @@ function TitanPage() {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [refreshKey]);
+  }, [refreshKey, wakeAttempt]);
+
+  useEffect(() => {
+    if (!waking || loading) return;
+    const timer = setTimeout(() => setWakeAttempt((value) => value + 1), WAKE_RETRY_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [waking, loading]);
 
   const domainCounts = samples.reduce<Record<string, number>>((counts, sample) => {
     counts[sample.domain] = (counts[sample.domain] ?? 0) + 1;
@@ -75,12 +97,16 @@ function TitanPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={statusVariant(health?.status ?? "unconfigured")}>
-              {health?.status ?? "unconfigured"}
+            <Badge variant={waking ? "warn" : statusVariant(health?.status ?? "unconfigured")}>
+              {waking ? "waking" : (health?.status ?? "unconfigured")}
             </Badge>
             <button
               type="button"
-              onClick={() => setRefreshKey((value) => value + 1)}
+              onClick={() => {
+                setWaking(false);
+                setWakeAttempt(0);
+                setRefreshKey((value) => value + 1);
+              }}
               disabled={loading}
               className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted disabled:cursor-wait disabled:opacity-50"
             >

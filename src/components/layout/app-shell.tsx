@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 const NAV_GROUPS = [
   { label: "Start", items: [
     { to: "/", label: "Open Desk", hint: "Local context & map" },
+    { to: "/place", label: "Place Dossier", hint: "Who watches an address" },
     { to: "/toolkit", label: "Toolkit", hint: "Request & verify" },
   ] },
   { label: "Desks", items: [
@@ -26,7 +27,7 @@ const NAV_GROUPS = [
   ] },
   { label: "Tools", items: [
     { to: "/watchtower", label: "Watchtower", hint: "Places & infrastructure" },
-    { to: "/globe", label: "Global View", hint: "God's Eye 3D globe" },
+    { to: "/globe", label: "ALPR & Feeds", hint: "Camera map and public feeds" },
     { to: "/signal", label: "Signal vs Record", hint: "Attention & evidence" },
     { to: "/veil", label: "VEIL", hint: "Briefing" },
     { to: "/titan", label: "Cell Titan", hint: "User-owned RF" },
