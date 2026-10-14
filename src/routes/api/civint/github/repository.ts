@@ -13,7 +13,7 @@ class GitHubError extends Error {
 // GITHUB_TOKEN (public-read only; never sent to the browser) lifts the limit to
 // 5,000/hour. Without one, rate limiting is reported as such instead of a bare 403.
 async function gh(path: string) {
-  const headers: Record<string, string> = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "CIVINTELLIGENCE-Reading-Room" };
+  const headers: Record<string, string> = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "CIVWATCH-Reading-Room" };
   const token = process.env.GITHUB_TOKEN?.trim();
   if (token) headers.Authorization = "Bearer " + token;
   const response = await fetch(GITHUB_API + path, { headers, signal: AbortSignal.timeout(10000) });

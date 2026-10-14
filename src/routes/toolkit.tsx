@@ -167,7 +167,7 @@ function ToolkitPage() {
   return (
     <AppShell>
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
-        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Desk 05</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Desk 05</p>
         <h1 className="mt-2 font-display text-4xl md:text-5xl">Field toolkit</h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           Intelligence is a skill, not a feed. Draft a records request, find who represents you, and read the
@@ -184,7 +184,7 @@ function ToolkitPage() {
                   variant={template === id ? "default" : "outline"}
                   size="sm"
                   onClick={() => setTemplate(id)}
-                  className="font-mono text-[11px] uppercase tracking-wider"
+                  className="text-xs font-semibold uppercase tracking-[0.06em]"
                 >
                   {TEMPLATES[id].label}
                 </Button>
@@ -238,7 +238,7 @@ function ToolkitPage() {
                   key={preset.label}
                   type="button"
                   onClick={() => setDescription(preset.text)}
-                  className="rounded-full border border-border bg-background px-3 py-1 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                  className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
                   {preset.label}
                 </button>
@@ -270,19 +270,19 @@ function ToolkitPage() {
 
           <div className="grid gap-3">
             <div className="flex items-center justify-between">
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                 Draft — {template === "state"
                   ? (STATE_RECORDS_LAWS.find((law) => law.code === stateCode) ?? OTHER_STATE).cite
                   : TEMPLATES[template].cite}
               </p>
-              <Button size="sm" onClick={copyLetter} className="font-mono text-[11px] uppercase tracking-wider">
+              <Button size="sm" onClick={copyLetter} className="text-xs font-semibold uppercase tracking-[0.06em]">
                 {copied ? "Copied" : "Copy letter"}
               </Button>
             </div>
             <pre className="max-h-[480px] overflow-auto whitespace-pre-wrap rounded-md border border-border bg-card p-4 font-mono text-[12px] leading-relaxed text-foreground">
               {letter}
             </pre>
-            <p className="text-[11px] leading-snug text-muted-foreground">
+            <p className="text-xs leading-snug text-muted-foreground">
               This draft is a starting point, not legal advice. Mail it to the agency FOIA office or file via
               FOIA.gov, and keep a copy of everything you send.
             </p>

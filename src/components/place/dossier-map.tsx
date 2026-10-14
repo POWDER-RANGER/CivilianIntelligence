@@ -83,15 +83,15 @@ export function DossierMap({
       map.addControl(new ScaleControl({ unit: "imperial" }), "bottom-left");
 
       const pin = document.createElement("div");
-      pin.className = "size-4 rounded-full border-[3px] border-white bg-foreground shadow-[0_0_0_6px_rgb(32_48_58/0.18)]";
+      pin.className = "size-4 rounded-full border-[3px] border-card bg-foreground ring-4 ring-foreground/20";
       pin.setAttribute("aria-label", label);
       new Marker({ element: pin }).setLngLat([longitude, latitude]).addTo(map);
 
       map.on("load", () => {
         if (!map) return;
         map.addSource("radius", { type: "geojson", data: circlePolygon(latitude, longitude, radiusMiles) });
-        map.addLayer({ id: "radius-fill", type: "fill", source: "radius", paint: { "fill-color": "#176b63", "fill-opacity": 0.05 } });
-        map.addLayer({ id: "radius-line", type: "line", source: "radius", paint: { "line-color": "#176b63", "line-width": 1.5, "line-dasharray": [2, 2] } });
+        map.addLayer({ id: "radius-fill", type: "fill", source: "radius", paint: { "fill-color": "#0e6e85", "fill-opacity": 0.06 } });
+        map.addLayer({ id: "radius-line", type: "line", source: "radius", paint: { "line-color": "#0e6e85", "line-width": 1.5, "line-dasharray": [2, 2] } });
         map.addSource("cams", {
           type: "geojson",
           data: {
@@ -107,7 +107,7 @@ export function DossierMap({
           id: "cams-halo",
           type: "circle",
           source: "cams",
-          paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 5, 15, 12], "circle-color": "#aa4c3d", "circle-opacity": 0.14 },
+          paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 5, 15, 12], "circle-color": "#e69f00", "circle-opacity": 0.18 },
         });
         map.addLayer({
           id: "cams",
@@ -115,8 +115,8 @@ export function DossierMap({
           source: "cams",
           paint: {
             "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 2.5, 15, 6],
-            "circle-color": ["case", ["==", ["get", "known"], 1], "#aa4c3d", "#3e5963"],
-            "circle-stroke-color": "#ffffff",
+            "circle-color": ["case", ["==", ["get", "known"], 1], "#e69f00", "#ffffff"],
+            "circle-stroke-color": ["case", ["==", ["get", "known"], 1], "#111418", "#0072b2"],
             "circle-stroke-width": 1,
           },
         });
@@ -149,7 +149,7 @@ export function DossierMap({
           The map could not start in this browser ({failed}). Camera counts and the list below are unaffected.
         </div>
       )}
-      <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-1 rounded-lg border border-border bg-card/95 px-3 py-2 text-[11px] text-muted-foreground shadow-sm">
+      <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-1 rounded-lg border border-border bg-card/95 px-3 py-2 text-xs text-muted-foreground shadow-sm">
         <span className="flex items-center gap-2"><span className="size-2 rounded-full bg-danger" />Operator on record</span>
         <span className="flex items-center gap-2"><span className="size-2 rounded-full bg-steel" />Operator not recorded</span>
       </div>

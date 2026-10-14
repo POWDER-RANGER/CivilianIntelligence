@@ -12,10 +12,10 @@ function SourcesPage() {
   return (
     <AppShell>
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
-        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Evidence infrastructure</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Evidence infrastructure</p>
         <h1 className="mt-2 font-display text-4xl md:text-5xl">Source registry</h1>
         <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-          Inspect the public sources CIVINT is designed to use, how each source is accessed, and where its original records live.
+          Inspect the public sources CIVWATCH is designed to use, how each source is accessed, and where its original records live.
           Listing a source does not mean its feed is currently healthy or that its records have been indexed.
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
@@ -46,7 +46,7 @@ function SourcesPage() {
                       </div>
                       <dl className="mt-4 grid gap-3 text-xs sm:grid-cols-2">
                         <div>
-                          <dt className="text-muted-foreground">CIVINT surface</dt>
+                          <dt className="text-muted-foreground">CIVWATCH surface</dt>
                           <dd className="mt-1">{source.nativeSurface}</dd>
                         </div>
                         <div>

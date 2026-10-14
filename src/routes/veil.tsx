@@ -83,19 +83,18 @@ function VeilPage() {
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
-              VEIL protocol
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+              Briefing
             </p>
             <h1 className="mt-2 font-display text-4xl md:text-5xl">Executive brief</h1>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-              Visibility across movement, oversight, and privacy invasion. A civilian situation room built only
-              from public record.
+              Government activity, oversight and privacy in one place, built only from public records.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge variant={live ? "live" : "outline"}>{live ? "Register API" : "Register unavailable"}</Badge>
             <Badge variant={civintLive ? "live" : "outline"}>
-              {civintLive ? "CIVINT ingest" : "CIVINT ingest empty"}
+              {civintLive ? "CIVWATCH ingest" : "CIVWATCH ingest empty"}
             </Badge>
           </div>
         </div>
@@ -103,22 +102,22 @@ function VeilPage() {
         <section className="mt-6 rounded-xl border border-border bg-card p-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Integration spine</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Integration spine</p>
               <h2 className="mt-1 font-display text-2xl">Pillar bridge</h2>
-              <p className="mt-1 text-xs text-muted-foreground">Server-side health probes for Watchtower and Cell Titan.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Server-side health probes for the CIVWATCH Platform and Cell Monitor.</p>
             </div>
-            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">topology hidden from browser</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">topology hidden from browser</span>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {(pillars.length ? pillars : ([
-              { id: "watchtower", label: "Watchtower", status: "unconfigured" },
-              { id: "cell-titan", label: "Cell Titan", status: "unconfigured" },
+              { id: "watchtower", label: "Platform", status: "unconfigured" },
+              { id: "cell-titan", label: "Cell Monitor", status: "unconfigured" },
             ] as PillarStatus[])).map((p) => (
               <div key={p.id} className="rounded-lg border border-border p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="font-medium">{p.label}</p>
-                    <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+                    <p className="mt-1 font-mono text-xs text-muted-foreground">
                       {p.version
                         ? "v" + p.version
                         : p.status === "unconfigured"
@@ -130,7 +129,7 @@ function VeilPage() {
                   </div>
                   <Badge variant={pillarStatusVariant(p.status)}>{p.status}</Badge>
                 </div>
-                <div className="mt-3 flex gap-3 text-[11px]">
+                <div className="mt-3 flex gap-3 text-xs">
                   <a href={p.id === "watchtower" ? "https://github.com/POWDER-RANGER/civwatch-watchtower" : "https://github.com/POWDER-RANGER/civwatch-cell-titan"} target="_blank" rel="noreferrer" className="text-steel hover:underline">Repository</a>
                   {p.service && <span className="text-muted-foreground">{p.service}</span>}
                 </div>
@@ -143,10 +142,10 @@ function VeilPage() {
           <section className="mt-6 rounded-xl border border-border bg-card p-5">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Federated source network</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Federated source network</p>
                 <h2 className="mt-1 font-display text-2xl">Use what already exists</h2>
                 <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
-                  CIVINT connects established public datasets and community tools instead of cloning their databases.
+                  CIVWATCH connects established public datasets and community tools instead of cloning their databases.
                   Machine-readable inputs are distinguished from evidence/reference sources.
                 </p>
               </div>
@@ -159,7 +158,7 @@ function VeilPage() {
                   href={source.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-full border border-border px-3 py-1.5 text-[11px] text-muted-foreground hover:text-foreground"
+                  className="rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
                   title={source.scope ?? source.integration}
                 >
                   {source.name} · {source.integration}
@@ -177,7 +176,7 @@ function VeilPage() {
             { label: "Expanding systems", value: String(expanding) },
           ].map((m) => (
             <div key={m.label} className="rounded-xl border border-border bg-card px-5 py-4">
-              <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{m.label}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">{m.label}</p>
               <p className="mt-2 font-display text-4xl tabular-nums">{m.value}</p>
             </div>
           ))}
@@ -190,7 +189,7 @@ function VeilPage() {
                 <header className="border-b border-border px-5 py-3 flex items-center justify-between">
                   <div>
                     <h2 className="font-display text-xl">NWS active alerts</h2>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">IA · IL · MO — from civint_ingest</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">IA · IL · MO — from civint_ingest</p>
                   </div>
                   <Badge variant="live">{nwsAlerts.length}</Badge>
                 </header>
@@ -202,7 +201,7 @@ function VeilPage() {
                         <Badge variant={severityVariant(a.severity)}>{a.severity}</Badge>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{a.headline}</p>
-                      <p className="mt-1 font-mono text-[10px] text-muted-foreground">{a.area?.split(";")[0]}</p>
+                      <p className="mt-1 font-mono text-xs text-muted-foreground">{a.area?.split(";")[0]}</p>
                     </li>
                   ))}
                 </ul>
@@ -214,7 +213,7 @@ function VeilPage() {
                 <header className="border-b border-border px-5 py-3 flex items-center justify-between">
                   <div>
                     <h2 className="font-display text-xl">Surveillance awards</h2>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">Flock Safety / ALPR — USAspending</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">Flock Safety / ALPR — USAspending</p>
                   </div>
                   <Badge variant="warn">{awards.length}</Badge>
                 </header>
@@ -226,7 +225,7 @@ function VeilPage() {
                         <Badge variant="steel">{formatUsd(w.amount)}</Badge>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">{w.agency}</p>
-                      <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+                      <p className="mt-1 font-mono text-xs text-muted-foreground">
                         {w.start_date} · {w.award_group} · term: {w.term}
                       </p>
                     </li>
@@ -257,7 +256,7 @@ function VeilPage() {
                         <Badge variant="outline">{s.pillar}</Badge>
                         <ExampleBadge />
                       </div>
-                      <p className="mt-2 font-mono text-[10px] text-muted-foreground">{s.tag}</p>
+                      <p className="mt-2 font-mono text-xs text-muted-foreground">{s.tag}</p>
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium">{s.headline}</p>
@@ -278,7 +277,7 @@ function VeilPage() {
                     <a href={doc.html_url} target="_blank" rel="noreferrer" className="block text-sm hover:underline">
                       {doc.title}
                     </a>
-                    <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
+                    <p className="mt-0.5 font-mono text-xs text-muted-foreground">
                       {doc.publication_date} · {doc.agencies[0]?.name}
                     </p>
                   </li>

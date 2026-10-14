@@ -21,14 +21,14 @@ function CameraFeedPortal() {
             <div className="flex min-w-0 items-start gap-3">
               <Camera className="mt-1 size-5 shrink-0 text-primary" />
               <div className="min-w-0">
-                <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                  CIVINTELLIGENCE · ALPR
+                <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                  CIVWATCH Globe
                 </p>
                 <h1 className="mt-0.5 text-2xl font-semibold tracking-tight md:text-3xl">
-                  Camera & Public Feeds Portal
+                  Cameras and public feeds
                 </h1>
                 <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-                  Explore U.S.-focused ALPR infrastructure alongside a separate God's Eye viewer. The embedded viewer is currently global; a U.S. starting position does not filter its feeds.
+                  Explore documented U.S. ALPR infrastructure alongside a separate global viewer. The viewer is global; starting it over the U.S. does not filter its feeds.
                 </p>
               </div>
             </div>
@@ -43,7 +43,7 @@ function CameraFeedPortal() {
           </div>
         </header>
 
-        <div className="border-b border-border bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-950 dark:bg-amber-950/30 dark:text-amber-100 md:px-6">
+        <div className="border-b border-warn bg-warn-subtle px-4 py-3 text-xs leading-relaxed text-foreground md:px-6">
           <div className="mx-auto flex max-w-[1800px] items-start gap-2">
             <ShieldAlert className="mt-0.5 size-4 shrink-0" />
             <p>
@@ -69,33 +69,33 @@ function CameraFeedPortal() {
             </p>
           </section>
 
-          <section className="min-w-0 overflow-hidden rounded-2xl border border-border bg-[#080d12] text-slate-100">
-            <header className="flex items-center gap-3 border-b border-white/10 px-4 py-4">
-              <Globe2 className="size-5 shrink-0 text-emerald-300" />
+          <section data-theme="ops" className="min-w-0 overflow-hidden rounded-2xl border border-border bg-card text-card-foreground">
+            <header className="flex items-center gap-3 border-b border-border px-4 py-4">
+              <Globe2 className="size-5 shrink-0 text-primary" />
               <div className="min-w-0">
-                <h2 className="text-lg font-semibold">Separate God's Eye viewer</h2>
-                <p className="mt-1 text-xs text-slate-400">
+                <h2 className="text-lg font-semibold">Global viewer</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
                   Global feed viewer · not yet restricted to U.S. data
                 </p>
               </div>
-              <span className="ml-auto shrink-0 rounded-full border border-white/15 px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-slate-300">
+              <span className="ml-auto shrink-0 rounded-sm border border-input px-2 py-1 text-xs font-semibold uppercase tracking-[0.06em] text-steel">
                 {loaded ? "Viewer loaded" : "Connecting"}
               </span>
             </header>
 
-            <div className="relative min-h-[640px] bg-[#080d12]">
+            <div className="relative min-h-[640px] bg-background">
               {!loaded && (
                 <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-6 text-center">
-                  <div className="max-w-sm rounded-xl border border-white/10 bg-black/70 p-4 shadow-xl backdrop-blur">
-                    <p className="text-sm font-medium text-slate-100">Connecting to the public-feed viewer…</p>
-                    <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                  <div className="max-w-sm rounded-xl border border-border bg-popover p-4 shadow-lg">
+                    <p className="text-sm font-medium text-foreground">Connecting to the public-feed viewer…</p>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                       The separate service may need a moment to wake up. If it does not load, use the separate-viewer link above.
                     </p>
                   </div>
                 </div>
               )}
               <iframe
-                title="Separate God's Eye global viewer"
+                title="Global public-feed viewer"
                 src={PUBLIC_FEEDS_EMBED_URL}
                 className="absolute inset-0 size-full border-0"
                 loading="eager"
@@ -105,15 +105,15 @@ function CameraFeedPortal() {
                 onLoad={() => setLoaded(true)}
               />
             </div>
-            <footer className="border-t border-white/10 px-4 py-3 text-[11px] leading-relaxed text-slate-400">
+            <footer className="border-t border-border px-4 py-3 text-xs leading-relaxed text-muted-foreground">
               Public data can be delayed, incomplete, estimated, or unavailable. The viewer loading is not proof that every feed is live. Original providers remain the source of record; code reference:{" "}
               <a
-                className="underline decoration-slate-500 underline-offset-2 hover:text-slate-200"
+                className="text-foreground underline underline-offset-2"
                 href="https://github.com/bilawalsidhu/gods-eye-view"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                open-source globe and camera layers
+                gods-eye-view, an open-source project
               </a>
               .
             </footer>

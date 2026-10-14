@@ -308,14 +308,16 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
                   "interpolate", ["linear"], ["zoom"],
                   2, 3, 5, 7, 8, 14, 10, 22,
                 ],
+                // cividis (CVD-safe), reversed for the light basemap so
+                // higher density reads darker. Design Standard v2.
                 "heatmap-color": [
                   "interpolate", ["linear"], ["heatmap-density"],
-                  0, "rgba(14,165,233,0)",
-                  0.15, "rgba(14,165,233,0.45)",
-                  0.4, "rgba(34,197,94,0.65)",
-                  0.65, "rgba(250,204,21,0.8)",
-                  0.85, "rgba(249,115,22,0.88)",
-                  1, "rgba(220,38,38,0.92)",
+                  0, "rgba(222,201,88,0)",
+                  0.15, "rgba(222,201,88,0.5)",
+                  0.4, "rgba(155,148,118,0.65)",
+                  0.65, "rgba(97,101,111,0.78)",
+                  0.85, "rgba(26,56,111,0.86)",
+                  1, "rgba(0,34,78,0.92)",
                 ],
                 "heatmap-opacity": [
                   "interpolate", ["linear"], ["zoom"],
@@ -324,11 +326,17 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
               },
             });
 
+            // Flock-branded: filled Okabe-Ito orange. Other or unknown vendor:
+            // hollow ring in Okabe-Ito blue. Shape and color both differ, so
+            // the split never depends on hue alone.
+            const isFlockBrand: ExpressionSpecification = [
+              "in", "flock", ["downcase", ["coalesce", ["get", "brand"], ""]],
+            ];
             const flockColor: ExpressionSpecification = [
-              "case",
-              ["in", "flock", ["downcase", ["coalesce", ["get", "brand"], ""]]],
-              "#22c55e",
-              "#fbbf24",
+              "case", isFlockBrand, "#e69f00", "#ffffff",
+            ];
+            const flockStroke: ExpressionSpecification = [
+              "case", isFlockBrand, "#111418", "#0072b2",
             ];
 
             map.addLayer({
@@ -338,10 +346,10 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
               "source-layer": SOURCE_LAYER,
               minzoom: 9,
               paint: {
+                // Invisible hit area only: v2 uses no glow.
                 "circle-color": flockColor,
                 "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 5, 12, 8, 16, 12],
-                "circle-opacity": 0.16,
-                "circle-blur": 0.8,
+                "circle-opacity": 0,
               },
             });
 
@@ -354,9 +362,9 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
               paint: {
                 "circle-color": flockColor,
                 "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 2.5, 12, 4, 16, 6],
-                "circle-opacity": ["interpolate", ["linear"], ["zoom"], 9, 0.45, 10.5, 0.82, 12, 0.94],
-                "circle-stroke-color": "#071018",
-                "circle-stroke-width": 1.2,
+                "circle-opacity": ["interpolate", ["linear"], ["zoom"], 9, 0.55, 10.5, 0.9, 12, 1],
+                "circle-stroke-color": flockStroke,
+                "circle-stroke-width": ["case", isFlockBrand, 1, 2],
               },
             });
 
@@ -486,13 +494,13 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
   };
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-      <header className="border-b border-border bg-gradient-to-b from-muted/40 to-card p-5 md:p-6">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card">
+      <header className="border-b border-border bg-card p-5 md:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                Watchtower · spatial intelligence
+              <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                CIVWATCH Map · documented infrastructure
               </p>
               <Badge variant="outline">
                 {status === "ready"
@@ -503,7 +511,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
                       ? "DEGRADED"
                       : "LOADING"}
               </Badge>
-              <span className="rounded-full border border-border bg-background/60 px-2 py-1 font-mono text-[9px] text-muted-foreground">
+              <span className="rounded-full border border-border bg-background/60 px-2 py-1 font-mono text-xs text-muted-foreground">
                 {zoomLevel < 9
                   ? "Zoom to 9+ to list individual observations"
                   : `${visibleCount.toLocaleString()} mapped observations in loaded view`}
@@ -525,9 +533,9 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
 
             <div
               className={[
-                "mt-3 rounded-xl border px-3 py-2 text-[10px]",
+                "mt-3 rounded-xl border px-3 py-2 text-xs",
                 status === "failed"
-                  ? "border-amber-300/60 bg-amber-50 text-amber-950"
+                  ? "border-warn bg-warn-subtle text-foreground"
                   : "border-border/80 bg-background/50 text-muted-foreground",
               ].join(" ")}
             >
@@ -541,7 +549,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
 
           <div className="grid min-w-[190px] grid-cols-2 gap-2 text-center">
             <div className="rounded-xl border border-border bg-background/70 px-4 py-2">
-              <p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+              <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                 Loaded
               </p>
               <p className="font-display text-2xl tabular-nums">
@@ -549,7 +557,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
               </p>
             </div>
             <div className="rounded-xl border border-border bg-background/70 px-4 py-2">
-              <p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+              <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                 Provider
               </p>
               <p className="font-display text-lg">DeFlock / OSM</p>
@@ -592,7 +600,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
         </div>
       </header>
 
-      <div className="relative h-[min(72vh,720px)] min-h-[460px] bg-slate-100">
+      <div className="relative h-[min(72vh,720px)] min-h-[460px] bg-muted">
         {/* maplibre-gl.css sets `.maplibregl-map { position: relative }` on the
             host element, which overrides `absolute inset-0` and collapses the
             host to 0px. Keep positioning on a wrapper; give MapLibre a plain
@@ -606,50 +614,60 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
         </div>
 
         {status === "failed" && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-100/95 p-6">
-            <div className="max-w-md rounded-2xl border border-amber-300 bg-white p-5 shadow-xl">
-              <p className="font-mono text-[10px] uppercase tracking-wider text-amber-700">
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-muted p-6">
+            <div className="max-w-md rounded-2xl border border-warn bg-card p-5 shadow-lg">
+              <p className="text-xs font-semibold uppercase tracking-[0.06em] text-warn">
                 Map renderer failed to start
               </p>
-              <h3 className="mt-1 font-display text-2xl text-slate-950">
+              <h3 className="mt-1 font-display text-2xl text-foreground">
                 The map is unavailable
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              <p className="mt-2 text-sm leading-relaxed text-steel">
                 {statusMessage}
               </p>
-              <p className="mt-3 text-xs leading-relaxed text-slate-500">
+              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
                 This state is intentionally separate from ALPR data status.
-                CIVINT will not label the map LIVE until MapLibre has emitted
+                CIVWATCH will not label the map LIVE until MapLibre has emitted
                 its load event.
               </p>
             </div>
           </div>
         )}
 
-        <div className="pointer-events-none absolute left-4 top-4 z-10 max-w-[calc(100%-5rem)] rounded-xl border border-white/10 bg-black/65 px-3 py-2 text-white shadow-lg backdrop-blur-xl">
+        <div className="pointer-events-none absolute left-4 top-4 z-10 max-w-[calc(100%-5rem)] rounded-xl border border-border bg-card px-3 py-2 text-foreground">
           <div className="flex items-center gap-2">
-            <MapPin className="size-3.5 text-emerald-300" />
-            <span className="font-mono text-[10px] uppercase tracking-wider text-white/75">
+            <MapPin className="size-3.5 text-primary" />
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
               ALPR observation atlas
             </span>
           </div>
-          <p className="mt-1 text-[10px] text-white/50">
+          <p className="mt-1 text-xs text-muted-foreground">
             Heat density at national scale. Individual mapped observations
             appear as you zoom in.
           </p>
+          <ul className="mt-2 grid gap-1 text-xs" aria-label="Map legend">
+            <li className="flex items-center gap-2">
+              <span aria-hidden="true" className="inline-block size-3 rounded-full border border-marker-stroke bg-dv-alpr-fixed" />
+              Flock Safety (vendor named in source)
+            </li>
+            <li className="flex items-center gap-2">
+              <span aria-hidden="true" className="inline-block size-3 rounded-full border-2 border-dv-other-device bg-card" />
+              Other or unknown vendor
+            </li>
+          </ul>
         </div>
 
         {location && status === "ready" && (
-          <div className="pointer-events-none absolute bottom-4 left-4 rounded-lg border border-sky-200/20 bg-sky-950/70 px-3 py-2 text-[10px] text-sky-100 shadow-lg backdrop-blur">
+          <div className="pointer-events-none absolute bottom-4 left-4 rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground">
             Location enabled · map can center on your area
           </div>
         )}
 
         {selected && (
-          <aside className="absolute bottom-4 right-4 z-30 w-[min(390px,calc(100%-2rem))] rounded-2xl border border-white/10 bg-black/85 p-4 text-white shadow-2xl backdrop-blur-xl">
+          <aside className="absolute bottom-4 right-4 z-30 w-[min(390px,calc(100%-2rem))] rounded-2xl border border-border bg-popover p-4 text-popover-foreground shadow-lg">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-wider text-white/50">
+                <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                   Observation dossier
                 </p>
                 <h3 className="mt-1 font-display text-xl">
@@ -660,7 +678,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
                 type="button"
                 aria-label="Close observation dossier"
                 onClick={() => setSelected(null)}
-                className="min-h-11 min-w-11 rounded-lg border border-white/10 text-lg text-white/70 hover:bg-white/10"
+                className="min-h-11 min-w-11 rounded-lg border border-input text-lg text-steel hover:bg-muted"
               >
                 ×
               </button>
@@ -668,45 +686,45 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
 
             <dl className="mt-3 space-y-2 text-xs">
               <div className="flex justify-between gap-4">
-                <dt className="text-white/50">Coordinates</dt>
+                <dt className="text-muted-foreground">Coordinates</dt>
                 <dd className="font-mono">
                   {selected.latitude.toFixed(5)},{" "}
                   {selected.longitude.toFixed(5)}
                 </dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-white/50">Operator</dt>
+                <dt className="text-muted-foreground">Operator</dt>
                 <dd>{selected.operator ?? "Not reported"}</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-white/50">Mount</dt>
+                <dt className="text-muted-foreground">Mount</dt>
                 <dd>{selected.mount ?? "Not reported"}</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-white/50">Direction</dt>
+                <dt className="text-muted-foreground">Direction</dt>
                 <dd>{selected.direction ?? "Not reported"}</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-white/50">Zone</dt>
+                <dt className="text-muted-foreground">Zone</dt>
                 <dd>{selected.zone ?? "Not reported"}</dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-white/50">Observation ID</dt>
+                <dt className="text-muted-foreground">Observation ID</dt>
                 <dd className="max-w-[190px] truncate font-mono">
                   {selected.id}
                 </dd>
               </div>
             </dl>
 
-            <p className="mt-3 border-t border-white/10 pt-3 text-[10px] leading-relaxed text-white/50">
-              Source: {selected.source}. CIVINT presents public provenance. It
+            <p className="mt-3 border-t border-border pt-3 text-xs leading-relaxed text-muted-foreground">
+              Source: {selected.source}. CIVWATCH presents public provenance. It
               is not a plate-search or vehicle-history product.
             </p>
           </aside>
         )}
       </div>
 
-      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-3 text-[10px] text-muted-foreground">
+      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-3 text-xs text-muted-foreground">
         <span>
           Pinch, double-tap, wheel, or use the controls to zoom · drag to pan ·
           heat density is not a camera count
@@ -717,7 +735,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
         </span>
       </footer>
 
-      <div className="flex flex-wrap gap-2 border-t border-border bg-muted/10 px-5 py-3 text-[10px] text-muted-foreground">
+      <div className="flex flex-wrap gap-2 border-t border-border bg-muted/10 px-5 py-3 text-xs text-muted-foreground">
         <span>Fast path: viewport-native vector tiles</span>
         <span>·</span>
         <span>Validation: Flock Locations + OpenStreetMap</span>
@@ -736,6 +754,21 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
           Privacy desk
         </Link>
       </div>
+
+      <p className="border-t border-border px-5 py-3 text-xs leading-relaxed text-muted-foreground">
+        CIVWATCH maps publicly reported infrastructure from public records, open data
+        (OpenStreetMap) and volunteer reports. We do not access camera feeds, intercept
+        communications, or track individuals.{" "}
+        <a
+          href="https://github.com/POWDER-RANGER/CivilianIntelligence/issues/new?title=Map%20correction%3A%20"
+          target="_blank"
+          rel="noreferrer"
+          className="text-foreground underline underline-offset-2"
+        >
+          Report a map error
+        </a>
+        .
+      </p>
     </section>
   );
 }

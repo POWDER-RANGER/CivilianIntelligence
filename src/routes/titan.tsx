@@ -58,7 +58,7 @@ function TitanPage() {
             ? keepWaking
               ? problem.message + " (attempt " + (wakeAttempt + 1) + " of " + WAKE_MAX_ATTEMPTS + ")"
               : problem.retryable
-                ? "Cell Titan did not respond after " + WAKE_MAX_ATTEMPTS + " attempts. Use Refresh to try again."
+                ? "Cell Monitor did not respond after " + WAKE_MAX_ATTEMPTS + " attempts. Use Refresh to try again."
                 : problem.message
             : null,
         );
@@ -89,8 +89,8 @@ function TitanPage() {
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Pillar 02</p>
-            <h1 className="mt-2 font-display text-4xl md:text-5xl">Cell Titan</h1>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">CIVWATCH Cell Monitor</p>
+            <h1 className="mt-2 font-display text-4xl md:text-5xl">Cell Monitor</h1>
             <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
               Defensive RF observability for understanding your device footprint, the radio environment it can observe,
               and the evidence those observations produce.
@@ -133,19 +133,19 @@ function TitanPage() {
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border border-border bg-card p-5">
-            <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">API service</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">API service</p>
             <p className="mt-2 font-display text-2xl">{health?.service ?? "—"}</p>
           </div>
           <div className="rounded-xl border border-border bg-card p-5">
-            <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Version</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Version</p>
             <p className="mt-2 font-display text-2xl">{health?.version ? "v" + health.version : "—"}</p>
           </div>
           <div className="rounded-xl border border-border bg-card p-5">
-            <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Observations</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Observations</p>
             <p className="mt-2 font-display text-2xl tabular-nums">{samples.length}</p>
           </div>
           <div className="rounded-xl border border-border bg-card p-5">
-            <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Evidence records</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Evidence records</p>
             <p className="mt-2 font-display text-2xl tabular-nums">{evidence.length}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {evidenceOk == null ? "Verification unavailable" : evidenceOk ? "Chain verification passed" : "Chain verification failed"}
@@ -156,10 +156,10 @@ function TitanPage() {
         <section className="mt-6 rounded-xl border border-border bg-card p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Learn your footprint</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Learn your footprint</p>
               <h2 className="mt-1 font-display text-2xl">What your device can tell you</h2>
               <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-                Cell Titan turns supported device observations into an understandable record. Actual coverage depends on
+                Cell Monitor turns supported device observations into an understandable record. Actual coverage depends on
                 your phone model, Android version, permissions, nearby networks, and whether external sensor hardware is attached.
               </p>
             </div>
@@ -221,7 +221,7 @@ function TitanPage() {
         <section className="mt-6 rounded-xl border border-border bg-card p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Local collector</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Local collector</p>
               <h2 className="mt-1 font-display text-2xl">Connect your own Android</h2>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                 This public service cannot access a phone plugged into your computer. Run the local collector, approve
@@ -283,7 +283,7 @@ function TitanPage() {
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">{sample.ts} · {sample.sensor_id}</p>
                   </div>
-                  <pre className="max-w-full overflow-x-auto text-right font-mono text-[10px] text-muted-foreground">
+                  <pre className="max-w-full overflow-x-auto text-right font-mono text-xs text-muted-foreground">
                     {JSON.stringify(sample.metrics, null, 2)}
                   </pre>
                 </div>
@@ -304,7 +304,7 @@ function TitanPage() {
               evidence.slice(0, 20).map((record, index) => (
                 <div key={String(record.seq) + String(record.hash) + index} className="grid gap-1 px-5 py-3 md:grid-cols-[120px_1fr]">
                   <p className="font-mono text-xs">#{record.seq} {record.kind}</p>
-                  <p className="break-all font-mono text-[10px] text-muted-foreground">{record.hash}</p>
+                  <p className="break-all font-mono text-xs text-muted-foreground">{record.hash}</p>
                 </div>
               ))
             )}
@@ -318,7 +318,7 @@ function TitanPage() {
             rel="noreferrer"
             className="text-steel hover:underline"
           >
-            Cell Titan repository
+            Cell Monitor repository
           </a>
           {" · "}
           Production remote access requires a secure transport boundary and a bearer token.

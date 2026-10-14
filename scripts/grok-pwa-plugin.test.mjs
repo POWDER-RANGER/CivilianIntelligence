@@ -504,3 +504,15 @@ test("vite plugin bakes og identity as a virtual module", () => {
   assert.match(plugin, /snapshotOgIdentity/);
 });
 
+
+test("manifest on a custom domain is named from site.json, not the placeholder", () => {
+  const manifest = JSON.parse(
+    renderWebManifest("civintelligence.onrender.com", { title: "CIVWATCH", color: "0a0c10" }),
+  );
+  assert.equal(manifest.name, "CIVWATCH");
+  assert.equal(manifest.short_name, "CIVWATCH");
+  assert.equal(manifest.theme_color, "#0a0c10");
+  // A published grok.me slug still names the app; no site keeps the old default.
+  assert.equal(JSON.parse(renderWebManifest("wild-race.grok.me", { title: "CIVWATCH" })).name, "Wild Race");
+  assert.equal(JSON.parse(renderWebManifest("localhost:8080")).name, "Grok App");
+});
