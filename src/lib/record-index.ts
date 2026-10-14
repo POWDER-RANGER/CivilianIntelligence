@@ -176,7 +176,7 @@ export async function upsertIndexedRecord(input: RecordInput, sql?: Sql): Promis
   const contentHash = input.contentHash ?? (input.rawContent ? sha256Content(input.rawContent) : "");
 
   if (!contentHash) {
-    throw new Error("Record ingestion requires contentHash or rawContent; CIVINT will not invent a hash.");
+    throw new Error("Record ingestion requires contentHash or rawContent; CIVWATCH will not invent a hash.");
   }
 
   const id = canonicalRecordId(input.sourceId, input.sourceRecordId);

@@ -14,7 +14,7 @@ const databaseUrl =
 // PGLite fallback remains useful for local/preview development, but it must not
 // silently make a public deployment look healthy while losing state on restart.
 if (process.env.CIVINT_DEPLOYMENT === "production" && !databaseUrl) {
-  throw new Error("DATABASE_URL is required for a production CIVINTELLIGENCE deployment");
+  throw new Error("DATABASE_URL is required for a production CIVWATCH deployment");
 }
 
 /**

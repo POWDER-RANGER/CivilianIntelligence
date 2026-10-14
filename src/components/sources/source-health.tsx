@@ -27,10 +27,10 @@ export function SourceHealth() {
     <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Evidence layer</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Evidence layer</p>
           <h2 className="mt-1 font-display text-3xl">Sources at a glance</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            CIVINT keeps the original source visible, but brings the useful record into the product.
+            CIVWATCH keeps the original source visible, but brings the useful record into the product.
             Availability below is checked server-side.
           </p>
         </div>

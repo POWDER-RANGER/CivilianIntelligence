@@ -1,7 +1,7 @@
 /**
  * Canonical external ALPR vector-tile provider.
  *
- * CIVINT keeps this as a referenced provider rather than copying or claiming
+ * CIVWATCH keeps this as a referenced provider rather than copying or claiming
  * ownership of the upstream camera dataset. Its endpoint is also registered
  * in public/civint/sources.json.
  */

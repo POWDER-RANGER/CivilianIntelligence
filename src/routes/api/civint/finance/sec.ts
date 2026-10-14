@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/civint/finance/sec")({
         if (!cik) return Response.json({ state: "invalid", error: "Provide a SEC CIK." }, { status: 400 });
         try {
           const response = await fetch(`https://data.sec.gov/submissions/CIK${cik}.json`, {
-            headers: { Accept: "application/json", "User-Agent": "CIVINTELLIGENCE public-record research client" },
+            headers: { Accept: "application/json", "User-Agent": "CIVWATCH public-record research client" },
             signal: AbortSignal.timeout(10000),
           });
           const text = await response.text();

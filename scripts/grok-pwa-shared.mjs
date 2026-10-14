@@ -157,8 +157,14 @@ export function renderInstallPageHtml(template, { host, url } = {}) {
     .replaceAll("{{APP_URL}}", escapeHtml(stripInstallParams(url)));
 }
 
-export function renderWebManifest(hostHeader) {
-  const name = appNameFromHost(hostHeader);
+export function renderWebManifest(hostHeader, site = undefined) {
+  // A deployed app on its own domain names itself from src/lib/og/site.json
+  // instead of the generic placeholder.
+  const siteTitle = String(site?.title ?? "").trim();
+  const hostName = appNameFromHost(hostHeader);
+  const name = hostName === DEFAULT_APP_NAME && siteTitle ? siteTitle : hostName;
+  const themeHex = placeholderCardColor(site);
+  const themeColor = themeHex ? `#${themeHex}` : "#000000";
   return JSON.stringify(
     {
       name,
@@ -167,8 +173,8 @@ export function renderWebManifest(hostHeader) {
       start_url: "/",
       scope: "/",
       display: "standalone",
-      background_color: "#000000",
-      theme_color: "#000000",
+      background_color: themeColor,
+      theme_color: themeColor,
       icons: [
         {
           src: "/__grok/icon-180.png",

@@ -1,4 +1,4 @@
-/** Shared evidence contracts for Signal vs. Record and future CIVINT search/watches. */
+/** Shared evidence contracts for Signal vs. Record and future CIVWATCH search/watches. */
 export type RecordKind = "federal-register" | "spending-award" | "oversight" | "legislation" | "foia" | "reading-room" | "other";
 
 export type EvidenceRecord = {
@@ -53,7 +53,7 @@ export function absenceLabel(hasMatchingRecord: boolean): string {
 }
 
 export const ABSENCE_DISCLAIMER =
-  "This does not establish that no record exists. CIVINT may not have the relevant source, document, or indexing coverage yet.";
+  "This does not establish that no record exists. CIVWATCH may not have the relevant source, document, or indexing coverage yet.";
 
 export function visibleMatch(score: number, includeWeaker = false): boolean {
   return Number.isFinite(score) && score >= (includeWeaker ? 0.3 : MATCH_THRESHOLDS.defaultMin);

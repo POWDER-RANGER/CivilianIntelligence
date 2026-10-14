@@ -18,7 +18,7 @@ export function NodePanel({
     return (
       <div className="flex h-full flex-col justify-between p-5">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Inspector</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Inspector</p>
           <h2 className="mt-3 font-display text-3xl leading-tight">Select a node</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             CIVWATCH is a civilian map of public government power: where it moves, who watches it, and how it
@@ -39,7 +39,7 @@ export function NodePanel({
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-border px-5 py-4">
-        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
           {crumb.filter((c) => c !== "CIVWATCH").join(" / ") || "Framework"}
         </p>
         <h2 className="mt-2 font-display text-2xl leading-tight">{node.name}</h2>
@@ -60,7 +60,7 @@ export function NodePanel({
         )}
         {node.bestFor && (
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Best for</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Best for</p>
             <p className="mt-1 text-sm">{node.bestFor}</p>
           </div>
         )}

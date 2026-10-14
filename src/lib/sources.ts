@@ -24,7 +24,7 @@ export const SOURCES: SourceDefinition[] = [
     license: "CC BY 4.0",
     attribution: "Independent community-run dataset",
     cadence: "Published feed",
-    nativeSurface: "Watchtower / ALPR Atlas",
+    nativeSurface: "CIVWATCH Map / ALPR atlas",
   },
   {
     id: "usaspending",
