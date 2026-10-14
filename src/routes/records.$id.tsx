@@ -62,7 +62,7 @@ function RecordDossierPage() {
         {state === "not-found" && (
           <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
             <FileSearch className="mx-auto size-7 text-muted-foreground" />
-            <h1 className="mt-3 font-display text-3xl">Record not found in the CIVINT index.</h1>
+            <h1 className="mt-3 font-display text-3xl">Record not found in the CIVWATCH index.</h1>
             <p className="mt-2 text-sm text-muted-foreground">The index is not being treated as proof that no source record exists.</p>
             <Link to="/records" className="mt-4 inline-flex text-sm font-medium text-primary hover:underline">Return to Record Index</Link>
           </div>
@@ -74,7 +74,7 @@ function RecordDossierPage() {
           <>
             <div className="flex flex-wrap items-start justify-between gap-5">
               <div className="max-w-4xl">
-                <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">CIVINT Record Dossier</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">CIVWATCH Record Dossier</p>
                 <h1 className="mt-2 font-display text-4xl md:text-5xl">{dossier.record.title}</h1>
                 <p className="mt-3 text-sm text-muted-foreground">{dossier.record.agency ?? "Agency not specified"} · {dossier.record.kind}</p>
               </div>
@@ -88,7 +88,7 @@ function RecordDossierPage() {
                   <div>
                     <h2 className="font-display text-2xl">The record</h2>
                     <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                      CIVINT context is intentionally limited here. The source document is not replaced by a model-generated explanation.
+                      CIVWATCH context is intentionally limited here. The source document is not replaced by a model-generated explanation.
                     </p>
                     <a href={dossier.record.sourceUrl} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
                       Open official/source record
@@ -118,9 +118,9 @@ function RecordDossierPage() {
             </section>
 
             <section className="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">CIVINT context</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">CIVWATCH context</p>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Everything on this panel is CIVINT-authored metadata: classification, indexing, provenance presentation, and relationships. It is not source text and should not be mistaken for the publisher's statement.
+                Everything on this panel is CIVWATCH-authored metadata: classification, indexing, provenance presentation, and relationships. It is not source text and should not be mistaken for the publisher's statement.
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {dossier.record.identifiers.map((identifier) => <Badge key={identifier} variant="outline">{identifier}</Badge>)}
@@ -150,7 +150,7 @@ function RecordDossierPage() {
                 <div className="mt-4 space-y-3">
                   {dossier.versions.map((version) => (
                     <div key={version.contentHash} className="rounded-lg border border-border p-3">
-                      <p className="font-mono break-all text-[11px]">{version.contentHash}</p>
+                      <p className="font-mono break-all text-xs">{version.contentHash}</p>
                       <p className="mt-1 text-xs text-muted-foreground">{version.hashBasis} · {version.retrievedAt} · {version.retrievalMethod} · {version.adapterVersion}</p>
                     </div>
                   ))}

@@ -38,8 +38,8 @@ export type AssistantResponse = {
 };
 
 export const ASSISTANT_SYSTEM_RULES = [
-  "Answer only from retrieved CIVINT index records and navigation metadata.",
-  "Never use model memory or open-web knowledge as evidence for CIVINT claims.",
+  "Answer only from retrieved CIVWATCH index records and navigation metadata.",
+  "Never use model memory or open-web knowledge as evidence for CIVWATCH claims.",
   "Every factual answer must identify supporting record IDs.",
   "If retrieval is weak, say so and offer nearest indexed alternatives or FOIA.",
   "Never convert an absence from the index into a claim that no record exists.",

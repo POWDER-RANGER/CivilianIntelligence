@@ -79,7 +79,7 @@ export const Route = createFileRoute("/api/civint/location/context")({
               recordIndex: indexFailed ? "unavailable" : "available",
               provenance: {
                 geography: "U.S. Census Bureau Geocoder",
-                evidence: "CIVINT Record Index",
+                evidence: "CIVWATCH Record Index",
               },
             },
             { headers: { "Cache-Control": "no-store" } },

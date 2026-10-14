@@ -106,7 +106,7 @@ const CIA_COLLECTIONS = [
   },
   {
     title: "STAR GATE",
-    description: "Declassified records associated with the STAR GATE remote-viewing research program. CIVINT treats the records as historical evidence, not validation of their underlying claims.",
+    description: "Declassified records associated with the STAR GATE remote-viewing research program. CIVWATCH treats the records as historical evidence, not validation of their underlying claims.",
     tags: ["STAR GATE", "science", "historical"],
     url: "https://www.cia.gov/readingroom/search/site/STAR%20GATE",
   },
@@ -132,10 +132,10 @@ function ReadingRoomPage() {
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div className="max-w-3xl">
-            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Public record library</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Public record library</p>
             <h1 className="mt-2 font-display text-4xl md:text-5xl">Reading Room</h1>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              A civilian-friendly index to federal FOIA libraries and declassified collections. CIVINT organizes
+              A civilian-friendly index to federal FOIA libraries and declassified collections. CIVWATCH organizes
               discovery and context; the releasing institution remains the source of record.
             </p>
           </div>
@@ -151,7 +151,7 @@ function ReadingRoomPage() {
             <div>
               <h2 className="font-display text-2xl">Search the source library</h2>
               <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                Start with the CIVINT index to choose the right federal collection. Search and document retrieval remain
+                Start with the CIVWATCH index to choose the right federal collection. Search and document retrieval remain
                 tied to the official publisher so provenance, metadata, and the original record stay visible.
               </p>
               <a
@@ -170,7 +170,7 @@ function ReadingRoomPage() {
         <section className="mt-8">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Federal libraries</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Federal libraries</p>
               <h2 className="mt-1 font-display text-2xl">Where the records live</h2>
             </div>
             <Badge variant="outline">{LIBRARIES.length} indexed libraries</Badge>
@@ -209,7 +209,7 @@ function ReadingRoomPage() {
         <section className="mt-8">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">CIA collections</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">CIA collections</p>
               <h2 className="mt-1 font-display text-2xl">Start with high-value collections</h2>
             </div>
             <Badge variant="outline">{CIA_COLLECTIONS.length} entry points</Badge>
@@ -239,7 +239,7 @@ function ReadingRoomPage() {
 
         <section className="mt-8 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Search practice</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Search practice</p>
             <h2 className="mt-1 font-display text-2xl">Find better records</h2>
             <div className="mt-4 grid gap-3">
               {SEARCH_TIPS.map(([title, text]) => (
@@ -251,11 +251,11 @@ function ReadingRoomPage() {
             </div>
           </div>
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">CIVINT principle</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">CIVWATCH principle</p>
             <h2 className="mt-1 font-display text-2xl">Remove UI dependency, not attribution</h2>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
               The long-term goal is a searchable evidence layer: normalized metadata, document dossiers, cross-desk
-              relationships, and eventually full-text search for selected collections. CIVINT should make records easier
+              relationships, and eventually full-text search for selected collections. CIVWATCH should make records easier
               to find without pretending to be the releasing agency or silently replacing the original record.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">

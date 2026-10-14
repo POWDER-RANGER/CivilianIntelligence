@@ -53,7 +53,7 @@ function PrivacyPage() {
   return (
     <AppShell>
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
-        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Desk 03</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Desk 03</p>
         <h1 className="mt-2 font-display text-4xl md:text-5xl">Privacy invasion</h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           A civilian atlas of how government watches the public — not a leak dump, not a conspiracy board. Each
@@ -73,7 +73,7 @@ function PrivacyPage() {
           <section className="mt-6 rounded-xl border border-border bg-card p-5">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Record intelligence</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Record intelligence</p>
                 <h2 className="mt-1 font-display text-2xl">Atlas of Surveillance</h2>
                 <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
                   Jurisdiction-level public records about surveillance technology, agencies, and vendors.
@@ -95,13 +95,13 @@ function PrivacyPage() {
                 ["Agencies", new Set(atlas.records.map((r) => r.agency).filter(Boolean)).size],
               ].map(([label, value]) => (
                 <div key={String(label)} className="rounded-lg border border-border p-4">
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">{label}</p>
                   <p className="mt-1 font-display text-3xl tabular-nums">{String(value)}</p>
                 </div>
               ))}
             </div>
             )}
-            <p className="mt-4 text-[11px] text-muted-foreground">
+            <p className="mt-4 text-xs text-muted-foreground">
               Source snapshot:{" "}
               <a href={atlas.source.url} target="_blank" rel="noreferrer" className="text-steel hover:underline">
                 {atlas.source.name}
@@ -115,10 +115,10 @@ function PrivacyPage() {
           <section className="mt-8 rounded-xl border border-border bg-card p-5">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Mapped infrastructure</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Mapped infrastructure</p>
                 <h2 className="mt-1 font-display text-2xl">Open surveillance map feed</h2>
                 <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
-                  Community-mapped OSM observations, normalized by CIVINT. These are mapped assets, not proof of
+                  Community-mapped OSM observations, normalized by CIVWATCH. These are mapped assets, not proof of
                   current operation, ownership, or unlawful interception.
                 </p>
               </div>
@@ -154,13 +154,13 @@ function PrivacyPage() {
                 ["Other", surveillance.counts.other ?? 0],
               ].map(([label, value]) => (
                 <div key={String(label)} className="rounded-lg border border-border p-4">
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">{label}</p>
                   <p className="mt-1 font-display text-3xl tabular-nums">{String(value)}</p>
                 </div>
               ))}
             </div>
             )}
-            <p className="mt-4 text-[11px] text-muted-foreground">
+            <p className="mt-4 text-xs text-muted-foreground">
               {surveillance.elements.length} normalized observations · as of {surveillance.as_of ?? "unknown"} ·{" "}
               <a href={surveillance.source.url} target="_blank" rel="noreferrer" className="text-steel hover:underline">
                 {surveillance.source.name}
@@ -184,7 +184,7 @@ function PrivacyPage() {
                   onClick={() => setOpenId(open ? null : sys.id)}
                 >
                   <div>
-                    <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                       {sys.category}
                     </p>
                     <h2 className="mt-1 font-display text-2xl leading-tight">{sys.name}</h2>
@@ -195,25 +195,25 @@ function PrivacyPage() {
                 {open && (
                   <dl className="mt-4 space-y-3 border-t border-border pt-4 text-sm">
                     <div>
-                      <dt className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                      <dt className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                         Operated by
                       </dt>
                       <dd className="mt-1">{sys.whoOperates}</dd>
                     </div>
                     <div>
-                      <dt className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                      <dt className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                         Coverage
                       </dt>
                       <dd className="mt-1">{sys.coverage}</dd>
                     </div>
                     <div>
-                      <dt className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                      <dt className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                         Last public
                       </dt>
                       <dd className="mt-1">{sys.lastPublic}</dd>
                     </div>
                     <div>
-                      <dt className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                      <dt className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
                         How a civilian sees it
                       </dt>
                       <dd className="mt-1">

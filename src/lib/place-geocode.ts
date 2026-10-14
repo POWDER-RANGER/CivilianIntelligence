@@ -11,7 +11,7 @@ import { resolveGeography, type ResolvedGeography } from "@/lib/census-geography
 const CENSUS_ADDRESS = "https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress";
 const CENSUS_COORDS = "https://geocoding.geo.census.gov/geocoder/geographies/coordinates";
 const NOMINATIM = "https://nominatim.openstreetmap.org/search";
-const UA = "CIVINT/1.0 (civic transparency; +https://civintelligence.onrender.com)";
+const UA = "CIVWATCH/1.0 (civic transparency; +https://civintelligence.onrender.com)";
 
 export type GeocodeMethod = "coordinates" | "census-address" | "nominatim+census";
 

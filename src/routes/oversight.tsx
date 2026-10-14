@@ -29,7 +29,7 @@ function OversightPage() {
   return (
     <AppShell>
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
-        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Desk 02</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Desk 02</p>
         <h1 className="mt-2 font-display text-4xl md:text-5xl">Oversight</h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           The civilian audit trail: Inspectors General, GAO, FOIA releases, STOCK Act trades, lobbying
@@ -49,7 +49,7 @@ function OversightPage() {
         </div>
 
         <div className="mt-3 overflow-hidden rounded-xl border border-border">
-          <div className="hidden grid-cols-[7rem_7rem_1fr_6rem] gap-3 border-b border-border bg-card px-4 py-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground md:grid">
+          <div className="hidden grid-cols-[7rem_7rem_1fr_6rem] gap-3 border-b border-border bg-card px-4 py-2 text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground md:grid">
             <span>Date</span>
             <span>Office</span>
             <span>Filing</span>
