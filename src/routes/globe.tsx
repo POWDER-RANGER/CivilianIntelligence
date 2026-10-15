@@ -13,11 +13,26 @@ import { AppShell } from "@/components/layout/app-shell";
 import { AlprAtlas } from "@/components/watchtower/alpr-atlas";
 import {
   DEFAULT_GLOBE_CAMERA,
-  GLOBE_BASE_URL,
+  DEFAULT_TOOLS_MODE,
   MY_LOCATION_ALT,
+  TOOLS_MODES,
   buildGlobeEmbedUrl,
+  isToolsMode,
   type GlobeCamera,
+  type GlobeToolsMode,
 } from "@/lib/globe-url";
+
+const TOOLS_STORAGE_KEY = "civwatch.globe.tools";
+const TOOLS_LABELS: Record<GlobeToolsMode, string> = { hidden: "Hidden", minimal: "Minimal", full: "Full" };
+
+function readStoredToolsMode(): GlobeToolsMode {
+  try {
+    const stored = window.localStorage.getItem(TOOLS_STORAGE_KEY);
+    return isToolsMode(stored) ? stored : DEFAULT_TOOLS_MODE;
+  } catch {
+    return DEFAULT_TOOLS_MODE;
+  }
+}
 
 type PortalView = "map" | "globe";
 type LocateState = "idle" | "requesting" | "granted" | "denied" | "unavailable";
@@ -30,6 +45,22 @@ function CameraFeedPortal() {
   const [loaded, setLoaded] = useState(false);
   const [camera, setCamera] = useState<GlobeCamera>(DEFAULT_GLOBE_CAMERA);
   const [locateState, setLocateState] = useState<LocateState>("idle");
+  const [toolsMode, setToolsMode] = useState<GlobeToolsMode>(() =>
+    typeof window === "undefined" ? DEFAULT_TOOLS_MODE : readStoredToolsMode(),
+  );
+
+  // The viewer reads its UI state from the URL fragment at load, so changing the
+  // tools mode reloads the embedded viewer at the same camera.
+  function changeToolsMode(next: GlobeToolsMode) {
+    if (next === toolsMode) return;
+    setToolsMode(next);
+    setLoaded(false);
+    try {
+      window.localStorage.setItem(TOOLS_STORAGE_KEY, next);
+    } catch {
+      /* storage unavailable: choice applies to this visit only */
+    }
+  }
 
   // Same prompt pattern as the home page: ask only on a user click, never on load.
   function launchAtMyLocation() {
@@ -98,7 +129,7 @@ function CameraFeedPortal() {
               </div>
             </div>
             <a
-              href={GLOBE_BASE_URL}
+              href={buildGlobeEmbedUrl(camera, toolsMode, { embed: false })}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-muted"
@@ -184,9 +215,27 @@ function CameraFeedPortal() {
                 <h2 className="text-base font-semibold md:text-lg">Global public-feed viewer</h2>
                 <p className="mt-0.5 text-xs text-muted-foreground">Separate open-source geospatial application</p>
               </div>
-              <span className="ml-auto shrink-0 rounded-md border border-border px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-                {viewerStatus}
-              </span>
+              <div className="ml-auto flex shrink-0 items-center gap-2">
+                <div role="group" aria-label="Viewer tools" className="flex items-center gap-1 rounded-lg border border-border bg-background p-0.5">
+                  <span className="px-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Tools</span>
+                  {TOOLS_MODES.map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      aria-pressed={toolsMode === mode}
+                      onClick={() => changeToolsMode(mode)}
+                      className={`min-h-9 rounded-md px-2.5 text-xs font-medium transition-colors ${
+                        toolsMode === mode ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                      }`}
+                    >
+                      {TOOLS_LABELS[mode]}
+                    </button>
+                  ))}
+                </div>
+                <span className="hidden shrink-0 rounded-md border border-border px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground sm:inline">
+                  {viewerStatus}
+                </span>
+              </div>
             </header>
 
             <div className="relative h-[min(70dvh,820px)] min-h-[420px] bg-background md:min-h-[540px] xl:h-[calc(100dvh-290px)] xl:min-h-[540px]">
@@ -249,8 +298,9 @@ function CameraFeedPortal() {
                     </div>
                   )}
                   <iframe
+                    key={toolsMode}
                     title="Global public-feed viewer"
-                    src={buildGlobeEmbedUrl(camera)}
+                    src={buildGlobeEmbedUrl(camera, toolsMode)}
                     className="absolute inset-0 size-full border-0"
                     loading="lazy"
                     allow="fullscreen"
