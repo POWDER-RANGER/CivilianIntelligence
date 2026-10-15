@@ -38,16 +38,17 @@ jobs:
           api_key: ${{ secrets.NEON_API_KEY }}
           expires_at: ${{ steps.expiration.outputs.expires_at }}
           # create-branch-action only emits db_url* outputs when it is told
-          # which database and role to build the connection string for.
-          database: ${{ vars.NEON_DATABASE_NAME }}
-          username: ${{ vars.NEON_ROLE_NAME }}
+          # which database and role to build the connection string for. Defaults are
+          # Neon's standard names; override with repo variables if yours differ.
+          database: ${{ vars.NEON_DATABASE_NAME || 'neondb' }}
+          username: ${{ vars.NEON_ROLE_NAME || 'neondb_owner' }}
 
       - name: Require preview DATABASE_URL
         env:
           DB_URL: ${{ steps.create_neon_branch.outputs.db_url_with_pooler }}
         run: |
           if [ -z "$DB_URL" ]; then
-            echo "::error::Neon branch created but no db_url_with_pooler output. Set repo variables NEON_DATABASE_NAME and NEON_ROLE_NAME."
+            echo "::error::Neon branch created but no db_url_with_pooler output. Check the NEON_DATABASE_NAME / NEON_ROLE_NAME repo variables."
             exit 1
           fi
 
