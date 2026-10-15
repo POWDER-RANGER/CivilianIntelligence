@@ -5,17 +5,22 @@ import {
   ExternalLink,
   Globe2,
   LoaderCircle,
+  LocateFixed,
   Map,
   ShieldAlert,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { AlprAtlas } from "@/components/watchtower/alpr-atlas";
-
-const PUBLIC_FEEDS_EMBED_URL =
-  "https://civintelligence-gods-eye-prod.onrender.com/?embed=1#v=2&lat=30.2672&lon=-97.7431&alt=600&heading=15&pitch=-30&roll=360&style=normal&bloom=0&sharpen=1&bi=0&bv=2&si=49&hud=tactical&hv=1&dm=DENSE&dd=75&da=elastic&kf=7&ko=1&cr=0&sc=1&scf=11&map=esri-imagery&l=&lo=f.e.1_k.o.n&ui=c.c.1_c.p.0_l.c.1_l.p.0_d.c.1_v.c.1_i.c.0_t.c.1_r.c.1_s.c.1_g.c.1_p.c.1_m.c.0";
-const PUBLIC_FEEDS_URL = "https://civintelligence-gods-eye-prod.onrender.com";
+import {
+  DEFAULT_GLOBE_CAMERA,
+  GLOBE_BASE_URL,
+  MY_LOCATION_ALT,
+  buildGlobeEmbedUrl,
+  type GlobeCamera,
+} from "@/lib/globe-url";
 
 type PortalView = "map" | "globe";
+type LocateState = "idle" | "requesting" | "granted" | "denied" | "unavailable";
 
 export const Route = createFileRoute("/globe")({ component: CameraFeedPortal });
 
@@ -23,6 +28,45 @@ function CameraFeedPortal() {
   const [activeView, setActiveView] = useState<PortalView>("map");
   const [viewerRequested, setViewerRequested] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [camera, setCamera] = useState<GlobeCamera>(DEFAULT_GLOBE_CAMERA);
+  const [locateState, setLocateState] = useState<LocateState>("idle");
+
+  // Same prompt pattern as the home page: ask only on a user click, never on load.
+  function launchAtMyLocation() {
+    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+      setLocateState("unavailable");
+      setViewerRequested(true);
+      return;
+    }
+    setLocateState("requesting");
+    let settled = false;
+    // The geolocation timeout does not run while the permission prompt is open,
+    // so an ignored prompt would never resolve. Fall back to the default view.
+    const fallback = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      setLocateState("denied");
+      setViewerRequested(true);
+    }, 15000);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(fallback);
+        setCamera({ lat: coords.latitude, lon: coords.longitude, alt: MY_LOCATION_ALT });
+        setLocateState("granted");
+        setViewerRequested(true);
+      },
+      () => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(fallback);
+        setLocateState("denied");
+        setViewerRequested(true);
+      },
+      { enableHighAccuracy: false, maximumAge: 300000, timeout: 10000 },
+    );
+  }
 
   const showMap = activeView === "map";
   const viewerStatus = loaded
@@ -54,7 +98,7 @@ function CameraFeedPortal() {
               </div>
             </div>
             <a
-              href={PUBLIC_FEEDS_URL}
+              href={GLOBE_BASE_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium transition-colors hover:bg-muted"
@@ -157,20 +201,42 @@ function CameraFeedPortal() {
                       The globe is loaded only when requested. This keeps the initial portal lighter, especially on
                       phones and foldables.
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => setViewerRequested(true)}
-                      className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 sm:w-auto"
-                    >
-                      <Globe2 className="size-4" /> Launch viewer
-                    </button>
+                    <div className="mt-5 flex flex-col items-stretch justify-center gap-2 sm:flex-row">
+                      <button
+                        type="button"
+                        onClick={launchAtMyLocation}
+                        disabled={locateState === "requesting"}
+                        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+                      >
+                        {locateState === "requesting" ? (
+                          <LoaderCircle className="size-4 animate-spin" />
+                        ) : (
+                          <LocateFixed className="size-4" />
+                        )}
+                        Launch at my location
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setViewerRequested(true)}
+                        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium transition-colors hover:bg-muted"
+                      >
+                        <Globe2 className="size-4" /> Launch viewer
+                      </button>
+                    </div>
                     <p className="mt-3 text-xs text-muted-foreground">
-                      The separate service may need a moment to wake up.
+                      Your location is requested only if you choose it, is rounded to about 100 m, and stays in your
+                      browser. The separate service may need a moment to wake up.
                     </p>
                   </div>
                 </div>
               ) : (
                 <>
+                  {(locateState === "denied" || locateState === "unavailable") && (
+                    <p className="absolute inset-x-0 top-0 z-20 border-b border-warn bg-warn-subtle px-3 py-2 text-xs text-foreground">
+                      Location {locateState === "denied" ? "was not shared" : "is not available in this browser"}; showing
+                      the default view.
+                    </p>
+                  )}
                   {!loaded && (
                     <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-6 text-center">
                       <div className="max-w-sm rounded-xl border border-border bg-popover p-4">
@@ -184,7 +250,7 @@ function CameraFeedPortal() {
                   )}
                   <iframe
                     title="Global public-feed viewer"
-                    src={PUBLIC_FEEDS_EMBED_URL}
+                    src={buildGlobeEmbedUrl(camera)}
                     className="absolute inset-0 size-full border-0"
                     loading="lazy"
                     allow="fullscreen"
