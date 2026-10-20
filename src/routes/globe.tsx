@@ -12,7 +12,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { AlprAtlas } from "@/components/watchtower/alpr-atlas";
 
 const PUBLIC_FEEDS_EMBED_URL =
-  "https://civintelligence-gods-eye-prod.onrender.com/?embed=1#v=2&lat=30.2672&lon=-97.7431&alt=600&heading=15&pitch=-30&roll=360&style=normal&bloom=0&sharpen=1&bi=0&bv=2&si=49&hud=tactical&hv=1&dm=DENSE&dd=75&da=elastic&kf=7&ko=1&cr=0&sc=1&scf=11&map=esri-imagery&l=&lo=f.e.1_k.o.n&ui=c.c.1_c.p.0_l.c.1_l.p.0_d.c.1_v.c.1_i.c.0_t.c.1_r.c.1_s.c.1_g.c.1_p.c.1_m.c.0";
+  "https://civintelligence-gods-eye-prod.onrender.com/?embed=1#v=2&lat=30.2672&lon=-97.7431&alt=600&heading=15&pitch=-30&roll=360&style=normal&bloom=0&sharpen=1&bi=0&bv=2&si=49&hud=tactical&hv=1&dm=OFF&dd=50&da=elastic&kf=7&ko=1&cr=0&sc=1&scf=11&map=esri-imagery&l=&ui=c.c.0_c.p.0_l.c.0_l.p.0_d.c.1_v.c.1_i.c.1_t.c.1_r.c.1_s.c.1_g.c.1_p.c.1_m.c.1";
 const PUBLIC_FEEDS_URL = "https://civintelligence-gods-eye-prod.onrender.com";
 
 type PortalView = "map" | "globe";
