@@ -127,12 +127,13 @@ Incident record: [docs/CI_RUNNER_INCIDENT_2026-10-04.md](./docs/CI_RUNNER_INCIDE
 
 ## Documentation
 
+- [Repository documentation standard](./docs/DOCUMENTATION_STANDARD.md)
+- [Cross-repository integration contract](./docs/CROSS_REPO_INTEGRATION.md) — canonical service boundaries and data contracts
 - [CIVINTELLIGENCE charter](./docs/CIVINTELLIGENCE.md)
 - [Unified architecture](./docs/CIVINTELLIGENCE_ARCHITECTURE.md)
 - [Consolidation plan](./docs/CIVINTELLIGENCE_CONSOLIDATION_PLAN.md)
-- [Cross-repo integration contract](./docs/CROSS_REPO_INTEGRATION.md)
-- [CI runner incident](./docs/CI_RUNNER_INCIDENT_2026-10-04.md)
 - [Ingest pipeline](./ingest/README.md)
+- [CI runner incident (historical)](./docs/CI_RUNNER_INCIDENT_2026-10-04.md)
 
 ## License
 
