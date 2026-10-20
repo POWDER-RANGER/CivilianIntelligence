@@ -1,136 +1,250 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="CIVINTELLIGENCE — the unified civilian intelligence platform. Public access to government movement, oversight, money in politics, privacy systems, and the tools to request records.">
-<meta name="theme-color" content="#0a0000">
-<title>CIVINTELLIGENCE</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CIVWATCH web app</title>
+<meta name="description" content="Source repository for the CIVWATCH web app: the camera map, records, money trail and records-request toolkit. Every record links to its source.">
+<meta name="theme-color" content="#f7f6f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0a0c10" media="(prefers-color-scheme: dark)">
+<link rel="icon" type="image/svg+xml" href="assets/brand/favicon.svg">
+<link rel="apple-touch-icon" href="assets/brand/icon-180.png">
+<meta property="og:title" content="CIVWATCH web app">
+<meta property="og:description" content="Who is watching your town, who paid for it, and how to challenge it. Every record links to its source.">
+<meta property="og:image" content="https://powder-ranger.github.io/CivilianIntelligence/assets/brand/og.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0a0000;--panel:#120000;--panel-2:#1a0000;--red:#E31C23;--red-dark:#8B0000;--ink:#F2E8E8;--mute:#A08080;--line:#4A1010;--display:'Oswald',Impact,'Arial Narrow',sans-serif;--mono:'Share Tech Mono',ui-monospace,monospace}
-*{box-sizing:border-box;margin:0;padding:0;border-radius:0!important}
-body{background:var(--bg);color:var(--ink);font-family:var(--display);font-weight:500;text-transform:uppercase;letter-spacing:.06em;line-height:1.35;min-height:100vh;overflow-x:hidden}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9998;background:repeating-linear-gradient(0deg,rgba(0,0,0,.2) 0,rgba(0,0,0,.2) 1px,transparent 1px,transparent 4px);opacity:.4}
-a{color:inherit;text-decoration:none}
-.wrap{max-width:1100px;margin:0 auto;padding:0 20px;position:relative;z-index:1}
-nav{position:fixed;top:0;left:0;right:0;z-index:50;background:#0a0000;border-bottom:3px solid var(--red)}
-nav .inner{display:flex;align-items:center;justify-content:space-between;height:52px;max-width:1100px;margin:0 auto;padding:0 20px}
-.brand{font-weight:700;font-size:.95rem;letter-spacing:.2em;color:var(--red)}
-.nav-links{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;color:var(--mute)}
-.nav-links a:hover{color:var(--red)}
-.hero{padding:120px 0 72px;border-bottom:3px solid var(--red);background:linear-gradient(180deg,rgba(227,28,35,.14),transparent 70%)}
-.stripe{height:8px;background:var(--red);margin-bottom:28px}
-.kicker{font-family:var(--mono);font-size:.72rem;letter-spacing:.2em;color:var(--red);margin-bottom:14px}
-h1{font-weight:700;font-size:clamp(3rem,11vw,6rem);line-height:.88;letter-spacing:.04em;margin-bottom:18px}
-h1 span{color:var(--red)}
-.lead{max-width:38rem;color:var(--mute);font-size:1.05rem;margin-bottom:28px;border-left:6px solid var(--red);padding-left:16px}
-.cta{display:flex;flex-wrap:wrap}
-.btn{font-family:var(--mono);font-size:.75rem;letter-spacing:.16em;padding:16px 22px;border:3px solid var(--red);display:inline-block}
-.btn-primary{background:var(--red);color:#fff}
-.btn-primary:hover{background:#fff;color:#000;border-color:#fff}
-.btn-ghost{background:transparent;color:var(--ink);margin-left:-3px}
-.btn-ghost:hover{background:var(--red);color:#fff}
-section{padding:56px 0;border-bottom:3px solid var(--line)}
-.tag{font-family:var(--mono);color:var(--red);font-size:.72rem;letter-spacing:.22em;margin-bottom:10px}
-h2{font-weight:700;font-size:clamp(1.5rem,4vw,2.2rem);letter-spacing:.06em;margin-bottom:20px}
-.sec-sub{color:var(--mute);max-width:42rem;margin-bottom:28px;font-size:.95rem}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0;border-top:3px solid var(--red);border-left:3px solid var(--red)}
-.card{display:block;background:var(--panel);border-right:3px solid var(--red);border-bottom:3px solid var(--red);padding:22px;min-height:150px}
-.card:hover{background:var(--red)}
-.card:hover *{color:#fff!important}
-.card h3{font-size:1.05rem;font-weight:700;letter-spacing:.06em;margin-bottom:8px}
-.card p{color:var(--mute);font-size:.88rem}
-.chip{display:inline-block;margin-top:14px;font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;padding:5px 9px;background:var(--panel-2);border:2px solid var(--line);color:var(--mute)}
-.card.live .chip{background:var(--red);border-color:var(--red);color:#fff}
-.card.merging{opacity:.75}
-footer{border-top:8px solid var(--red);padding:40px 20px;text-align:center;font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;color:var(--mute)}
-footer a{color:var(--red)}
-footer a:hover{color:#fff}
-@media(max-width:640px){.nav-links{display:none}.btn-ghost{margin-left:0;margin-top:-3px}}
-</style>
-\n<link rel="stylesheet" href="https://powder-ranger.github.io/assets/brand-pages.css">\n</head>
-<body>
-<nav>
-  <div class="inner">
-    <a class="brand" href="#top">CIVINTELLIGENCE</a>
-    <div class="nav-links">
-      <a href="#pillars">Pillars</a>
-      <a href="#spine">Spine</a>
-      <a href="#sources">Sources</a>
-      <a href="https://github.com/POWDER-RANGER/CivilianIntelligence">GitHub</a>
-    </div>
-  </div>
-</nav>
+/* CIVWATCH Design Standard v2 tokens: editorial (light) default, ops (dark) by preference */
+:root {
+  color-scheme: light;
+  --bg: #f7f6f2; --surface: #ffffff; --raised: #ffffff;
+  --text: #111418; --text-2: #4a5260; --muted: #5f6773;
+  --border: #d9d6ce; --control: #7a808a;
+  --accent: #0e6e85; --on-accent: #ffffff; --accent-subtle: #e4f0f2;
+  --focus: #0e6e85;
+  --land: #12161b; --road: #232a33; --map-ink: #e6eaf0;
+  --sans: "IBM Plex Sans", system-ui, sans-serif;
+  --serif: "Source Serif 4", Georgia, serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #0a0c10; --surface: #111418; --raised: #161b22;
+    --text: #e6eaf0; --text-2: #a8b0bc; --muted: #8b949e;
+    --border: #2a313b; --control: #6b7684;
+    --accent: #56c2d6; --on-accent: #0a0c10; --accent-subtle: #0d2328;
+    --focus: #e6eaf0;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 400 16px/1.5 var(--sans); }
+a { color: var(--accent); text-underline-offset: 2px; }
+:where(a, button):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.wrap { max-width: 1200px; margin: 0 auto; padding-inline: 24px; }
+@media (max-width: 640px) { .wrap { padding-inline: 16px; } }
+.eyebrow { font: 600 12px/1.3 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+h1, h2, h3 { text-wrap: balance; }
 
-<header class="hero" id="top">
+header.site { border-bottom: 1px solid var(--border); }
+header.site .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 64px; }
+.lockup { display: inline-flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; }
+.lockup .glyph { width: 30px; height: 30px; }
+.lockup span { font: 600 18px/1 var(--sans); letter-spacing: .06em; }
+.glyph { display: block; color: currentColor; }
+.glyph .dot { fill: var(--accent); }
+nav.top { display: flex; gap: 20px; font-size: 14px; }
+nav.top a { color: var(--text-2); text-decoration: none; }
+nav.top a:hover { color: var(--text); text-decoration: underline; }
+@media (max-width: 640px) { nav.top .opt { display: none; } }
+
+.hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 48px; align-items: center; padding-block: 64px; }
+@media (max-width: 900px) { .hero { grid-template-columns: 1fr; gap: 32px; padding-block: 40px; } }
+.hero h1 { font: 600 clamp(40px, 6vw, 60px)/1.05 var(--serif); letter-spacing: -.02em; margin: 0; }
+.hero p.lead { font-size: 18px; line-height: 1.6; color: var(--text-2); max-width: 34em; margin: 20px 0 28px; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 4px; font: 500 15px/1 var(--sans); text-decoration: none; border: 1px solid var(--control); color: var(--text); background: var(--surface); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn:hover { filter: brightness(1.05); }
+.note { margin-top: 14px; font-size: 13px; color: var(--muted); }
+figure.map { margin: 0; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); background: var(--land); }
+figure.map > svg { display: block; width: 100%; height: auto; }
+.legend svg { flex: none; }
+figure.map figcaption { background: var(--surface); border-top: 1px solid var(--border); padding: 10px 14px; font-size: 13px; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 6px; color: var(--text-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+section.band { border-top: 1px solid var(--border); padding-block: 56px; }
+section.band h2 { font: 600 32px/1.15 var(--sans); letter-spacing: -.01em; margin: 0 0 8px; }
+section.band p.sub { color: var(--text-2); max-width: 44em; margin: 0 0 32px; }
+.products { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 1000px) { .products { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .products { grid-template-columns: 1fr; } }
+.product { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.product .glyph { width: 40px; height: 40px; color: var(--text); }
+.product h3 { font: 600 18px/1.3 var(--sans); margin: 4px 0 0; }
+.product p { margin: 0; color: var(--text-2); font-size: 15px; flex: 1; }
+.product a { font-weight: 500; font-size: 15px; }
+ol.principles { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 48px; }
+@media (max-width: 760px) { ol.principles { grid-template-columns: 1fr; } }
+ol.principles li { border-top: 1px solid var(--border); padding-block: 20px; }
+ol.principles h3 { font: 600 18px/1.35 var(--sans); margin: 0 0 6px; }
+ol.principles p { margin: 0; color: var(--text-2); }
+.status { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 760px) { .status { grid-template-columns: 1fr; } }
+.status div { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px 20px; }
+.status dt { font-size: 13px; color: var(--muted); }
+.status dd { margin: 4px 0 0; font-weight: 500; }
+.status code { font: 400 13px/1.4 var(--mono); }
+
+footer.site { border-top: 1px solid var(--border); background: var(--surface); padding-block: 40px; font-size: 14px; color: var(--text-2); }
+footer.site .cols { display: grid; grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)); gap: 32px; }
+@media (max-width: 760px) { footer.site .cols { grid-template-columns: 1fr; } }
+footer.site h4 { font: 600 12px/1.3 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+footer.site ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+footer.site p { margin: 0 0 12px; max-width: 46em; }
+.legal { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* web-app source page additions */
+.desks { width: 100%; border-collapse: collapse; font-size: 15px; }
+.desks th { text-align: left; font: 500 13px/1.3 var(--sans); color: var(--muted); padding: 8px 12px 8px 0; border-bottom: 1px solid var(--border); }
+.desks td { padding: 14px 12px 14px 0; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text-2); }
+.desks td:first-child { color: var(--text); font-weight: 600; white-space: nowrap; }
+.desks code { font: 400 13px/1.4 var(--mono); color: var(--text-2); }
+.table-scroll { overflow-x: auto; }
+pre.run { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px 20px; overflow-x: auto; font: 400 14px/1.6 var(--mono); margin: 0; }
+.sources { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 900px) { .sources { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .sources { grid-template-columns: 1fr; } }
+.sources a { display: block; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px 20px; text-decoration: none; color: var(--text); }
+.sources a:hover { border-color: var(--control); }
+.sources b { display: block; font-weight: 600; margin-bottom: 4px; }
+.sources span { color: var(--text-2); font-size: 15px; }
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; }
+@media (max-width: 900px) { .split { grid-template-columns: 1fr; gap: 32px; } }
+</style>
+</head>
+<body>
+<header class="site">
   <div class="wrap">
-    <div class="stripe"></div>
-    <p class="kicker">// Unclassified · public records · civilian access</p>
-    <h1>CIV<span>INTELLIGENCE</span></h1>
-    <p class="lead">The unified civilian intelligence platform. Public access to government movement, oversight, money in politics, privacy systems — and the tools to request records yourself.</p>
-    <div class="cta">
-      <a class="btn btn-primary" href="https://github.com/POWDER-RANGER/CivilianIntelligence">Open the repository</a>
-      <a class="btn btn-ghost" href="#pillars">View the pillars</a>
-    </div>
+    <a class="lockup" href="./" aria-label="CIVWATCH web app"><svg class="glyph" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><g stroke-width="4.25"><path d="M6.5 18.5V10.5a4 4 0 0 1 4-4h8" /><path d="M41.5 29.5v8a4 4 0 0 1-4 4h-8" /></g><circle cx="24" cy="24" r="5" class="dot" stroke="none"/></g></svg><span>CIVWATCH</span></a>
+    <nav class="top" aria-label="Site">
+      <a href="#desks">What it does</a>
+      <a class="opt" href="#sourcing">Sourcing</a>
+      <a class="opt" href="#run">Run it</a>
+      <a href="https://github.com/POWDER-RANGER/CivilianIntelligence">GitHub</a>
+    </nav>
   </div>
 </header>
 
-<section id="pillars">
-  <div class="wrap">
-    <p class="tag">// Platform pillars</p>
-    <h2>Find. Watch. Follow. Act.</h2>
-    <p class="sec-sub">One loop: find the sources, watch government move, audit it, follow the money, know how you are watched, and act on it.</p>
-    <div class="grid">
-      <div class="card live"><h3>Framework</h3><p>A living index of civic intelligence sources — tree, search, per-node markers, public portals and APIs.</p><span class="chip">Live</span></div>
-      <div class="card live"><h3>Movement</h3><p>Executive calendars, Congress floor and hearings, and the live Federal Register feed.</p><span class="chip">Live</span></div>
-      <div class="card live"><h3>Oversight</h3><p>IG reports, GAO, FOIA releases, STOCK Act trades, lobbying registrations — severity-tagged.</p><span class="chip">Live</span></div>
-      <div class="card live"><h3>Finance</h3><p>PAC money, dark money, LD-2/LD-203 lobbying, official trades, contracts, state money — read from the filings.</p><span class="chip">Live</span></div>
-      <div class="card live"><h3>Privacy</h3><p>Surveillance system tracker with a public-record path for every system mapped.</p><span class="chip">Live</span></div>
-      <div class="card live"><h3>Field toolkit</h3><p>Records request generator — FOIA, Privacy Act, state — plus agency offices and lookups.</p><span class="chip">Live</span></div>
-      <div class="card live"><h3>Veil</h3><p>The daily briefing: live metrics, signals, and the Federal Register wire.</p><span class="chip">Live</span></div>
-      <a class="card live" href="https://github.com/POWDER-RANGER/civwatch-watchtower"><h3>Watchtower</h3><p>Map-first civic monitoring, anomaly detection, citizen reports.</p><span class="chip">Live</span></a>
-      <a class="card live" href="https://github.com/POWDER-RANGER/civwatch-cell-titan"><h3>Cell Titan</h3><p>Defensive RF observability — federated sensors, cryptographic evidence chain.</p><span class="chip">Live</span></a>
+<main>
+  <div class="wrap" style="padding-block:64px 48px">
+    <p class="eyebrow">CIVWATCH web app · source repository</p>
+    <h1 style="font:600 clamp(36px,5.5vw,56px)/1.06 var(--serif);letter-spacing:-.02em;margin:0;max-width:16em">Who is watching your town, who paid for it, and how to challenge it.</h1>
+    <p class="lead" style="font-size:18px;line-height:1.6;color:var(--text-2);max-width:36em;margin:20px 0 28px">This repository is the CIVWATCH web app: a map of documented surveillance cameras, the contracts and filings behind them, and a toolkit that drafts the records request. Every record links to its source and shows when it was last checked.</p>
+    <div class="actions">
+      <a class="btn primary" href="https://civintelligence.onrender.com">Open the web app</a>
+      <a class="btn" href="https://github.com/POWDER-RANGER/CivilianIntelligence">Read the source</a>
     </div>
+    <p class="note">Runs on free hosting. If the app has been idle, the first page can take up to a minute to load.</p>
   </div>
-</section>
 
-<section id="spine">
-  <div class="wrap">
-    <p class="tag">// Integration spine</p>
-    <h2>One system of record. Specialized rails.</h2>
-    <p class="sec-sub">CivilianIntelligence owns the public hub and contract. Watchtower owns civic map/report telemetry. Cell Titan owns RF telemetry and evidence provenance. Clients consume the stable rails.</p>
-    <div class="grid">
-      <a class="card live" href="https://github.com/POWDER-RANGER/CivilianIntelligence"><h3>CivilianIntelligence</h3><p>Unified hub, system of record, server-side upstream topology and provenance contract.</p><span class="chip">Hub</span></a>
-      <a class="card live" href="https://github.com/POWDER-RANGER/civwatch-watchtower"><h3>Watchtower API</h3><p>Health, feature, map/report, anomaly and civic monitoring rail.</p><span class="chip">Rail</span></a>
-      <a class="card live" href="https://github.com/POWDER-RANGER/civwatch-cell-titan"><h3>Cell Titan API</h3><p>Health, telemetry, evidence tail and verification under the remote-read security boundary.</p><span class="chip">Rail</span></a>
-      <a class="card live" href="https://github.com/POWDER-RANGER/civwatch-app"><h3>Flutter client</h3><p>Secure endpoint settings and Watchtower health/feature visibility in the client.</p><span class="chip">Client</span></a>
+  <section class="band" id="desks">
+    <div class="wrap">
+      <h2>What the app does</h2>
+      <p class="sub">Each part of the app answers one question and cites the public system it reads from.</p>
+      <div class="table-scroll">
+      <table class="desks">
+        <thead><tr><th scope="col">Part</th><th scope="col">Answers</th><th scope="col">Reads from</th></tr></thead>
+        <tbody>
+          <tr><td><a href="https://civintelligence.onrender.com/">Map</a></td><td>Where are documented license-plate readers, and which way do they face?</td><td>OpenStreetMap ALPR tags via DeFlock vector tiles</td></tr>
+          <tr><td><a href="https://civintelligence.onrender.com/place">Place lookup</a></td><td>Which city, county and districts cover this address, and what is nearby?</td><td>U.S. Census geocoder and geographies</td></tr>
+          <tr><td><a href="https://civintelligence.onrender.com/finance">Money</a></td><td>Which federal awards and company filings touch this subject?</td><td>USAspending, SEC EDGAR</td></tr>
+          <tr><td><a href="https://civintelligence.onrender.com/movement">Federal actions</a></td><td>What rules and notices did agencies publish today?</td><td>Federal Register API</td></tr>
+          <tr><td><a href="https://civintelligence.onrender.com/toolkit">Records toolkit</a></td><td>How do I ask for the contract, policy or audit log?</td><td>FOIA, Privacy Act and state public-records statutes</td></tr>
+          <tr><td><a href="https://github.com/POWDER-RANGER/civwatch-cell-titan">Cell Monitor</a></td><td>What did my own phone observe about the cell network around it?</td><td>A local app on your computer; separate repository</td></tr>
+        </tbody>
+      </table>
+      </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<section id="sources">
-  <div class="wrap">
-    <p class="tag">// Primary sources</p>
-    <h2>Everything traceable</h2>
-    <p class="sec-sub">Every claim in the platform resolves to a public filing system. No back channels. No untraceable assertion.</p>
-    <div class="grid">
-      <a class="card" href="https://www.federalregister.gov/"><h3>Federal Register</h3><p>The daily journal of the U.S. government — with a public API.</p></a>
-      <a class="card" href="https://www.congress.gov/"><h3>Congress.gov</h3><p>Bills, members, committees, the record, and the calendar.</p></a>
-      <a class="card" href="https://www.fec.gov/data/"><h3>FEC data</h3><p>The legal base layer of federal political money.</p></a>
-      <a class="card" href="https://lda.senate.gov/system/public/"><h3>Senate LDA</h3><p>LD-2 lobbying reports and LD-203 contributions.</p></a>
-      <a class="card" href="https://www.usaspending.gov/"><h3>USAspending</h3><p>Every federal award, line by line.</p></a>
-      <a class="card" href="https://www.oversight.gov/"><h3>Oversight.gov</h3><p>Inspector General reports across government.</p></a>
+  <section class="band" id="sourcing">
+    <div class="wrap split">
+      <div>
+        <h2>How every record is sourced</h2>
+        <p class="sub" style="margin-bottom:0">A mapped camera is a documented location, not proof of an operating camera. The app says what it knows, where it came from and when it was checked.</p>
+      </div>
+      <ol class="principles" style="grid-template-columns:1fr">
+        <li><h3>Source on every line</h3><p>Each record carries its source link, the date it was retrieved and the date it was last verified.</p></li>
+        <li><h3>Verification is shown, not implied</h3><p>Records are marked Verified (primary document), Reported (secondary source) or Unverified (tip).</p></li>
+        <li><h3>Examples are labeled</h3><p>Sample and fixture data use <code style="font:400 14px var(--mono)">SAMPLE-</code> IDs and a banner. Nothing invented is shown as live.</p></li>
+        <li><h3>Corrections are public</h3><p>Anyone can <a href="https://github.com/POWDER-RANGER/CivilianIntelligence/issues/new?title=Correction%3A%20">report an error</a>; fixes are logged.</p></li>
+      </ol>
     </div>
-  </div>
-</section>
+  </section>
 
-<footer>
+  <section class="band" id="sources">
+    <div class="wrap">
+      <h2>Primary sources</h2>
+      <p class="sub">Public filing systems the app reads directly.</p>
+      <div class="sources">
+        <a href="https://www.federalregister.gov/"><b>Federal Register</b><span>Daily journal of the U.S. government, with a public API.</span></a>
+        <a href="https://www.congress.gov/"><b>Congress.gov</b><span>Bills, members, committees and the record.</span></a>
+        <a href="https://www.usaspending.gov/"><b>USAspending</b><span>Every federal award, line by line.</span></a>
+        <a href="https://www.sec.gov/edgar/search/"><b>SEC EDGAR</b><span>Company filings, including vendors.</span></a>
+        <a href="https://www.openstreetmap.org/"><b>OpenStreetMap</b><span>Community-mapped infrastructure, including ALPR tags.</span></a>
+        <a href="https://www.oversight.gov/"><b>Oversight.gov</b><span>Inspector General reports across government.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="run">
+    <div class="wrap split">
+      <div>
+        <h2>Run it yourself</h2>
+        <p class="sub" style="margin-bottom:0">Node 22. Postgres (Neon) is optional; without it the record index runs read-only. API keys for Congress.gov and api.data.gov unlock those feeds.</p>
+      </div>
+      <pre class="run">git clone https://github.com/POWDER-RANGER/CivilianIntelligence.git
+cd CivilianIntelligence
+npm ci
+npm run dev</pre>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
   <div class="wrap">
-    <p>CIVINTELLIGENCE — BUILT FOR CITIZENS, BY CITIZENS. TRANSPARENCY IS NOT OPTIONAL.</p>
-    <p style="margin-top:10px"><a href="https://github.com/POWDER-RANGER/CivilianIntelligence">HUB</a> · <a href="https://github.com/POWDER-RANGER/civwatch-watchtower">WATCHTOWER</a> · <a href="https://github.com/POWDER-RANGER/civwatch-cell-titan">CELL TITAN</a> · <a href="https://github.com/POWDER-RANGER/CIVWATCH">LEGACY CIVWATCH</a> · <a href="https://powder-ranger.github.io/">POWDER-RANGER</a></p>
+    <div class="cols">
+      <div>
+        <a class="lockup" href="./"><svg class="glyph" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><g stroke-width="4.25"><path d="M6.5 18.5V10.5a4 4 0 0 1 4-4h8" /><path d="M41.5 29.5v8a4 4 0 0 1-4 4h-8" /></g><circle cx="24" cy="24" r="5" class="dot" stroke="none"/></g></svg><span>CIVWATCH</span></a>
+        <p style="margin-top:14px">Public evidence about surveillance infrastructure. Built by <a href="https://powder-ranger.github.io">POWDER-RANGER</a>.</p>
+      </div>
+      <div>
+        <h4>Project</h4>
+        <ul>
+          <li><a href="https://civintelligence.onrender.com">Web app</a></li>
+          <li><a href="https://powder-ranger.github.io/CIVWATCH/">Project site</a></li>
+          <li><a href="https://github.com/POWDER-RANGER/CivilianIntelligence/issues/new?title=Correction%3A%20">Report an error</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Repositories</h4>
+        <ul>
+          <li><a href="https://github.com/POWDER-RANGER/CivilianIntelligence">Web app</a></li>
+          <li><a href="https://github.com/POWDER-RANGER/civwatch-watchtower">Platform</a></li>
+          <li><a href="https://github.com/POWDER-RANGER/civwatch-cell-titan">Cell Monitor</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="legal">CIVWATCH documents publicly visible infrastructure and public records about government surveillance technology. Locations come from public records, open data (OpenStreetMap) and volunteer reports; each shows its source and verification status. We do not access camera feeds, intercept communications or track individuals. Vendor names identify vendors only; CIVWATCH is not affiliated with any vendor or government agency.</p>
   </div>
 </footer>
-\n<script defer src="https://powder-ranger.github.io/assets/brand-pages.js" data-repo="CivilianIntelligence"></script>\n</body>\n</html>
+</body>
+</html>
