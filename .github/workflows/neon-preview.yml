@@ -38,6 +38,15 @@ jobs:
           api_key: ${{ secrets.NEON_API_KEY }}
           expires_at: ${{ steps.expiration.outputs.expires_at }}
 
+      - name: Require preview DATABASE_URL
+        env:
+          DB_URL: ${{ steps.create_neon_branch.outputs.db_url_pooled }}
+        run: |
+          if [ -z "$DB_URL" ]; then
+            echo "::error::create-branch-action returned no db_url_pooled output."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -52,7 +61,7 @@ jobs:
 
       - name: Run migrations on preview branch
         env:
-          DATABASE_URL: ${{ steps.create_neon_branch.outputs.db_url_with_pooler }}
+          DATABASE_URL: ${{ steps.create_neon_branch.outputs.db_url_pooled }}
         run: npm run db:migrate
 
   delete_neon_branch:
