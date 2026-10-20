@@ -1,6 +1,6 @@
 # CIVINTELLIGENCE Reticulum Implementation
 
-**Status:** Planned; initial bootstrap scaffolding only. Offline peer communication has not yet been verified by this repository change.
+**Status:** Planned; bootstrap scripts and a shared installation diagnostic are present on the feature branch. Target-platform execution and offline peer communication have not yet been verified.
 
 ## Mission
 
@@ -10,14 +10,14 @@ Reticulum is a networking stack, not a ready-made nationwide network. Actual con
 
 ## Phase 1 scope
 
-1. Establish reproducible, user-local installation on Windows and Linux.
-2. Record installed package/runtime details and verify that the Reticulum Python module imports.
+1. Establish user-local installation on Windows and Linux.
+2. Record installed package/runtime details and verify the Reticulum Python module imports.
 3. Document service startup and status checks using upstream utilities.
 4. Test two nodes over a local transport while public internet access is disconnected.
 5. Publish evidence of successful delivery, failure cases, and tested OS versions.
 6. Only after the offline proof passes, build a guided local control surface.
 
-The current bootstrap scripts install into a project-local `.venv`. They do not configure network interfaces, change firewall rules, create services, open ports, alter routers, or send telemetry.
+The bootstrap scripts install into a project-local `.venv`. They do not configure network interfaces, change firewall rules, create services, open ports, alter routers, or send telemetry.
 
 ## Initial architecture
 
@@ -43,11 +43,13 @@ Linux, from the repository root:
 bash reticulum/scripts/install-linux.sh
 ```
 
-These scripts require a working Python 3 installation and internet access to retrieve the package during installation. Internet access is required for the initial package download; it is not a requirement for later local Reticulum communication. Inspect scripts before running them. They install into `reticulum/.venv` and do not configure system services.
+These scripts require Python 3 and internet access to retrieve the package during installation. Internet access is needed for the initial package download; it is not required for subsequent local Reticulum communication. Inspect scripts before running them. They install into `reticulum/.venv` and do not configure system services.
+
+The shared diagnostic at `reticulum/scripts/verify_install.py` reports the Python version, Reticulum package version, module path, and whether `rnsd` and `rnstatus` are visible on the virtual environment's PATH. This is an installation check, not a network-connectivity test.
 
 ## Current bootstrap verification
 
-The scripts report whether installation and Python import verification succeeded on the machine where they are run. This repository change does not claim that either script has been executed on Windows or Linux, or that offline communication has been demonstrated.
+The scripts and diagnostic are committed on the feature branch. This repository change does not claim they have been executed on Windows or Linux, or that offline communication has been demonstrated. GitHub CI status is not evidence of local installation or offline delivery.
 
 ## Two-node offline acceptance test
 
