@@ -1,11 +1,12 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { createFileRoute } from "@tanstack/react-router";
-import { ExternalLink, Library, Search, ShieldCheck } from "lucide-react";
+import { BookOpen, ExternalLink, FileText, Library, Search, ShieldCheck, X } from "lucide-react";
 
 export const Route = createFileRoute("/reading-room")({ component: ReadingRoomPage });
 
 type LibraryEntry = {
+  id: "cia" | "fbi" | "state" | "dhs" | "nsa" | "dia";
   name: string;
   agency: string;
   tier: "Core" | "Secondary";
@@ -18,6 +19,7 @@ type LibraryEntry = {
 
 const LIBRARIES: LibraryEntry[] = [
   {
+    id: "cia",
     name: "CIA Electronic Reading Room",
     agency: "Central Intelligence Agency",
     tier: "Core",
@@ -28,6 +30,7 @@ const LIBRARIES: LibraryEntry[] = [
     searchLabel: "Search Reading Room",
   },
   {
+    id: "fbi",
     name: "FBI Vault",
     agency: "Federal Bureau of Investigation",
     tier: "Core",
@@ -38,6 +41,7 @@ const LIBRARIES: LibraryEntry[] = [
     searchLabel: "Search Vault",
   },
   {
+    id: "state",
     name: "FOIA Virtual Reading Room",
     agency: "U.S. Department of State",
     tier: "Core",
@@ -48,6 +52,7 @@ const LIBRARIES: LibraryEntry[] = [
     searchLabel: "Search released records",
   },
   {
+    id: "dhs",
     name: "DHS FOIA Library",
     agency: "Department of Homeland Security",
     tier: "Core",
@@ -58,6 +63,7 @@ const LIBRARIES: LibraryEntry[] = [
     searchLabel: "Browse DHS library",
   },
   {
+    id: "nsa",
     name: "NSA Reading Room",
     agency: "National Security Agency",
     tier: "Secondary",
@@ -68,6 +74,7 @@ const LIBRARIES: LibraryEntry[] = [
     searchLabel: "Open Reading Room",
   },
   {
+    id: "dia",
     name: "DIA FOIA Electronic Reading Room",
     agency: "Defense Intelligence Agency",
     tier: "Secondary",
@@ -118,6 +125,38 @@ const CIA_COLLECTIONS = [
   },
 ] as const;
 
+
+type ReaderTarget = {
+  title: string;
+  url: string;
+  sourceHost: string;
+  kind: "portal" | "document";
+};
+
+/**
+ * Accept only direct HTTPS links on official .gov/.mil hosts for the in-app
+ * reader. The browser loads the original URL; CIVINT does not proxy, rewrite,
+ * or persist the source content.
+ */
+function officialSourceUrl(raw: string): URL | null {
+  try {
+    const url = new URL(raw.trim());
+    const hostname = url.hostname.toLowerCase();
+    if (
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      (url.port && url.port !== "443") ||
+      !(hostname.endsWith(".gov") || hostname.endsWith(".mil")) ||
+      hostname === "gov" ||
+      hostname === "mil"
+    ) return null;
+    return url;
+  } catch {
+    return null;
+  }
+}
+
 const SEARCH_TIPS = [
   ["Start broad", "Use a person, program, place, agency, or document number before adding date or collection filters."],
   ["Use exact phrases", "Put distinctive names or program titles in quotes when the source search supports phrase matching."],
@@ -127,6 +166,50 @@ const SEARCH_TIPS = [
 ];
 
 function ReadingRoomPage() {
+  const [searchSourceId, setSearchSourceId] = useState<LibraryEntry["id"]>("cia");
+  const [sourceQuery, setSourceQuery] = useState("");
+  const [documentUrlInput, setDocumentUrlInput] = useState("");
+  const [readerError, setReaderError] = useState("");
+  const [activeReader, setActiveReader] = useState<ReaderTarget | null>(null);
+
+  function openLibraryInReader(library: LibraryEntry) {
+    const query = sourceQuery.trim();
+    let url = new URL(library.searchUrl);
+    if (library.id === "cia" && query) {
+      url = new URL(library.searchUrl.replace(/\\/?$/, "/") + encodeURIComponent(query));
+    } else if (library.id === "fbi" && query) {
+      url.searchParams.set("SearchableText", query);
+    }
+    setReaderError("");
+    setActiveReader({
+      title: library.name + (query ? " — " + query : ""),
+      url: url.href,
+      sourceHost: url.hostname,
+      kind: "portal",
+    });
+  }
+
+  function openDirectDocument(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const url = officialSourceUrl(documentUrlInput);
+    if (!url) {
+      setReaderError("Enter a valid HTTPS URL on an official .gov or .mil domain. The reader does not accept third-party hosts.");
+      return;
+    }
+    setReaderError("");
+    setActiveReader({
+      title: "Official record",
+      url: url.href,
+      sourceHost: url.hostname,
+      kind: "document",
+    });
+  }
+
+  function closeReader() {
+    setActiveReader(null);
+    setReaderError("");
+  }
+
   return (
     <AppShell>
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
@@ -167,6 +250,134 @@ function ReadingRoomPage() {
           </div>
         </section>
 
+
+        <section className="mt-8 rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">In-app access</p>
+              <h2 className="mt-1 font-display text-2xl">Official source desk</h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Search CIA and FBI public collections inside CIVINT, or open a direct record/PDF from an official government source here.
+                Documents load from the publisher’s URL; CIVINT does not alter or store a second copy. Use the original-source link to verify the record independently.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
+              <ShieldCheck className="size-4 text-primary" />
+              HTTPS .gov / .mil only
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-5 lg:grid-cols-2">
+            <form
+              className="rounded-xl border border-border bg-background p-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const library = LIBRARIES.find((item) => item.id === searchSourceId);
+                if (library) openLibraryInReader(library);
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <BookOpen className="size-4 text-primary" />
+                <h3 className="text-sm font-semibold">Search an official portal</h3>
+              </div>
+              <label className="mt-3 block text-xs font-medium text-muted-foreground" htmlFor="reading-room-source">
+                Agency library
+              </label>
+              <select
+                id="reading-room-source"
+                value={searchSourceId}
+                onChange={(event) => setSearchSourceId(event.target.value as LibraryEntry["id"])}
+                className="mt-1 min-h-11 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground"
+              >
+                {LIBRARIES.map((library) => (
+                  <option key={library.id} value={library.id}>{library.name}</option>
+                ))}
+              </select>
+              <label className="mt-3 block text-xs font-medium text-muted-foreground" htmlFor="reading-room-query">
+                Search term (CIA/FBI searches are prefilled; other portals open their official search page)
+              </label>
+              <input
+                id="reading-room-query"
+                value={sourceQuery}
+                onChange={(event) => setSourceQuery(event.target.value)}
+                placeholder="Program, person, case or document identifier"
+                className="mt-1 min-h-11 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground"
+              />
+              <button type="submit" className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">
+                Open portal inside CIVINT <BookOpen className="size-4" />
+              </button>
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                Some agencies restrict framing. When an official portal will not display here, use the original-source link on its library card.
+              </p>
+            </form>
+
+            <form className="rounded-xl border border-border bg-background p-4" onSubmit={openDirectDocument}>
+              <div className="flex items-center gap-2">
+                <FileText className="size-4 text-primary" />
+                <h3 className="text-sm font-semibold">Open a specific record or PDF</h3>
+              </div>
+              <label className="mt-3 block text-xs font-medium text-muted-foreground" htmlFor="reading-room-document-url">
+                Official document URL
+              </label>
+              <input
+                id="reading-room-document-url"
+                value={documentUrlInput}
+                onChange={(event) => setDocumentUrlInput(event.target.value)}
+                placeholder="https://www.cia.gov/readingroom/document/..."
+                inputMode="url"
+                className="mt-1 min-h-11 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground"
+              />
+              <button type="submit" className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted">
+                Read inside CIVINT <FileText className="size-4" />
+              </button>
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                A direct PDF URL usually gives the cleanest reading experience. This field accepts only HTTPS .gov/.mil hosts and does not route content through a CIVINT file proxy.
+              </p>
+            </form>
+          </div>
+
+          {readerError && (
+            <p role="alert" className="mt-4 rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground">
+              {readerError}
+            </p>
+          )}
+
+          {activeReader && (
+            <section className="mt-5 overflow-hidden rounded-xl border border-border bg-background" aria-label="Official source viewer">
+              <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+                <div className="min-w-0">
+                  <h3 className="truncate text-sm font-semibold">{activeReader.title}</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Loaded directly from {activeReader.sourceHost} · {activeReader.kind === "document" ? "record/document URL" : "official portal"}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <a href={activeReader.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border bg-card px-3 text-xs font-medium hover:bg-muted">
+                    Verify original <ExternalLink className="size-3.5" />
+                  </a>
+                  <button type="button" onClick={closeReader} aria-label="Close official source viewer" className="inline-flex size-9 items-center justify-center rounded-md border border-border bg-card hover:bg-muted">
+                    <X className="size-4" />
+                  </button>
+                </div>
+              </header>
+              <div className="h-[65dvh] min-h-[380px] bg-card sm:min-h-[520px]">
+                <iframe
+                  key={activeReader.url}
+                  title={activeReader.title}
+                  src={activeReader.url}
+                  className="size-full border-0 bg-card"
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  sandbox="allow-forms allow-scripts allow-same-origin allow-downloads"
+                />
+              </div>
+              <footer className="border-t border-border px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+                The publisher controls document availability and framing policy. CIVINT does not claim a local hash or byte-for-byte verification because the file is not mirrored here. Use “Verify original” to inspect the same source URL directly; if the viewer is blank or blocked, the source may prohibit embedding.
+              </footer>
+            </section>
+          )}
+        </section>
+
         <section className="mt-8">
           <div className="flex items-end justify-between gap-3">
             <div>
@@ -192,13 +403,18 @@ function ReadingRoomPage() {
                   {library.tags.map((tag) => <Badge key={tag} variant="outline">{tag}</Badge>)}
                 </div>
                 <div className="mt-5 flex flex-wrap gap-3">
-                  <a href={library.searchUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
-                    {library.searchLabel}
-                    <ExternalLink className="size-3.5" />
+                  <button
+                    type="button"
+                    onClick={() => openLibraryInReader(library)}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                  >
+                    View inside CIVINT <BookOpen className="size-3.5" />
+                  </button>
+                  <a href={library.searchUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground hover:underline">
+                    {library.searchLabel} <ExternalLink className="size-3.5" />
                   </a>
                   <a href={library.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground hover:underline">
-                    Source home
-                    <ExternalLink className="size-3.5" />
+                    Source home <ExternalLink className="size-3.5" />
                   </a>
                 </div>
               </article>
