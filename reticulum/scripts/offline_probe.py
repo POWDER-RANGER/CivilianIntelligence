@@ -93,9 +93,26 @@ def run_client(config_path, destination_hex, message, timeout):
 
     packet = RNS.Packet(destination, payload)
     receipt = packet.send()
+    if receipt is False or receipt is None:
+        print(
+            "FAIL: Reticulum could not enqueue the packet on an available interface.",
+            file=sys.stderr,
+            flush=True,
+        )
+        return 1
+
     receipt.set_timeout(timeout)
     receipt.set_delivery_callback(lambda _: delivered.set())
     receipt.set_timeout_callback(lambda _: failed.set())
+
+    # A very fast proof or timeout can arrive before callbacks are attached.
+    # Inspect the receipt state after registration so that such a race cannot
+    # leave this process waiting until its separate wall-clock deadline.
+    status = receipt.get_status()
+    if status == RNS.PacketReceipt.DELIVERED:
+        delivered.set()
+    elif status in (RNS.PacketReceipt.FAILED, RNS.PacketReceipt.CULLED):
+        failed.set()
 
     print(f"Sent payload bytes: {len(payload)}", flush=True)
     print(f"Expected payload: {message!r}", flush=True)
