@@ -2,7 +2,7 @@
 
 Initial Windows/Linux bootstrap scaffolding for a future offline communications capability.
 
-**Current status:** installation scripts, a shared diagnostic, and a manual two-node probe are present on the feature branch. They have not yet been executed on target platforms, and offline message delivery is not verified.
+**Current status:** installation scripts, a safe local-config initializer, a shared diagnostic, automated initializer tests, and a manual two-node probe are present on the feature branch. They have not yet been executed on target platforms, and offline message delivery is not verified.
 
 ## Install
 
@@ -17,29 +17,37 @@ Initial installation requires internet access to download the package. The subse
 
 ## How the first offline test works
 
-The first acceptance target is two computers connected to the same local Ethernet/Wi-Fi segment while public internet access is unavailable. The probe creates a dedicated Reticulum instance and relies on the default local `AutoInterface` when the generated configuration enables it.
+The first acceptance target is two computers connected to the same local Ethernet/Wi-Fi segment while public internet access is unavailable. Reticulum's automatically generated minimal configuration does **not** necessarily include a local network interface, so this project includes a helper to create a dedicated test configuration with `AutoInterface` explicitly enabled.
 
-Reticulum's default configuration normally enables an `AutoInterface` for local Ethernet/Wi-Fi discovery. It uses link-local IPv6 for discovery and UDP for transport; it does not require a working internet connection, router, or DHCP server. Both devices still need a functioning local link. Some access points isolate wireless clients, and host firewalls can block discovery. Reticulum documents UDP ports `29716` and `42671` for AutoInterface. Inspect the actual configuration and network policy before changing anything; do not disable the firewall broadly.
+AutoInterface uses link-local IPv6 for peer discovery and UDP for packet transport; it does not require a working internet connection, router, or DHCP server. Both devices still need a functioning local link and link-local IPv6. Some access points isolate wireless clients, and host firewalls can block discovery. Reticulum documents UDP ports `29716` and `42671` for AutoInterface. Inspect the actual configuration and network policy before changing anything; do not disable the firewall broadly.
 
-If the dedicated test configuration is missing or does not enable `AutoInterface`, generate or inspect an example configuration with the installed utility:
+## Prepare each test computer
+
+Run the initializer separately on Computer A and Computer B, using a dedicated directory on each computer. It creates a config only if one does not already exist and refuses to overwrite an existing config. Do not point it at your normal Reticulum configuration.
 
 Windows PowerShell:
 
 ```powershell
-.\reticulum\.venv\Scripts\rnsd.exe --exampleconfig
+.\reticulum\.venv\Scripts\python.exe reticulum\scripts\init_local_config.py --config "$HOME\civint-reticulum-test"
 ```
 
 Linux:
 
 ```bash
-reticulum/.venv/bin/rnsd --exampleconfig
+reticulum/.venv/bin/python reticulum/scripts/init_local_config.py --config "$HOME/civint-reticulum-test"
 ```
 
-The command prints an example configuration; it does not establish that the interface is reachable. Configure only the dedicated test directory for this experiment, and do not overwrite an existing user configuration.
+The generated configuration enables only the local AutoInterface and disables transport routing and shared-instance use for this test. It does not modify firewall rules, router settings, services, or an existing configuration.
+
+Automated initializer tests can be run from the repository root:
+
+```bash
+python -m unittest discover -s reticulum/tests -v
+```
 
 ## Manual two-node probe
 
-Use two computers on the same local Ethernet/Wi-Fi network. Disconnect public internet access for the acceptance test, but leave the local network link active. Use a separate, dedicated Reticulum config directory on each computer; do not point this test at an existing configuration unless you intend to reuse it.
+Use two computers on the same local Ethernet/Wi-Fi network. Disconnect public internet access for the acceptance test, but leave the local network link active. Confirm that the initializer succeeded on both computers and that each has its own dedicated config directory.
 
 Start the receiving node on Computer A.
 
@@ -71,7 +79,7 @@ reticulum/.venv/bin/python reticulum/scripts/offline_probe.py client --config "$
 
 The client waits for a route and then for a Reticulum delivery proof. The receiver should print a `RECEIVED` log with the exact payload. Record the test as passed only when the client reports a delivery proof **and** the receiver log confirms the exact unique payload while public internet access is unavailable. Then test the reverse direction and restart/reconnection behavior.
 
-The probe does not automatically disconnect internet, configure interfaces, change firewall rules, open ports, or upload results. If peer discovery fails, check the actual config, link-local IPv6, local client isolation, and host firewall policy. Make only narrow, temporary changes that you understand, and restore them after testing.
+The probe does not automatically disconnect internet, configure interfaces, change firewall rules, open ports, or upload results. If peer discovery fails, check the generated config, link-local IPv6, local client isolation, and host firewall policy. Make only narrow, temporary changes that you understand, and restore them after testing.
 
 ## Cloud gateway is a separate, optional phase
 
