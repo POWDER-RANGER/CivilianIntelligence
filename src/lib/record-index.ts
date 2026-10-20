@@ -189,7 +189,7 @@ export async function upsertIndexedRecord(input: RecordInput, sql?: Sql): Promis
     "hash_basis, adapter_version, body_ref, tsv, record_updated_at)",
     "values",
     "($1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,",
-    "to_tsvector('english', concat_ws(' ', $4, $5, $6::jsonb::text, $7::jsonb::text)), now())",
+    "to_tsvector('english', concat_ws(' ', $4::text, $5::text, $6::jsonb::text, $7::jsonb::text)), now())",
     "on conflict (source_id, source_record_id) do update set",
     "kind=excluded.kind, title=excluded.title, agency=excluded.agency,",
     "identifiers=excluded.identifiers, entities=excluded.entities,",

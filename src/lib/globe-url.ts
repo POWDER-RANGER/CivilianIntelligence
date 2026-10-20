@@ -39,11 +39,8 @@ const FULL_PANELS = "c.c.1_c.p.0_l.c.1_l.p.0_d.c.1_v.c.1_i.c.0_t.c.1_r.c.1_s.c.1
 
 const VIEW_BASE =
   "heading=15&pitch=-30&roll=360&style=normal&bloom=0&sharpen=1&bi=0&bv=2&si=49";
-// Only source-backed layers are enabled by default. Street Traffic animates
-// simulated vehicle sprites (not observed positions) and is intentionally absent
-// from the layer list; detection overlays start off.
 const VIEW_LAYERS =
-  "&dm=OFF&dd=75&da=elastic&kf=7&ko=1&cr=0&sc=1&scf=11&map=esri-imagery&l=e.f.j.y&lo=f.e.1_k.o.n";
+  "&dm=OFF&dd=50&da=elastic&kf=7&ko=1&cr=0&sc=1&scf=11&map=esri-imagery&l=e.f.j.y";
 
 function toolsState(mode: GlobeToolsMode): string {
   switch (mode) {

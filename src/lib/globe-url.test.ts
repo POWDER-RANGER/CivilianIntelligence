@@ -12,7 +12,9 @@ import {
 
 test("globe points at the single canonical service", () => {
   assert.equal(GLOBE_BASE_URL, "https://civintelligence-gods-eye-view.onrender.com");
-  assert.ok(!buildGlobeEmbedUrl().includes("gods-eye-prod"));
+  assert.ok(buildGlobeEmbedUrl().includes("dm=OFF"));
+  assert.ok(buildGlobeEmbedUrl().includes("l=e.f.j.y"));
+  assert.ok(!buildGlobeEmbedUrl().includes("lo=f.e.1_k.o.n"));
 });
 
 test("default embed keeps the Austin camera and embed mode", () => {
