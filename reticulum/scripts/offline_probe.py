@@ -6,6 +6,7 @@ It sends no telemetry and makes no firewall or router changes.
 """
 
 import argparse
+import math
 import sys
 import threading
 import time
@@ -149,8 +150,8 @@ def main():
     if args.mode == "server":
         run_server(args.config)
         return 0
-    if args.timeout <= 0:
-        parser.error("--timeout must be greater than zero")
+    if not math.isfinite(args.timeout) or args.timeout <= 0:
+        parser.error("--timeout must be a finite number greater than zero")
     return run_client(args.config, args.destination, args.message, args.timeout)
 
 
