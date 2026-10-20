@@ -11,7 +11,7 @@ import {
 } from "./globe-url";
 
 test("globe points at the single canonical service", () => {
-  assert.equal(GLOBE_BASE_URL, "https://civintelligence-gods-eye-prod.onrender.com");
+  assert.equal(GLOBE_BASE_URL, "https://civintelligence-gods-eye-view.onrender.com");
   assert.ok(buildGlobeEmbedUrl().includes("dm=OFF"));
   assert.ok(buildGlobeEmbedUrl().includes("l=e.f.j.y"));
   assert.ok(!buildGlobeEmbedUrl().includes("lo=f.e.1_k.o.n"));
