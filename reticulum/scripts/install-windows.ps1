@@ -27,11 +27,11 @@ if ($LASTEXITCODE -ne 0) { throw "Could not update pip inside the project-local 
 & $VenvPython -m pip install rns
 if ($LASTEXITCODE -ne 0) { throw "Reticulum package installation failed. Review the pip error above." }
 
-& $VenvPython -c "import RNS; print('Reticulum Python import: OK'); print('Module:', RNS.__file__)"
-if ($LASTEXITCODE -ne 0) { throw "The Reticulum package installed but the import verification failed." }
+& $VenvPython (Join-Path $ScriptDir "verify_install.py")
+if ($LASTEXITCODE -ne 0) { throw "Reticulum installation verification failed. Review the diagnostic above." }
 
 Write-Host ""
-Write-Host "Installation and import check completed on this computer."
+Write-Host "Installation diagnostic completed on this computer."
 Write-Host "Environment: $VenvDir"
 Write-Host "This does not verify peer discovery or offline message delivery."
 Write-Host "No firewall, router, system service, or network interface settings were changed."
