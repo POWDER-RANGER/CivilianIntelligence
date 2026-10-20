@@ -12,7 +12,7 @@ Reticulum is a networking stack, not a ready-made nationwide network. Actual con
 
 1. Establish user-local installation on Windows and Linux.
 2. Record installed package/runtime details and verify the Reticulum Python module imports.
-3. Document service startup and status checks using upstream utilities.
+3. Create an explicit, dedicated local AutoInterface configuration without overwriting existing user configuration.
 4. Test two nodes over a local transport while public internet access is disconnected.
 5. Publish evidence of successful delivery, failure cases, and tested OS versions.
 6. Only after the offline proof passes, build a guided local control surface.
@@ -24,8 +24,9 @@ The bootstrap scripts install into a project-local `.venv`. They do not configur
 - **CIVINTELLIGENCE website:** documentation and release notes only; it cannot start processes on a visitor's computer.
 - **Local setup utility:** later manages installation and service lifecycle on the user's computer.
 - **Reticulum (`rnsd`):** networking service and routing.
-- **Local transport:** begin with the upstream `AutoInterface` on a compatible local Ethernet/Wi-Fi segment. The documented default configuration enables it for local peer discovery. It uses link-local IPv6 and UDP, so a public internet connection is not required; host firewalls or access-point client isolation can still prevent discovery.
+- **Local transport:** use the upstream `AutoInterface` on a compatible local Ethernet/Wi-Fi segment. The automatically generated minimal configuration does not necessarily enable a network interface, so this branch includes `reticulum/scripts/init_local_config.py` to create a dedicated test config with AutoInterface explicitly enabled. AutoInterface uses link-local IPv6 and UDP; public internet is not required, but host firewalls or access-point client isolation can still prevent discovery.
 - **Test application:** `reticulum/scripts/offline_probe.py` uses Reticulum destinations and packet delivery proofs to support a manual two-node test.
+- **Config safety tests:** `reticulum/tests/test_init_local_config.py` checks config creation and verifies that existing config files are not overwritten.
 - **Optional cloud entry point:** only a later experiment for internet-connected peers, using a separate Linux VM and dedicated configuration. This path is not offline transport and must never be a prerequisite for local messaging.
 - **CIVWATCH bridge:** out of scope until the independent offline baseline is proven and a separate opt-in integration contract is reviewed.
 
@@ -34,7 +35,6 @@ The bootstrap scripts install into a project-local `.venv`. They do not configur
 Windows PowerShell, from the repository root:
 
 ```powershell
-Set-ExecutionPolicy -Scope Process Bypass
 .\reticulum\scripts\install-windows.ps1
 ```
 
@@ -48,11 +48,31 @@ These scripts require Python 3 and internet access to retrieve the package durin
 
 The shared diagnostic at `reticulum/scripts/verify_install.py` reports the Python version, Reticulum package version, module path, and whether `rnsd` and `rnstatus` are visible on the virtual environment's PATH. This is an installation check, not a network-connectivity test.
 
+## Dedicated local configuration
+
+Run the initializer once on each test computer with a separate directory for each node.
+
+Windows PowerShell:
+
+```powershell
+.\reticulum\.venv\Scripts\python.exe reticulum\scripts\init_local_config.py --config "$HOME\civint-reticulum-test"
+```
+
+Linux:
+
+```bash
+reticulum/.venv/bin/python reticulum/scripts/init_local_config.py --config "$HOME/civint-reticulum-test"
+```
+
+The helper creates a config only if no config file already exists. It refuses to overwrite an existing file. The generated config explicitly enables the local AutoInterface and disables transport routing and shared-instance use for this isolated test. It does not change firewall, router, or system-service settings.
+
+Run the initializer unit tests from the repository root with `python -m unittest discover -s reticulum/tests -v`. These tests cover file creation and overwrite protection; they do not verify that a network interface is reachable.
+
 ## Manual two-node test
 
-Use two computers on the same local network, with public internet disconnected but the local link preserved. Run the probe server on one node and the client on the other, each with its own dedicated Reticulum configuration directory. Copy the actual destination hash from the server output; never use a made-up hash.
+Use two computers on the same local network, with public internet disconnected but the local link preserved. Initialize a separate dedicated config directory on each node. Copy the actual destination hash from the server output; never use a made-up hash.
 
-Reticulum's documented default configuration enables local `AutoInterface`. If peer discovery fails, inspect the config emitted/used by each test instance, ensure link-local IPv6 is available, and check whether the access point isolates clients. Host firewalls may need narrowly scoped UDP allowances for AutoInterface ports `29716` and `42671`; do not disable the firewall globally. See the [official interface documentation](https://reticulum.network/manual/interfaces.html) and [getting-started guide](https://reticulum.network/manual/gettingstartedfast.html).
+AutoInterface uses link-local IPv6 for discovery and UDP for transport. Host firewalls may need narrowly scoped UDP allowances for AutoInterface ports `29716` and `42671`; do not disable the firewall globally. A Wi-Fi access point with client isolation can also prevent discovery. See the [official interface documentation](https://reticulum.network/manual/interfaces.html) and [getting-started guide](https://reticulum.network/manual/gettingstartedfast.html).
 
 The test is considered passed only when:
 - the client receives a Reticulum packet delivery proof;
@@ -82,13 +102,13 @@ Render remains the host for the public CIVINTELLIGENCE web application. Do not r
 
 ## Current bootstrap verification
 
-The scripts and diagnostic are committed on the feature branch. The Python diagnostic syntax and Linux shell syntax were checked locally before the latest small probe hardening changes; those latest changes still need a fresh syntax run. The Reticulum package was not installed by those checks. This does not establish that the installer works on Windows/Linux, nor that offline communication has been demonstrated. No platform installation or two-node network test is claimed.
+The bootstrap scripts and probe are present on the feature branch. The new local-config initializer and its automated tests have been committed, but they have not yet been executed in a local runtime here. The Reticulum package was not installed as part of the code-review checks. This does not establish that the installer works on Windows/Linux, nor that offline communication has been demonstrated. No platform installation or two-node network test is claimed.
 
 ## Two-node offline acceptance test
 
 - [ ] Two computers and exact OS versions identified.
 - [ ] Reticulum package/runtime versions recorded on both.
-- [ ] Dedicated configuration on both nodes uses a compatible local transport.
+- [ ] Dedicated config initializer succeeds on both nodes without overwriting any existing config.
 - [ ] Public internet access is unavailable while the local transport remains connected.
 - [ ] Each node's actual service status is captured.
 - [ ] The intended peer is discovered over the selected interface.
