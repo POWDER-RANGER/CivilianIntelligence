@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
+import { useState, type FormEvent } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { BookOpen, ExternalLink, FileText, Library, Search, ShieldCheck, X } from "lucide-react";
 
@@ -176,7 +177,8 @@ function ReadingRoomPage() {
     const query = sourceQuery.trim();
     let url = new URL(library.searchUrl);
     if (library.id === "cia" && query) {
-      url = new URL(library.searchUrl.replace(/\\/?$/, "/") + encodeURIComponent(query));
+      const base = library.searchUrl.endsWith("/") ? library.searchUrl : library.searchUrl + "/";
+      url = new URL(base + encodeURIComponent(query));
     } else if (library.id === "fbi" && query) {
       url.searchParams.set("SearchableText", query);
     }
@@ -189,7 +191,7 @@ function ReadingRoomPage() {
     });
   }
 
-  function openDirectDocument(event: React.FormEvent<HTMLFormElement>) {
+  function openDirectDocument(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const url = officialSourceUrl(documentUrlInput);
     if (!url) {
