@@ -60,7 +60,7 @@ def run_client(config_path, destination_hex, message, timeout):
     except ValueError:
         raise SystemExit("Destination hash must be hexadecimal.")
 
-    if len(destination_hash) != RNS.Identity.TRUNCATED_HASHLENGTH // 8:
+    if len(destination_hash) != RNS.Reticulum.TRUNCATED_HASHLENGTH // 8:
         raise SystemExit("Destination hash has an unexpected length.")
 
     RNS.Reticulum(config_path)
