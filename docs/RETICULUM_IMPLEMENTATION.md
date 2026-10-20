@@ -1,6 +1,6 @@
 # CIVINTELLIGENCE Reticulum Implementation
 
-**Status:** Planned; bootstrap scripts and a shared installation diagnostic are present on the feature branch. Target-platform execution and offline peer communication have not yet been verified.
+**Status:** Planned; bootstrap scripts, an installation diagnostic, and a manual two-node probe are present on the feature branch. Target-platform execution and offline peer communication have not yet been verified.
 
 ## Mission
 
@@ -25,7 +25,7 @@ The bootstrap scripts install into a project-local `.venv`. They do not configur
 - **Local setup utility:** later manages installation and service lifecycle on the user's computer.
 - **Reticulum (`rnsd`):** networking service and routing.
 - **Local transport:** begin with a compatible local Ethernet/Wi-Fi network and the upstream `AutoInterface` where supported by the local network.
-- **Test application:** later exchanges a unique test payload between two nodes and verifies exact receipt.
+- **Test application:** `reticulum/scripts/offline_probe.py` uses Reticulum destinations and packet delivery proofs to support a manual two-node test.
 - **CIVWATCH bridge:** out of scope until the independent offline baseline is proven and a separate opt-in integration contract is reviewed.
 
 ## Bootstrap
@@ -47,13 +47,23 @@ These scripts require Python 3 and internet access to retrieve the package durin
 
 The shared diagnostic at `reticulum/scripts/verify_install.py` reports the Python version, Reticulum package version, module path, and whether `rnsd` and `rnstatus` are visible on the virtual environment's PATH. This is an installation check, not a network-connectivity test.
 
+## Manual two-node test
+
+Use two computers on the same local network, with public internet disconnected but the local link preserved. Run the probe server on one node and the client on the other, each with its own dedicated Reticulum configuration directory. Copy the actual destination hash from the server output; never use a made-up hash.
+
+The test is considered passed only when:
+- the client receives a Reticulum packet delivery proof;
+- the receiver log confirms the exact unique payload;
+- public internet access was unavailable during the exchange;
+- both OS versions, package versions, transport configuration, timestamps, and errors are recorded.
+
+The probe does not disable internet access, configure interfaces, change firewall rules, open ports, or upload results. If discovery fails, inspect the interface configuration and local network isolation; do not disable the firewall broadly.
+
 ## Current bootstrap verification
 
-The scripts and diagnostic are committed on the feature branch. This repository change does not claim they have been executed on Windows or Linux, or that offline communication has been demonstrated. GitHub CI status is not evidence of local installation or offline delivery.
+The scripts and diagnostic are committed on the feature branch. The Python diagnostic syntax and Linux shell syntax were checked locally, but the Reticulum package was not installed by those checks. This does not establish that the installer works on Windows/Linux, nor that offline communication has been demonstrated. No platform installation or two-node network test is claimed.
 
 ## Two-node offline acceptance test
-
-Do not label offline communications verified until all of the following are recorded:
 
 - [ ] Two computers and exact OS versions identified.
 - [ ] Reticulum package/runtime versions recorded on both.
@@ -94,4 +104,5 @@ A running process, successful installation, ICMP ping, or peer discovery alone d
 - [Reticulum getting started](https://reticulum.network/start.html)
 - [Reticulum interfaces](https://reticulum.network/manual/interfaces.html)
 - [Reticulum utilities and usage](https://reticulum.network/manual/using.html)
+- [Reticulum examples](https://reticulum.network/manual/examples.html)
 - [Reticulum software and applications](https://reticulum.network/manual/software.html)
