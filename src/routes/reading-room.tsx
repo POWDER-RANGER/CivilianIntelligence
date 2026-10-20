@@ -173,6 +173,16 @@ function ReadingRoomPage() {
   const [readerError, setReaderError] = useState("");
   const [activeReader, setActiveReader] = useState<ReaderTarget | null>(null);
 
+  function openUrlInsideReader(title: string, rawUrl: string, kind: ReaderTarget["kind"] = "portal") {
+    const url = officialSourceUrl(rawUrl);
+    if (!url) {
+      setReaderError("Only HTTPS URLs on official .gov or .mil domains can be opened in this reader.");
+      return;
+    }
+    setReaderError("");
+    setActiveReader({ title, url: url.href, sourceHost: url.hostname, kind });
+  }
+
   function openLibraryInReader(library: LibraryEntry) {
     const query = sourceQuery.trim();
     let url = new URL(library.searchUrl);
@@ -182,29 +192,12 @@ function ReadingRoomPage() {
     } else if (library.id === "fbi" && query) {
       url.searchParams.set("SearchableText", query);
     }
-    setReaderError("");
-    setActiveReader({
-      title: library.name + (query ? " — " + query : ""),
-      url: url.href,
-      sourceHost: url.hostname,
-      kind: "portal",
-    });
+    openUrlInsideReader(library.name + (query ? " — " + query : ""), url.href, "portal");
   }
 
   function openDirectDocument(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const url = officialSourceUrl(documentUrlInput);
-    if (!url) {
-      setReaderError("Enter a valid HTTPS URL on an official .gov or .mil domain. The reader does not accept third-party hosts.");
-      return;
-    }
-    setReaderError("");
-    setActiveReader({
-      title: "Official record",
-      url: url.href,
-      sourceHost: url.hostname,
-      kind: "document",
-    });
+    openUrlInsideReader("Official record", documentUrlInput, "document");
   }
 
   function closeReader() {
@@ -434,23 +427,32 @@ function ReadingRoomPage() {
           </div>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {CIA_COLLECTIONS.map((collection) => (
-              <a
+              <article
                 key={collection.title}
-                href={collection.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group rounded-xl border border-border bg-card p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md"
+                className="group flex flex-col rounded-xl border border-border bg-card p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="rounded-lg bg-muted p-2"><Library className="size-4 text-primary" /></div>
                   <ExternalLink className="size-4 text-muted-foreground transition group-hover:text-foreground" />
                 </div>
                 <h3 className="mt-4 font-display text-xl">{collection.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{collection.description}</p>
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">{collection.description}</p>
                 <div className="mt-4 flex flex-wrap gap-1.5">
                   {collection.tags.map((tag) => <Badge key={tag} variant="outline">{tag}</Badge>)}
                 </div>
-              </a>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => openUrlInsideReader(collection.title, collection.url, "portal")}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                  >
+                    View inside CIVINT <BookOpen className="size-3.5" />
+                  </button>
+                  <a href={collection.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground hover:underline">
+                    Original collection <ExternalLink className="size-3.5" />
+                  </a>
+                </div>
+              </article>
             ))}
           </div>
         </section>
