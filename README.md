@@ -127,12 +127,13 @@ Incident record: [docs/CI_RUNNER_INCIDENT_2026-10-04.md](./docs/CI_RUNNER_INCIDE
 
 ## Documentation
 
+- [Repository documentation standard](./docs/DOCUMENTATION_STANDARD.md)
+- [Cross-repository integration contract](./docs/CROSS_REPO_INTEGRATION.md) — canonical service boundaries and data contracts
 - [CIVINTELLIGENCE charter](./docs/CIVINTELLIGENCE.md)
 - [Unified architecture](./docs/CIVINTELLIGENCE_ARCHITECTURE.md)
 - [Consolidation plan](./docs/CIVINTELLIGENCE_CONSOLIDATION_PLAN.md)
-- [Cross-repo integration contract](./docs/CROSS_REPO_INTEGRATION.md)
-- [CI runner incident](./docs/CI_RUNNER_INCIDENT_2026-10-04.md)
 - [Ingest pipeline](./ingest/README.md)
+- [CI runner incident (historical)](./docs/CI_RUNNER_INCIDENT_2026-10-04.md)
 
 ## License
 
@@ -190,38 +191,15 @@ The Desk Assistant is being built against this contract: the model can interpret
 
 ---
 
-## Public platform status — October 2026
+## Operational status
 
-**CIVWATCH is live on the public web and its REST/API surface is active.**
+**Public application:** https://civintelligence.onrender.com  
+**Public service/status inventory:** https://powder-ranger.github.io/CIVWATCH/status.html
 
-**Public site:** https://civintelligence.onrender.com
+The deployed application is the user-facing reference surface; this README describes repository intent and architecture, not real-time health. Use the status inventory and current probe results for current endpoint state.
 
-The web platform is now the working reference implementation for the CIVWATCH ecosystem: the core application, public-data surfaces, evidence/provenance model, specialized pillars, and integration boundaries are being exercised through the deployed CIVWATCH service.
+The Flutter client lives in [civwatch-app](https://github.com/POWDER-RANGER/civwatch-app). Its repository and integration code exist, but a released, fully accepted native client must not be inferred until its target-platform analysis, tests, builds, and release acceptance have been verified.
 
-### Applications are next
+CivilianIntelligence remains the unified application and system of record. Specialized repositories own their stated domains; predecessor and legacy repositories remain reference material until functionality is verified in the unified application and meets the [cross-repository integration contract](./docs/CROSS_REPO_INTEGRATION.md).
 
-With the web application and REST contracts now active, the remaining client work is primarily **productization and platform packaging**, not rebuilding the intelligence platform from scratch. Native applications for the major target platforms are planned and will be coming soon.
-
-The application layer can consume the same stable contracts already used by the web experience:
-
-- **Android**
-- **iOS**
-- **Windows**
-- **Linux**
-- additional platform clients as the shared API contract matures
-
-The existing Flutter client and service boundaries give the ecosystem a head start. Mobile/desktop applications can progressively adopt the established authentication, API, provenance, map, evidence, and desk contracts rather than duplicating backend intelligence.
-
-### How quickly this came together
-
-The current milestone is notable because the ecosystem moved from a multi-repository architecture and integration plan to a functioning public platform in a short development window. The difficult architectural work — ownership boundaries, public-data ingestion, REST contracts, evidence/provenance rules, Watchtower/Cell Titan integration, and the user-facing desk model — is already substantially established.
-
-That means the next step should be treated as **client delivery on top of an operating platform**. The web application is the reference surface; native clients become additional presentation and interaction layers over the same CIVWATCH contracts.
-
-> **Build once at the platform layer. Deliver many clients at the edge.**
-
-### Ecosystem rule
-
-CIVWATCH remains the system of record. Specialized repositories retain clear ownership of their domains, while clients consume stable public/service contracts. Legacy and predecessor repositories remain valuable migration/reference material but are not silently represented as unified production capabilities.
-
-**Status discipline:** live means exposed and usable; available means implemented and integrated; in progress means actively being built; planned means not yet shipped. No synthetic or unavailable source is represented as live evidence.
+**Status discipline:** report a capability as live only when it is reachable and its live state has been verified. A successful page response alone does not prove that every upstream data source is current. Planned or unconfigured integrations must be labelled accordingly.
