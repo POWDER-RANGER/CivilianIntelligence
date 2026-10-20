@@ -3,7 +3,7 @@
 // centering on the viewer needs no change to the upstream service. Fragments are
 // never sent in HTTP requests: the coordinates stay in the viewer's browser.
 
-export const GLOBE_BASE_URL = "https://civintelligence-gods-eye-prod.onrender.com";
+export const GLOBE_BASE_URL = "https://civintelligence-gods-eye-view.onrender.com";
 
 /** Default camera: downtown Austin, TX, street level. */
 export const DEFAULT_GLOBE_CAMERA = { lat: 30.2672, lon: -97.7431, alt: 600 } as const;
