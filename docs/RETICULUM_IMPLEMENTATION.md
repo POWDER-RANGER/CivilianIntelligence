@@ -1,6 +1,6 @@
 # CIVINTELLIGENCE Reticulum Implementation
 
-**Status:** Planned; bootstrap scripts, an installation diagnostic, and a manual two-node probe are present on the feature branch. Target-platform execution and offline peer communication have not yet been verified.
+**Status:** Planned / bootstrap implemented on a feature branch. Target-platform execution and offline peer communication have not yet been verified.
 
 ## Mission
 
@@ -24,8 +24,9 @@ The bootstrap scripts install into a project-local `.venv`. They do not configur
 - **CIVINTELLIGENCE website:** documentation and release notes only; it cannot start processes on a visitor's computer.
 - **Local setup utility:** later manages installation and service lifecycle on the user's computer.
 - **Reticulum (`rnsd`):** networking service and routing.
-- **Local transport:** begin with a compatible local Ethernet/Wi-Fi network and the upstream `AutoInterface` where supported by the local network.
+- **Local transport:** begin with the upstream `AutoInterface` on a compatible local Ethernet/Wi-Fi segment. The documented default configuration enables it for local peer discovery. It uses link-local IPv6 and UDP, so a public internet connection is not required; host firewalls or access-point client isolation can still prevent discovery.
 - **Test application:** `reticulum/scripts/offline_probe.py` uses Reticulum destinations and packet delivery proofs to support a manual two-node test.
+- **Optional cloud entry point:** only a later experiment for internet-connected peers, using a separate Linux VM and dedicated configuration. This path is not offline transport and must never be a prerequisite for local messaging.
 - **CIVWATCH bridge:** out of scope until the independent offline baseline is proven and a separate opt-in integration contract is reviewed.
 
 ## Bootstrap
@@ -51,23 +52,43 @@ The shared diagnostic at `reticulum/scripts/verify_install.py` reports the Pytho
 
 Use two computers on the same local network, with public internet disconnected but the local link preserved. Run the probe server on one node and the client on the other, each with its own dedicated Reticulum configuration directory. Copy the actual destination hash from the server output; never use a made-up hash.
 
+Reticulum's documented default configuration enables local `AutoInterface`. If peer discovery fails, inspect the config emitted/used by each test instance, ensure link-local IPv6 is available, and check whether the access point isolates clients. Host firewalls may need narrowly scoped UDP allowances for AutoInterface ports `29716` and `42671`; do not disable the firewall globally. See the [official interface documentation](https://reticulum.network/manual/interfaces.html) and [getting-started guide](https://reticulum.network/manual/gettingstartedfast.html).
+
 The test is considered passed only when:
 - the client receives a Reticulum packet delivery proof;
 - the receiver log confirms the exact unique payload;
 - public internet access was unavailable during the exchange;
 - both OS versions, package versions, transport configuration, timestamps, and errors are recorded.
 
-The probe does not disable internet access, configure interfaces, change firewall rules, open ports, or upload results. If discovery fails, inspect the interface configuration and local network isolation; do not disable the firewall broadly.
+The probe does not disable internet access, configure interfaces, change firewall rules, open ports, or upload results. Test the reverse direction and restart/reconnection behavior before marking recovery verified.
+
+## Cloud gateway decision
+
+**Decision: no paid cloud resources and no production deployment at this stage.**
+
+The local transport must be proven independently first. If a cloud entry point later proves useful, use a small, separately managed Linux VM with a public IP and a Reticulum `BackboneInterface` or compatible TCP interface, following the current upstream guidance. Treat it as an optional path for internet-connected nodes, not as a way to communicate after public internet access is lost.
+
+Controls for that later experiment:
+- use a dedicated non-production VM, identity, and configuration;
+- keep private identity material out of GitHub, logs, screenshots, and diagnostic bundles;
+- use SSH keys and restrict SSH access to a trusted source where possible;
+- open only the required Reticulum listener port and required administration access;
+- persist configuration and identity data securely; verify backup/recovery before upgrades;
+- do not connect CIVWATCH evidence stores, production databases, or live user data;
+- document monthly cost, owner, test window, and teardown steps before provisioning;
+- test the local/offline path and cloud path as two independent cases.
+
+Render remains the host for the public CIVINTELLIGENCE web application. Do not repurpose or rename production services to act as a public Reticulum TCP listener. A cloud path must not become a single hard-coded dependency for the network.
 
 ## Current bootstrap verification
 
-The scripts and diagnostic are committed on the feature branch. The Python diagnostic syntax and Linux shell syntax were checked locally, but the Reticulum package was not installed by those checks. This does not establish that the installer works on Windows/Linux, nor that offline communication has been demonstrated. No platform installation or two-node network test is claimed.
+The scripts and diagnostic are committed on the feature branch. The Python diagnostic syntax and Linux shell syntax were checked locally before the latest small probe hardening changes; those latest changes still need a fresh syntax run. The Reticulum package was not installed by those checks. This does not establish that the installer works on Windows/Linux, nor that offline communication has been demonstrated. No platform installation or two-node network test is claimed.
 
 ## Two-node offline acceptance test
 
 - [ ] Two computers and exact OS versions identified.
 - [ ] Reticulum package/runtime versions recorded on both.
-- [ ] A documented local transport is configured on both nodes.
+- [ ] Dedicated configuration on both nodes uses a compatible local transport.
 - [ ] Public internet access is unavailable while the local transport remains connected.
 - [ ] Each node's actual service status is captured.
 - [ ] The intended peer is discovered over the selected interface.
@@ -101,7 +122,7 @@ A running process, successful installation, ICMP ping, or peer discovery alone d
 
 ## References
 
-- [Reticulum getting started](https://reticulum.network/start.html)
+- [Reticulum getting started](https://reticulum.network/manual/gettingstartedfast.html)
 - [Reticulum interfaces](https://reticulum.network/manual/interfaces.html)
 - [Reticulum utilities and usage](https://reticulum.network/manual/using.html)
 - [Reticulum examples](https://reticulum.network/manual/examples.html)
