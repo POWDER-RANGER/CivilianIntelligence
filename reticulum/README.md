@@ -2,7 +2,7 @@
 
 Initial Windows/Linux bootstrap scaffolding for a future offline communications capability.
 
-**Current status:** installation scripts, a safe local-config initializer, a shared diagnostic, automated initializer tests, and a manual two-node probe are present on the feature branch. They have not yet been executed on target platforms, and offline message delivery is not verified.
+**Current status:** installation scripts, a safe local-config initializer, a shared diagnostic, automated config/probe regression tests, and a manual two-node probe are present on the feature branch. They have not yet been executed on target platforms, and offline message delivery is not verified.
 
 ## Install
 
@@ -39,7 +39,7 @@ reticulum/.venv/bin/python reticulum/scripts/init_local_config.py --config "$HOM
 
 The generated configuration enables only the local AutoInterface and disables transport routing and shared-instance use for this test. It does not modify firewall rules, router settings, services, or an existing configuration.
 
-Automated initializer tests can be run from the repository root:
+Automated config and probe regression tests can be run from the repository root:
 
 ```bash
 python -m unittest discover -s reticulum/tests -v

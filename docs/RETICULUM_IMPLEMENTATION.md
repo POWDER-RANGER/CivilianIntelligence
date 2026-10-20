@@ -26,7 +26,7 @@ The bootstrap scripts install into a project-local `.venv`. They do not configur
 - **Reticulum (`rnsd`):** networking service and routing.
 - **Local transport:** use the upstream `AutoInterface` on a compatible local Ethernet/Wi-Fi segment. The automatically generated minimal configuration does not necessarily enable a network interface, so this branch includes `reticulum/scripts/init_local_config.py` to create a dedicated test config with AutoInterface explicitly enabled. AutoInterface uses link-local IPv6 and UDP; public internet is not required, but host firewalls or access-point client isolation can still prevent discovery.
 - **Test application:** `reticulum/scripts/offline_probe.py` uses Reticulum destinations and packet delivery proofs to support a manual two-node test.
-- **Config safety tests:** `reticulum/tests/test_init_local_config.py` checks config creation and verifies that existing config files are not overwritten.
+- **Config and probe regression tests:** tests cover config creation/overwrite protection and ensure the manual probe exits cleanly when Reticulum cannot enqueue a packet.
 - **Optional cloud entry point:** only a later experiment for internet-connected peers, using a separate Linux VM and dedicated configuration. This path is not offline transport and must never be a prerequisite for local messaging.
 - **CIVWATCH bridge:** out of scope until the independent offline baseline is proven and a separate opt-in integration contract is reviewed.
 
@@ -66,7 +66,7 @@ reticulum/.venv/bin/python reticulum/scripts/init_local_config.py --config "$HOM
 
 The helper creates a config only if no config file already exists. It refuses to overwrite an existing file. The generated config explicitly enables the local AutoInterface and disables transport routing and shared-instance use for this isolated test. It does not change firewall, router, or system-service settings.
 
-Run the initializer unit tests from the repository root with `python -m unittest discover -s reticulum/tests -v`. These tests cover file creation and overwrite protection; they do not verify that a network interface is reachable.
+Run the config and probe regression tests from the repository root with `python -m unittest discover -s reticulum/tests -v`. These tests cover config creation, overwrite protection, and one packet-enqueue failure path; they do not verify that a network interface is reachable.
 
 ## Manual two-node test
 
