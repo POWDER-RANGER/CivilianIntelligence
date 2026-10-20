@@ -18,10 +18,10 @@ python3 -m venv "${VENV_DIR}" || {
 
 "${VENV_DIR}/bin/python" -m pip install --upgrade pip
 "${VENV_DIR}/bin/python" -m pip install rns
-"${VENV_DIR}/bin/python" -c 'import RNS; print("Reticulum Python import: OK"); print("Module:", RNS.__file__)'
+"${VENV_DIR}/bin/python" "${SCRIPT_DIR}/verify_install.py"
 
 echo
-echo "Installation and import check completed on this computer."
+echo "Installation diagnostic completed on this computer."
 echo "Environment: ${VENV_DIR}"
 echo "This does not verify peer discovery or offline message delivery."
 echo "No firewall, router, system service, or network interface settings were changed."
