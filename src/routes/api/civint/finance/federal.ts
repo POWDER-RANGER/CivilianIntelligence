@@ -6,8 +6,16 @@ const API = "https://api.usaspending.gov/api/v2/search/spending_by_award/";
 export const Route = createFileRoute("/api/civint/finance/federal")({
   server: { handlers: {
     POST: async ({ request }) => {
+      let body: unknown;
       try {
-        const body = await request.json();
+        body = await request.json();
+      } catch {
+        return Response.json({ state: "invalid-request", error: "Request body must be valid JSON." }, { status: 400 });
+      }
+      if (!body || typeof body !== "object" || Array.isArray(body)) {
+        return Response.json({ state: "invalid-request", error: "Request body must be a JSON object." }, { status: 400 });
+      }
+      try {
         const upstream = await fetch(API, {
           method: "POST",
           headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -47,8 +55,19 @@ export const Route = createFileRoute("/api/civint/finance/federal")({
               }),
             );
             indexed = outcomes.filter((outcome) => outcome.status === "fulfilled" && outcome.value).length;
+            const failure = outcomes.find((outcome) => outcome.status === "rejected");
+            if (failure && failure.status === "rejected") {
+              console.error("[finance/federal] record index write failed", {
+                failed: outcomes.filter((outcome) => outcome.status === "rejected").length,
+                total: awards.length,
+                message: failure.reason instanceof Error ? failure.reason.message : String(failure.reason),
+              });
+            }
             indexState = indexed === awards.length ? "indexed" : indexed > 0 ? "partial" : "unavailable";
-          } catch {
+          } catch (error) {
+            console.error("[finance/federal] record index unavailable", {
+              message: error instanceof Error ? error.message : String(error),
+            });
             indexState = "unavailable";
           }
         }
