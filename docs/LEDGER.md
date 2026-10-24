@@ -54,6 +54,12 @@ Local run, Node 22.23.4, `npm ci --ignore-scripts` from lockfile.
 | P0-3 | 0 | all | Full baseline across repos | Partially Implemented | Hub only; other repos not yet run |
 | P0-4 | 0 | all | Correct disproved claims in docs | Not Implemented | |
 | P0-5 | 0 | v3, powder-ranger, ruby-gem | Prepare consolidation (human executes) | Not Implemented | |
+| P1-1/2/4/5 | 1 | CivilianIntelligence | Security headers, API method contract, validated proxies, rate/size limits | Failed Verification² | PR #91 @ `5266a300`; verifier comment on PR #91 |
+
+² PR #91 was opened by a separate session. Independent verification passed headers, JSON 405/404,
+400 on malformed bodies and the 32 KiB cap, but the rate limiter keys on the client-controlled
+leftmost `X-Forwarded-For` entry (Render appends to that header), so rotating it bypasses 429
+entirely (40/40 accepted). Not merged.
 
 ¹ Low-risk change self-merged under the owner's policy for small changes (no auth, migration,
 infrastructure or contract changes). Production deploy is **not verified**: see blocker B-1.
