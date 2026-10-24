@@ -49,17 +49,29 @@ Local run, Node 22.23.4, `npm ci --ignore-scripts` from lockfile.
 |---|---|---|---|---|---|
 | P0-1a | 0 | CivilianIntelligence | Remove unused Neon Functions scaffold + stray files; rename package | Verified Complete¹ | PR #90 → `4f1fa548`; CI + Validate green on PR and on `main` |
 | P0-1b | 0 | CivilianIntelligence | Replace `AGENTS.md`; decide fate of `.grok/` agent tooling | Blocked — owner decision | See note A |
-| P0-1c | 0 | CivilianIntelligence | Fix 8 failing grok-pwa OG injector tests (production code) | Not Implemented | `test:platform` 189/197 after P0-1a |
+| P0-1c | 0 | CivilianIntelligence | Fix 8 failing grok-pwa OG injector tests | Implemented, Verification Pending³ | `agent/p0-hub-hygiene` PR; `test:platform` 197/197 |
+| P2-4 | 2 | CivilianIntelligence | Run `test:platform` and `pytest ingest` in CI | Implemented, Verification Pending | `agent/p0-hub-hygiene` PR |
+| P2-5 | 2 | CivilianIntelligence | Fix failing ingest test (`test_normalize_atlas_row`: records lacked license provenance) | Implemented, Verification Pending | `agent/p0-hub-hygiene` PR; ingest pytest 7/7 |
+| P2-6 | 2 | CivilianIntelligence | Lint blocking with zero warnings | Implemented, Verification Pending | `agent/p0-hub-hygiene` PR |
 | P0-2 | 0 | CivilianIntelligence | Create this ledger | Implemented, Verification Pending | This PR |
 | P0-3 | 0 | all | Full baseline across repos | Partially Implemented | Hub only; other repos not yet run |
 | P0-4 | 0 | all | Correct disproved claims in docs | Not Implemented | |
 | P0-5 | 0 | v3, powder-ranger, ruby-gem | Prepare consolidation (human executes) | Not Implemented | |
-| P1-1/2/4/5 | 1 | CivilianIntelligence | Security headers, API method contract, validated proxies, rate/size limits | Failed Verification² | PR #91 @ `5266a300`; verifier comment on PR #91 |
+| P1-1/2/4/5 | 1 | CivilianIntelligence | Security headers, API method contract, validated proxies, rate/size limits | Implemented, Verification Pending² | PR #91 @ `ea3a243`; fix response on PR #91 |
+| P1-3 | 1 | civwatch-cell-titan | Ed25519-signed evidence (schema v2), `/api/evidence/pubkey` | Implemented, Verification Pending | civwatch-cell-titan PR #15; pytest 199 passed; CI green 3.11/3.12 |
+| P2-2/P2-3 | 2 | civwatch-watchtower | Persist features/reports in PostGIS; first test suite with coverage gate | Implemented, Verification Pending | civwatch-watchtower PR #14; 36 tests, 90.5% lines; restart-persistence check |
 
 ² PR #91 was opened by a separate session. Independent verification passed headers, JSON 405/404,
 400 on malformed bodies and the 32 KiB cap, but the rate limiter keys on the client-controlled
 leftmost `X-Forwarded-For` entry (Render appends to that header), so rotating it bypasses 429
-entirely (40/40 accepted). Not merged.
+entirely (40/40 accepted). Not merged. **Update:** fixed in `ea3a243` (right-to-left hop walk,
+`TRUSTED_PROXY_HOPS`, oldest-bucket eviction); the same reproduction now yields 30×400 then 10×429.
+Production hop count still needs one real-request check after deploy.
+
+³ Root cause was the tests, not production code: `normalizeHeadContext()` reads
+`src/lib/og/site.json` from `process.cwd()` when no `site` is passed, so template-default tests run
+from this repo picked up the deliberate CIVWATCH branding (`title: CIVWATCH`, `card: custom`).
+The test file now runs from an empty temp directory; production OG output is unchanged.
 
 ¹ Low-risk change self-merged under the owner's policy for small changes (no auth, migration,
 infrastructure or contract changes). Production deploy is **not verified**: see blocker B-1.

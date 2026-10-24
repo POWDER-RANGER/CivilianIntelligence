@@ -135,6 +135,11 @@ def usaspending(terms=("Flock Safety", "Flock Group", "license plate reader"), s
 
 # ---------------------------------------------------------------- Atlas of Surveillance
 ATLAS_URL = "https://www.atlasofsurveillance.org/download.csv"
+# atlasofsurveillance.org footer marks the site "CC-by", linking EFF's copyright
+# page: CC BY 4.0 for original material unless otherwise noted.
+ATLAS_LICENSE = "CC-BY"
+ATLAS_LICENSE_URL = "https://www.eff.org/copyright"
+ATLAS_ATTRIBUTION = "Atlas of Surveillance, Electronic Frontier Foundation and Reynolds School of Journalism"
 
 
 def _atlas_value(row, *names):
@@ -175,6 +180,9 @@ def normalize_atlas_row(row):
             "source_url": ATLAS_URL,
             "method": "Atlas of Surveillance CSV",
             "state": "snapshot",
+            "license": ATLAS_LICENSE,
+            "license_url": ATLAS_LICENSE_URL,
+            "attribution": ATLAS_ATTRIBUTION,
         },
     }
 
@@ -205,7 +213,9 @@ def atlas(url=None):
             "id": "atlas-of-surveillance",
             "name": "Atlas of Surveillance",
             "url": url,
-                "publisher": "Electronic Frontier Foundation / Reynolds School of Journalism",
+            "publisher": "Electronic Frontier Foundation / Reynolds School of Journalism",
+            "license": ATLAS_LICENSE,
+            "license_url": ATLAS_LICENSE_URL,
         },
         "count": len(records),
         "records": records,
