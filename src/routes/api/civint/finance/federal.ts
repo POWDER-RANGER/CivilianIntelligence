@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { upsertIndexedRecord } from "@/lib/record-index";
+import { buildUpstreamBody, parseFederalRequest } from "@/lib/federal-spending";
 
 const API = "https://api.usaspending.gov/api/v2/search/spending_by_award/";
 
@@ -12,14 +13,15 @@ export const Route = createFileRoute("/api/civint/finance/federal")({
       } catch {
         return Response.json({ state: "invalid-request", error: "Request body must be valid JSON." }, { status: 400 });
       }
-      if (!body || typeof body !== "object" || Array.isArray(body)) {
-        return Response.json({ state: "invalid-request", error: "Request body must be a JSON object." }, { status: 400 });
+      const parsed = parseFederalRequest(body);
+      if (!parsed.ok) {
+        return Response.json({ state: "invalid-request", error: parsed.error }, { status: 400 });
       }
       try {
         const upstream = await fetch(API, {
           method: "POST",
           headers: { "Content-Type": "application/json", Accept: "application/json" },
-          body: JSON.stringify(body),
+          body: JSON.stringify(buildUpstreamBody(parsed.view, parsed.page)),
           signal: AbortSignal.timeout(20000),
         });
         const payload = await upstream.text();

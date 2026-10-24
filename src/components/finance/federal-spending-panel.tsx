@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { FEDERAL_VIEWS } from "@/lib/federal-spending";
 
 type Award = {
   "Award ID"?: string;
@@ -14,29 +15,10 @@ type Award = {
 };
 type Result = { results?: Award[] };
 
-// Live audit P1-14: the panel showed the largest awards of all time (Humana,
-// Lockheed, national labs) — accurate but irrelevant to surveillance oversight.
-// The default view is now a keyword search for surveillance technology, with
-// the general view kept as an explicit second option.
-const VIEWS = {
-  surveillance: {
-    label: "Surveillance technology",
-    note: "Federal contracts whose award text mentions license plate readers, Flock Safety, ShotSpotter or SoundThinking, FY2021 to date.",
-    filters: {
-      keywords: ["license plate reader", "Flock Safety", "ShotSpotter", "SoundThinking"],
-      award_type_codes: ["A", "B", "C", "D"],
-      time_period: [{ start_date: "2020-10-01", end_date: "2026-09-30" }],
-    },
-  },
-  largest: {
-    label: "Largest awards with FY2026 activity",
-    note: "Contracts with transactions in fiscal year 2026, ranked by total award value over the award's lifetime.",
-    filters: {
-      award_type_codes: ["A", "B", "C", "D"],
-      time_period: [{ start_date: "2025-10-01", end_date: "2026-09-30" }],
-    },
-  },
-} as const;
+// Live audit P1-14: the default view is a keyword search for surveillance
+// technology, with the general view kept as an explicit second option. The
+// queries themselves are server-owned (P1-4): the panel names a view only.
+const VIEWS = FEDERAL_VIEWS;
 
 type ViewId = keyof typeof VIEWS;
 
@@ -53,14 +35,7 @@ export function FederalSpendingPanel() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       signal: controller.signal,
-      body: JSON.stringify({
-        filters: VIEWS[view].filters,
-        fields: ["Award ID", "Recipient Name", "Award Amount", "Contract Award Type", "Awarding Agency", "Start Date", "End Date", "Description"],
-        page: 1,
-        limit: 10,
-        sort: "Award Amount",
-        order: "desc",
-      }),
+      body: JSON.stringify({ view, page: 1 }),
     })
       .then(async (r) => {
         const x = (await r.json()) as Result;
