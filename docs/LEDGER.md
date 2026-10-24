@@ -18,9 +18,9 @@ Identity, default branch and push permission confirmed through the GitHub REST A
 
 | Repo | Default | `main` head | Open PRs | Role (per roadmap) |
 |---|---|---|---|---|
-| CivilianIntelligence | `main` | `4f1fa548` | 0 | Hub, system of record |
+| CivilianIntelligence | `main` | `27bbdd69` | 1 (#91, other session) | Hub, system of record |
 | civwatch-cell-titan | `main` | `fe110a32` | 0 | RF telemetry + hash-chained evidence |
-| civwatch-watchtower | `main` | `62a7fe80` | 1 (#10, Dependabot) | Geospatial API + dashboard |
+| civwatch-watchtower | `main` | `3c7ff698` | 0 | Geospatial API + dashboard |
 | civwatch-app | `main` | `765bab80` | 0 | Flutter client |
 | CIVWATCH | `main` | `22f7567c` | 0 | Legacy project site / security workflows |
 | civwatch-v3 | `main` | `f06bd204` | 0 | Archive candidate |
@@ -100,7 +100,11 @@ The roadmap's P0-1 treated all Grok/Neon files as dead scaffolding. Inspection s
 - `.vercel/output/` — 63 committed build-output files in the hub.
 - Hub: no CSP / HSTS / X-Frame-Options strings in `src/` or `server/` (consistent with P1-1).
 - All workflow `uses:` lines in the hub are pinned to commit SHAs.
-- Watchtower PR #10: open Dependabot security bump (axios, dompurify, others).
+- Watchtower PR #10 (Dependabot: axios 1.20.0, vite 7.3.7, vitest 3.2.6, postcss, nanoid, pnpm):
+  merged as `3c7ff698`. Verified on the merge result before merging: frozen-lockfile install 0,
+  `pnpm check` 0, `pnpm build` 0. `pnpm audit --prod`: 84 → 48 findings (high 20 → 6, critical
+  1 → 1). `main` CI green on `3c7ff698`. Watchtower has no deploy config of its own; nothing deployed.
+- Watchtower has no `test` script and 0 test files (P2-3 still open).
 - Code-scanning alerts API returns 403 for this session's token; alert state not observed.
 
 ## Blockers
