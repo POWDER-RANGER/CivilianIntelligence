@@ -27,6 +27,8 @@ interface SecurityEvent {
 }
 
 const limiter = new FixedWindowLimiter();
+// Public proxies between the client and Render to skip (0 = Render edge only).
+const trustedProxyHops = Math.max(0, Number.parseInt(process.env.TRUSTED_PROXY_HOPS ?? "0", 10) || 0);
 
 export default async function securityMiddleware(
   event: SecurityEvent,
@@ -43,7 +45,7 @@ export default async function securityMiddleware(
 
     const rule = rateLimitRule(path, method);
     if (rule) {
-      const wait = limiter.hit(`${clientKey(event.req.headers)}|${rule.limit}`, rule);
+      const wait = limiter.hit(`${clientKey(event.req.headers, trustedProxyHops)}|${rule.limit}`, rule);
       if (wait > 0) return withHeaders(tooManyRequests(wait), headers);
     }
 

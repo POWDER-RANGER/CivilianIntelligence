@@ -156,11 +156,52 @@ export function withHeaders(response: Response, headers: Record<string, string>)
   }
 }
 
-/** Client address from the first X-Forwarded-For hop (Render's proxy sets it). */
-export function clientKey(headers: Headers): string {
+const PRIVATE_V4 = [
+  /^10\./,
+  /^127\./,
+  /^169\.254\./,
+  /^192\.168\./,
+  /^172\.(1[6-9]|2\d|3[01])\./,
+  /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./, // 100.64.0.0/10 carrier-grade NAT
+];
+
+/** Loopback, link-local, private and unique-local addresses are proxy hops, never the client. */
+export function isInternalAddress(address: string): boolean {
+  const a = address.trim().toLowerCase().replace(/^::ffff:/, "");
+  if (!a) return true;
+  if (PRIVATE_V4.some((re) => re.test(a))) return true;
+  return a === "::1" || a.startsWith("fe80:") || a.startsWith("fc") || a.startsWith("fd");
+}
+
+/**
+ * Rate-limit key for a request.
+ *
+ * Render appends to `X-Forwarded-For` instead of replacing it, so the LEFTMOST
+ * entries are whatever the client sent and must never be trusted (PR #91
+ * verification, finding 1). Proxies append on the right, so walk from the right:
+ * skip internal proxy hops, then skip `trustedPublicHops` further public proxies
+ * (e.g. 1 when a CDN sits in front of Render), and take the next entry.
+ *
+ * `TRUSTED_PROXY_HOPS` must be confirmed against a real production request.
+ */
+export function clientKey(headers: Headers, trustedPublicHops = 0): string {
   const forwarded = headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0]!.trim() || "unknown";
-  return headers.get("x-real-ip") ?? "unknown";
+  if (forwarded) {
+    const hops = forwarded.split(",").map((h) => h.trim()).filter(Boolean);
+    let skipPublic = Math.max(0, trustedPublicHops);
+    for (let i = hops.length - 1; i >= 0; i--) {
+      const hop = hops.at(i)!;
+      if (isInternalAddress(hop)) continue;
+      if (skipPublic > 0) {
+        skipPublic -= 1;
+        continue;
+      }
+      return hop;
+    }
+    // Every entry was internal or a trusted proxy: fall back to the rightmost.
+    if (hops.length) return hops.at(-1)!;
+  }
+  return headers.get("x-real-ip")?.trim() || "unknown";
 }
 
 export interface RateLimitRule {
@@ -194,7 +235,9 @@ export class FixedWindowLimiter {
   hit(key: string, rule: RateLimitRule, now = Date.now()): number {
     const bucket = this.buckets.get(key);
     if (!bucket || now - bucket.started >= rule.windowMs) {
+      if (bucket) this.buckets.delete(key);
       if (this.buckets.size >= this.maxKeys) this.prune(now, rule.windowMs);
+      // Insertion order = window start order, so the oldest bucket is first.
       this.buckets.set(key, { started: now, count: 1 });
       return 0;
     }
@@ -203,11 +246,20 @@ export class FixedWindowLimiter {
     return 0;
   }
 
+  /**
+   * Drop expired buckets; if still full, evict the oldest windows one by one.
+   * Never clears every bucket, so flooding new keys cannot reset other
+   * clients' counters (PR #91 verification, finding 2).
+   */
   private prune(now: number, windowMs: number): void {
     for (const [key, bucket] of this.buckets) {
       if (now - bucket.started >= windowMs) this.buckets.delete(key);
     }
-    if (this.buckets.size >= this.maxKeys) this.buckets.clear();
+    while (this.buckets.size >= this.maxKeys) {
+      const oldest = this.buckets.keys().next();
+      if (oldest.done) break;
+      this.buckets.delete(oldest.value);
+    }
   }
 }
 

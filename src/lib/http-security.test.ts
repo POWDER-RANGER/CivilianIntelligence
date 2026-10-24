@@ -8,6 +8,7 @@ import {
   FixedWindowLimiter,
   apiContractResponse,
   clientKey,
+  isInternalAddress,
   matchApiRoute,
   rateLimitRule,
   securityHeaders,
@@ -125,7 +126,50 @@ test("limiter memory stays bounded", () => {
   assert.ok((limiter as unknown as { buckets: Map<string, unknown> }).buckets.size <= 5);
 });
 
-test("client key uses the first forwarded hop", () => {
-  assert.equal(clientKey(new Headers({ "x-forwarded-for": "203.0.113.9, 10.0.0.1" })), "203.0.113.9");
+test("client key ignores the client-controlled leftmost X-Forwarded-For entries", () => {
+  // Render appends the real client address; anything to its left came from the client.
+  const real = "203.0.113.7";
+  const keys = new Set<string>();
+  for (let i = 1; i <= 40; i++) {
+    keys.add(clientKey(new Headers({ "x-forwarded-for": `198.51.100.${i}, ${real}` })));
+  }
+  assert.deepEqual([...keys], [real], "rotating the spoofed value must not create new buckets");
+});
+
+test("client key skips internal proxy hops on the right", () => {
+  assert.equal(clientKey(new Headers({ "x-forwarded-for": "198.51.100.1, 203.0.113.7, 10.1.2.3" })), "203.0.113.7");
+  assert.equal(clientKey(new Headers({ "x-forwarded-for": "203.0.113.7, 100.64.0.9, 172.20.0.1" })), "203.0.113.7");
+  assert.equal(clientKey(new Headers({ "x-forwarded-for": "203.0.113.7, ::ffff:10.0.0.5" })), "203.0.113.7");
+});
+
+test("client key skips a configured number of trusted public proxies", () => {
+  const h = new Headers({ "x-forwarded-for": "198.51.100.1, 203.0.113.7, 104.16.0.1" });
+  assert.equal(clientKey(h, 0), "104.16.0.1");
+  assert.equal(clientKey(h, 1), "203.0.113.7");
+});
+
+test("client key falls back sensibly", () => {
+  assert.equal(clientKey(new Headers({ "x-forwarded-for": "10.0.0.1, 10.0.0.2" })), "10.0.0.2");
+  assert.equal(clientKey(new Headers({ "x-real-ip": "203.0.113.5" })), "203.0.113.5");
   assert.equal(clientKey(new Headers()), "unknown");
+});
+
+test("internal address detection", () => {
+  for (const a of ["10.0.0.1", "127.0.0.1", "192.168.1.1", "172.16.0.1", "172.31.255.1", "169.254.1.1", "100.64.0.1", "::1", "fd00::1", "fe80::1"]) {
+    assert.equal(isInternalAddress(a), true, a);
+  }
+  for (const a of ["203.0.113.7", "172.32.0.1", "100.128.0.1", "8.8.8.8", "2001:db8::1"]) {
+    assert.equal(isInternalAddress(a), false, a);
+  }
+});
+
+test("flooding new keys evicts the oldest buckets instead of resetting everyone", () => {
+  const limiter = new FixedWindowLimiter(100);
+  const rule = { limit: 2, windowMs: 60_000 };
+  limiter.hit("victim", rule, 0);
+  limiter.hit("victim", rule, 1);
+  assert.ok(limiter.hit("victim", rule, 2) > 0, "victim is limited");
+  // Fewer than maxKeys new keys: the victim's counter must survive.
+  for (let i = 0; i < 98; i++) limiter.hit(`flood-${i}`, rule, 3);
+  assert.ok(limiter.hit("victim", rule, 4) > 0, "victim still limited after a flood below capacity");
 });
