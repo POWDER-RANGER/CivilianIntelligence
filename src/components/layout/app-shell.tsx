@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Menu, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -50,6 +50,33 @@ export function AppShell({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
+  const desktopNavRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const closeMenus = () => {
+      desktopNavRef.current?.querySelectorAll<HTMLDetailsElement>("details[open]")
+        .forEach((menu) => { menu.open = false; });
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      if (!desktopNavRef.current?.contains(event.target as Node)) closeMenus();
+    };
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") closeMenus();
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    desktopNavRef.current?.querySelectorAll<HTMLDetailsElement>("details[open]")
+      .forEach((menu) => { menu.open = false; });
+    setOpen(false);
+  }, [pathname]);
+
 
   // Live audit P1-12: the box only matched framework nodes, gave no feedback on
   // a miss, and Enter did nothing. It now matches desks too, always offers a
@@ -145,7 +172,7 @@ export function AppShell({
             <BrandLockup />
           </Link>
 
-          <nav className="ml-2 hidden items-center gap-1 lg:flex" aria-label="Main navigation">
+          <nav ref={desktopNavRef} className="ml-2 hidden items-center gap-1 lg:flex" aria-label="Main navigation">
             {NAV_GROUPS.map((group) => {
               const active = group.items.some((item) => item.to === "/" ? pathname === "/" : pathname.startsWith(item.to));
               return (
@@ -243,7 +270,7 @@ export function AppShell({
 
       {!flush && (
         <footer className="border-t border-border bg-card">
-          <div className="mx-auto grid max-w-[1600px] gap-3 px-4 py-6 text-xs leading-relaxed text-muted-foreground md:grid-cols-[minmax(0,1fr)_auto] md:gap-8">
+          <div className="mx-auto grid max-w-[1600px] gap-3 px-4 py-6 text-sm leading-relaxed text-muted-foreground md:grid-cols-[minmax(0,1fr)_auto] md:gap-8">
             <p className="max-w-3xl">
               CIVWATCH documents publicly visible infrastructure and public records about government surveillance
               technology. Locations come from public records, open data (OpenStreetMap) and volunteer reports; each shows
