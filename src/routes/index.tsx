@@ -66,7 +66,7 @@ function Home() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">The Open Desk</p>
               <h1 className="mt-1 font-display text-3xl md:text-4xl">What is happening around you?</h1>
-              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+              <p className="mt-2 max-w-3xl text-base leading-relaxed text-muted-foreground">
                 Start with public infrastructure, then move outward through city, county, state, and federal records.
                 CIVWATCH surfaces evidence; the original publisher remains the source of record.
               </p>
@@ -82,7 +82,7 @@ function Home() {
             </div>
           </div>
           {locationState === "denied" && (
-            <p className="mt-3 text-xs text-muted-foreground">Location permission was not granted. You can still search and explore the map normally.</p>
+            <p className="mt-3 text-sm text-muted-foreground">Location permission was not granted. You can still search and explore the map normally.</p>
           )}
         </div>
       </section>
@@ -131,18 +131,18 @@ function Home() {
                   <div key={level.key} className="rounded-xl border border-border bg-background p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">{level.label}</p>
                     <p className="mt-1 text-sm font-medium">{level.value ?? "Not resolved"}</p>
-                    <p className="mt-3 text-xs text-muted-foreground">
+                    <p className="mt-3 text-sm text-muted-foreground">
                       {records.length ? `${records.length} indexed record${records.length === 1 ? "" : "s"}` : "No matching indexed records found"}
                     </p>
                     {records.slice(0, 3).map((record) => (
-                      <Link key={record.id} to="/records/$id" params={{ id: record.id }} className="mt-2 block text-xs text-primary hover:underline">{record.title}</Link>
+                      <Link key={record.id} to="/records/$id" params={{ id: record.id }} className="mt-2 block text-sm text-primary hover:underline">{record.title}</Link>
                     ))}
                   </div>
                 );
               })}
             </div>
           )}
-          <p className="mt-5 border-t border-border pt-4 text-xs leading-relaxed text-muted-foreground">
+          <p className="mt-5 border-t border-border pt-4 text-sm leading-relaxed text-muted-foreground">
             Location is permission-based. CIVWATCH does not fingerprint the device, sell location data, or treat proximity as evidence about a person.
           </p>
         </div>
@@ -159,7 +159,7 @@ function Home() {
               {recent.map((record) => (
                 <Link key={record.id} to="/records/$id" params={{ id: record.id }} className="block rounded-lg border border-border p-3 hover:bg-muted">
                   <p className="text-sm font-medium">{record.title}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{record.sourceName} · {new Date(record.viewedAt).toLocaleString()}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{record.sourceName} · {new Date(record.viewedAt).toLocaleString()}</p>
                 </Link>
               ))}
             </div>
