@@ -20,7 +20,7 @@ export const MY_LOCATION_ALT = 1500;
  */
 export type GlobeToolsMode = "hidden" | "minimal" | "full";
 
-export const DEFAULT_TOOLS_MODE: GlobeToolsMode = "minimal";
+export const DEFAULT_TOOLS_MODE: GlobeToolsMode = "hidden";
 
 export const TOOLS_MODES: readonly GlobeToolsMode[] = ["hidden", "minimal", "full"];
 
