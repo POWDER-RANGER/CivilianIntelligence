@@ -20,7 +20,7 @@ export function SecRecordsPanel() {
     setState("loading");
     try {
       const response = await fetch(`/api/civint/finance/sec?cik=${encodeURIComponent(cik)}`);
-      if (!response.ok) { setData(null); setState("not-found"); return; }
+      if (!response.ok) { setData(null); setState(response.status === 404 ? "not-found" : "error"); return; }
       setData(await response.json() as Submission);
       setState("live");
     } catch {
@@ -56,7 +56,7 @@ export function SecRecordsPanel() {
       {state === "idle" && <p className="mt-4 text-xs text-muted-foreground">Enter a CIK to load the public EDGAR submission record.</p>}
       {state === "loading" && <p className="mt-4 text-xs text-muted-foreground">Reading EDGAR…</p>}
       {state === "not-found" && <p className="mt-4 text-xs text-muted-foreground">No public filing record was returned for that CIK.</p>}
-      {state === "error" && <p className="mt-4 text-xs text-muted-foreground">SEC source unavailable. No synthetic records are shown.</p>}
+      {state === "error" && <p className="mt-4 text-xs text-muted-foreground">SEC filing lookup failed or the source is unavailable. No synthetic records are shown.</p>}
 
       {state === "live" && data && (
         <div className="mt-5 grid gap-4 md:grid-cols-[1fr_auto]">
