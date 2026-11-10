@@ -40,8 +40,8 @@ type LocateState = "idle" | "requesting" | "granted" | "denied" | "unavailable";
 export const Route = createFileRoute("/globe")({ component: CameraFeedPortal });
 
 function CameraFeedPortal() {
-  const [activeView, setActiveView] = useState<PortalView>("map");
-  const [viewerRequested, setViewerRequested] = useState(false);
+  const [activeView, setActiveView] = useState<PortalView>("globe");
+  const [viewerRequested, setViewerRequested] = useState(true);
   const [loaded, setLoaded] = useState(false);
   const [camera, setCamera] = useState<GlobeCamera>(DEFAULT_GLOBE_CAMERA);
   const [locateState, setLocateState] = useState<LocateState>("idle");
@@ -104,7 +104,7 @@ function CameraFeedPortal() {
     ? "Viewer loaded"
     : viewerRequested
       ? "Connecting"
-      : "On demand";
+      : "Not started";
 
   return (
     <AppShell flush>
@@ -123,7 +123,7 @@ function CameraFeedPortal() {
                   Cameras and public feeds
                 </h1>
                 <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-                  Inspect documented U.S. ALPR infrastructure and open the separate global viewer when you need it.
+                  Explore the 3D global viewer by default, or switch to documented U.S. ALPR infrastructure.
                   The global viewer is not filtered to the United States.
                 </p>
               </div>
@@ -151,7 +151,7 @@ function CameraFeedPortal() {
           </div>
         </div>
 
-        <div className="border-b border-border bg-background px-3 py-2 lg:hidden">
+        <div className="border-b border-border bg-background px-3 py-2">
           <div className="mx-auto grid max-w-[1800px] grid-cols-2 gap-2" role="group" aria-label="Choose map view">
             <button
               type="button"
@@ -180,8 +180,8 @@ function CameraFeedPortal() {
           </div>
         </div>
 
-        <main className="mx-auto grid w-full max-w-[1800px] min-h-0 flex-1 grid-cols-1 items-stretch gap-3 p-3 md:gap-4 md:p-5 xl:grid-cols-2">
-          <section className={`min-w-0 ${showMap ? "block" : "hidden"} xl:block`}>
+        <main className="mx-auto grid w-full max-w-[1800px] min-h-0 flex-1 grid-cols-1 items-stretch gap-3 p-3 md:gap-4 md:p-5">
+          <section className={`min-w-0 ${showMap ? "block" : "hidden"}`}>
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2">
                 <Camera className="size-4 shrink-0 text-primary" />
@@ -205,7 +205,7 @@ function CameraFeedPortal() {
 
           <section
             data-theme="ops"
-            className={`min-w-0 overflow-hidden rounded-xl border border-border bg-card text-card-foreground ${!showMap ? "block" : "hidden"} xl:block`}
+            className={`min-w-0 overflow-hidden rounded-xl border border-border bg-card text-card-foreground ${!showMap ? "block" : "hidden"}`}
           >
             <header className="flex min-h-[76px] items-center gap-3 border-b border-border px-3 py-3 md:px-4">
               <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-primary">
@@ -302,7 +302,7 @@ function CameraFeedPortal() {
                     title="Global public-feed viewer"
                     src={buildGlobeEmbedUrl(camera, toolsMode)}
                     className="absolute inset-0 size-full border-0"
-                    loading="lazy"
+                    loading="eager"
                     allow="fullscreen"
                     allowFullScreen
                     referrerPolicy="strict-origin-when-cross-origin"
