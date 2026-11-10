@@ -14,7 +14,6 @@ function statusVariant(status: PillarStatus["status"]) {
 }
 
 function WatchtowerPage() {
-  const [mapRequested, setMapRequested] = useState(false);
   const [health, setHealth] = useState<PillarStatus | null>(null);
   const [features, setFeatures] = useState<WatchtowerFeature[]>([]);
   const [count, setCount] = useState(0);
@@ -80,23 +79,9 @@ function WatchtowerPage() {
           </div>
         </div>
 
-        {mapRequested ? (
-          <Suspense fallback={<div role="status" className="mt-6 rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">Loading interactive map renderer…</div>}>
-            <AlprAtlas />
-          </Suspense>
-        ) : (
-          <section className="mt-6 rounded-xl border border-border bg-card p-5">
-            <h2 className="font-display text-2xl">Interactive ALPR map</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              The map renderer is off until requested to reduce mobile startup work.
-              Camera observations remain sourced; no sample markers are generated.
-            </p>
-            <button type="button" onClick={() => setMapRequested(true)}
-              className="mt-4 min-h-11 rounded-xl border border-border bg-background px-5 text-sm font-medium hover:bg-muted">
-              Launch interactive map
-            </button>
-          </section>
-        )}
+        <Suspense fallback={<div role="status" className="mt-6 rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">Preparing interactive map…</div>}>
+          <AlprAtlas />
+        </Suspense>
 
         <section className="mt-8 rounded-xl border border-border bg-card">
           <header className="border-b border-border px-5 py-4">
