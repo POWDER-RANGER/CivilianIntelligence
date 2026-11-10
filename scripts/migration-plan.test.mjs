@@ -57,9 +57,19 @@ test("non-.sql entries are dropped (readdir also yields the auth/ directory)", (
 });
 
 test("the auth schema ships outside the globbed directory", () => {
-  const migrationsDir = join(projectRoot(), "migrations");
-  assert.deepEqual(pendingMigrations(readdirSync(migrationsDir), []), []);
-  assert.ok(readdirSync(join(migrationsDir, "auth")).includes("0001_auth.sql"));
+  // The app owns real schema files (0002_public_evidence.sql, 0003_record_index.sql),
+  // so the globbed directory is not empty. What must hold is that the opt-in
+  // auth schema is not auto-applied unless sign-in was turned on (copy present).
+  const root = projectRoot();
+  const migrationsDir = join(root, "migrations");
+  const pending = pendingMigrations(readdirSync(migrationsDir), []).map((m) => m.name);
+  if (authSchemaCopy(root) === null) {
+    assert.ok(
+      !pending.includes(AUTH_MIGRATION),
+      `${AUTH_MIGRATION} is in migrations/ without its migrations/auth/ source — it would be auto-applied`,
+    );
+  }
+  assert.ok(readdirSync(join(migrationsDir, "auth")).includes(AUTH_MIGRATION));
 });
 
 test("this workspace's auth schema copy is byte-identical to its source", () => {

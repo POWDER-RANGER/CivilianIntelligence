@@ -99,15 +99,15 @@ function VeilPage() {
           </div>
         </div>
 
-        <section className="mt-6 rounded-xl border border-border bg-card p-5">
-          <div className="flex flex-wrap items-end justify-between gap-3">
+        <details className="mt-6 rounded-xl border border-border bg-card p-5">
+          <summary className="cursor-pointer flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Integration spine</p>
-              <h2 className="mt-1 font-display text-2xl">Pillar bridge</h2>
-              <p className="mt-1 text-xs text-muted-foreground">Server-side health probes for the CIVWATCH Platform and Cell Monitor.</p>
+              <h2 className="mt-1 font-display text-2xl">Service status</h2>
+              <p className="mt-1 text-xs text-muted-foreground">Platform and Cell Monitor health details, shown on demand.</p>
             </div>
-            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">topology hidden from browser</span>
-          </div>
+            <span className="text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">Expand details</span>
+          </summary>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {(pillars.length ? pillars : ([
               { id: "watchtower", label: "Platform", status: "unconfigured" },
@@ -136,7 +136,7 @@ function VeilPage() {
               </div>
             ))}
           </div>
-        </section>
+        </details>
 
         {sourceRegistry.length > 0 && (
           <section className="mt-6 rounded-xl border border-border bg-card p-5">

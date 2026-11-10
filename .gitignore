@@ -6,3 +6,4 @@ node_modules/
 civint_data/civint.db
 *.osm.pbf
 .output/
+reticulum/.venv/
