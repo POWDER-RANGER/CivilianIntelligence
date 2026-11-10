@@ -463,13 +463,13 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
     };
   }, []);
   useEffect(() => {
-    if (!mapRef.current || status !== "ready") return;
+    if (!mapRef.current || (status !== "ready" && status !== "degraded")) return;
     applyPointFilter(mapRef.current, flockOnly, query);
     refreshVisibleCount(mapRef.current);
   }, [flockOnly, query, status]);
 
   useEffect(() => {
-    if (!location || !mapRef.current || status !== "ready" || locationUsed) {
+    if (!location || !mapRef.current || (status !== "ready" && status !== "degraded") || locationUsed) {
       return;
     }
 
@@ -483,7 +483,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
   }, [location, status, locationUsed]);
 
   const centerOnLocation = () => {
-    if (!location || !mapRef.current || status !== "ready") return;
+    if (!location || !mapRef.current || (status !== "ready" && status !== "degraded")) return;
 
     mapRef.current.flyTo({
       center: [location.longitude, location.latitude],
@@ -504,7 +504,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
               </p>
               <Badge variant="outline">
                 {status === "ready"
-                  ? "HOURLY TILES"
+                  ? "MAP READY"
                   : status === "failed"
                     ? "FAILED"
                     : status === "degraded"
@@ -656,7 +656,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
           </ul>
         </div>
 
-        {location && status === "ready" && (
+        {location && (status === "ready" || status === "degraded") && (
           <div className="pointer-events-none absolute bottom-4 left-4 rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground">
             Location enabled · map can center on your area
           </div>

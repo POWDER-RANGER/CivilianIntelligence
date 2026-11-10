@@ -147,11 +147,25 @@ export async function getCivintAlpr(): Promise<CivintAlprNode[]> {
 }
 
 export async function getCivintSurveillance(): Promise<CivintSurveillanceFeed | null> {
-  return softJson<CivintSurveillanceFeed>("/surveillance.json");
+  const feed = await softJson<CivintSurveillanceFeed>("/surveillance.json");
+  if (!feed || (feed.state !== "live" && feed.state !== "snapshot")) return null;
+  return {
+    ...feed,
+    elements: Array.isArray(feed.elements)
+      ? feed.elements.filter((asset) => asset?.provenance?.state === "live" || asset?.provenance?.state === "snapshot")
+      : [],
+  };
 }
 
 export async function getCivintSurveillanceRecords(): Promise<CivintSurveillanceRecordsFeed | null> {
-  return softJson<CivintSurveillanceRecordsFeed>("/atlas_surveillance.json");
+  const feed = await softJson<CivintSurveillanceRecordsFeed>("/atlas_surveillance.json");
+  if (!feed || (feed.state !== "live" && feed.state !== "snapshot")) return null;
+  return {
+    ...feed,
+    records: Array.isArray(feed.records)
+      ? feed.records.filter((record) => record?.provenance?.state === "live" || record?.provenance?.state === "snapshot")
+      : [],
+  };
 }
 
 export type CivintSourceRegistry = {
