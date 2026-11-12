@@ -463,13 +463,13 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
     };
   }, []);
   useEffect(() => {
-    if (!mapRef.current || status !== "ready") return;
+    if (!mapRef.current || (status !== "ready" && status !== "degraded")) return;
     applyPointFilter(mapRef.current, flockOnly, query);
     refreshVisibleCount(mapRef.current);
   }, [flockOnly, query, status]);
 
   useEffect(() => {
-    if (!location || !mapRef.current || status !== "ready" || locationUsed) {
+    if (!location || !mapRef.current || (status !== "ready" && status !== "degraded") || locationUsed) {
       return;
     }
 
@@ -483,7 +483,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
   }, [location, status, locationUsed]);
 
   const centerOnLocation = () => {
-    if (!location || !mapRef.current || status !== "ready") return;
+    if (!location || !mapRef.current || (status !== "ready" && status !== "degraded")) return;
 
     mapRef.current.flyTo({
       center: [location.longitude, location.latitude],
@@ -504,7 +504,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
               </p>
               <Badge variant="outline">
                 {status === "ready"
-                  ? "HOURLY TILES"
+                  ? "MAP READY"
                   : status === "failed"
                     ? "FAILED"
                     : status === "degraded"
@@ -522,7 +522,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
               ALPR observation map
             </h2>
 
-            <p className="mt-2 max-w-3xl text-xs leading-relaxed text-muted-foreground">
+            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
               Publicly reported ALPR infrastructure is shown as{" "}
               <strong className="text-foreground">
                 sourced observations
@@ -531,20 +531,19 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
               vehicle activity.
             </p>
 
-            <div
-              className={[
-                "mt-3 rounded-xl border px-3 py-2 text-xs",
-                status === "failed"
-                  ? "border-warn bg-warn-subtle text-foreground"
-                  : "border-border/80 bg-background/50 text-muted-foreground",
-              ].join(" ")}
-            >
-              <span className="font-medium text-foreground">
-                {statusMessage}
-              </span>{" "}
-              Coverage is uneven; absence does not mean no cameras. Filters
-              apply to individual observations at zoom 9+.
-            </div>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              Coverage is uneven; absence does not mean no cameras. Filters apply to individual observations at zoom 9+.
+            </p>
+            {(status === "failed" || status === "degraded") && (
+              <p role="status" className="mt-3 rounded-lg border border-warn bg-warn-subtle px-3 py-2 text-sm text-foreground">
+                {status === "failed" ? "Map unavailable" : "Some map data is unavailable"}. See service details.
+              </p>
+            )}
+            <details className="mt-3 rounded-lg border border-border bg-background/50 px-3 py-2 text-sm">
+              <summary className="cursor-pointer font-medium text-foreground">Service details</summary>
+              <p className="mt-2 text-sm text-muted-foreground">{statusMessage}</p>
+              <p className="mt-1 text-sm text-muted-foreground">Renderer state: {status}. Observations do not prove operation.</p>
+            </details>
           </div>
 
           <div className="grid min-w-[190px] grid-cols-2 gap-2 text-center">
@@ -657,7 +656,7 @@ export function AlprAtlas({ location }: { location?: Location | null }) {
           </ul>
         </div>
 
-        {location && status === "ready" && (
+        {location && (status === "ready" || status === "degraded") && (
           <div className="pointer-events-none absolute bottom-4 left-4 rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground">
             Location enabled · map can center on your area
           </div>

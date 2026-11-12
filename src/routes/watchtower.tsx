@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
-import { AlprAtlas } from "@/components/watchtower/alpr-atlas";
+const AlprAtlas = lazy(() => import("@/components/watchtower/alpr-atlas").then((module) => ({ default: module.AlprAtlas })));
 import { getPillarStatus, getWatchtowerFeatures, type PillarStatus, type WatchtowerFeature } from "@/lib/pillars";
 
 export const Route = createFileRoute("/watchtower")({ component: WatchtowerPage });
@@ -79,7 +79,9 @@ function WatchtowerPage() {
           </div>
         </div>
 
-        <AlprAtlas />
+        <Suspense fallback={<div role="status" className="mt-6 rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">Preparing interactive map…</div>}>
+          <AlprAtlas />
+        </Suspense>
 
         <section className="mt-8 rounded-xl border border-border bg-card">
           <header className="border-b border-border px-5 py-4">
