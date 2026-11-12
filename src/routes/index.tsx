@@ -66,7 +66,7 @@ function Home() {
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.06em] text-muted-foreground">The Open Desk</p>
               <h1 className="mt-1 font-display text-3xl md:text-4xl">What is happening around you?</h1>
-              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+              <p className="mt-2 max-w-3xl text-base leading-relaxed text-muted-foreground">
                 Start with public infrastructure, then move outward through city, county, state, and federal records.
                 CIVWATCH surfaces evidence; the original publisher remains the source of record.
               </p>
