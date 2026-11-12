@@ -119,7 +119,7 @@ function CameraFeedPortal() {
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   CIVWATCH · Geospatial desk
                 </p>
-                <h1 className="mt-1 text-2xl font-semibold tracking-tight md:text-3xl">
+                <h1 className="mt-1 font-serif text-2xl font-semibold tracking-tight md:text-3xl">
                   Cameras and public feeds
                 </h1>
                 <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">
