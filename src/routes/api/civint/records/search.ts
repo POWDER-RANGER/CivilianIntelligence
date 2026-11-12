@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { searchIndexedRecords, type RecordSearchFilters } from "@/lib/record-index";
+import { parseRecordSearchFilters, searchIndexedRecords, type RecordSearchFilters } from "@/lib/record-index";
 
 function parseFilters(url: URL): RecordSearchFilters {
   return {
@@ -48,9 +48,18 @@ export const Route = createFileRoute("/api/civint/records/search")({
         }
       },
       POST: async ({ request }) => {
+        let raw: unknown;
         try {
-          const body = await request.json() as RecordSearchFilters;
-          return jsonResult(await searchIndexedRecords(body));
+          raw = await request.json();
+        } catch {
+          return Response.json({ state: "invalid-request", error: "Request body must be valid JSON." }, { status: 400, headers: { "Cache-Control": "no-store" } });
+        }
+        const parsed = parseRecordSearchFilters(raw);
+        if (!parsed.ok) {
+          return Response.json({ state: "invalid-request", error: parsed.error }, { status: 400, headers: { "Cache-Control": "no-store" } });
+        }
+        try {
+          return jsonResult(await searchIndexedRecords(parsed.filters));
         } catch (error) {
           console.error("[records/search] POST failed", {
             message: error instanceof Error ? error.message : String(error),
