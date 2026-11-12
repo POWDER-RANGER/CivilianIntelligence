@@ -21,6 +21,13 @@ import { renderInstallPage } from "./grok-pwa-plugin.mjs";
 
 const TEMPLATE_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
+// These tests pin the template's default head behaviour. The injector reads
+// src/lib/og/site.json from process.cwd() when no `site` is passed, so running
+// them from this repository picked up CIVWATCH's branding and failed. Run from
+// an empty directory so defaults are tested; tests that need a workspace pass
+// `cwd` (or TEMPLATE_ROOT) explicitly.
+process.chdir(mkdtempSync(join(tmpdir(), "grok-pwa-defaults-")));
+
 test("injects before </head>", () => {
   const out = injectGrokPwaHead("<html><head><title>x</title></head><body></body></html>");
   assert.match(out, /rel="manifest"/);
