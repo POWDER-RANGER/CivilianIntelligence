@@ -45,7 +45,9 @@ test("invalid cameras fall back to the default", () => {
 test("tools mode controls the viewer HUD and panels via the fragment only", () => {
   const hidden = buildGlobeEmbedUrl(DEFAULT_GLOBE_CAMERA, "hidden");
   assert.ok(hidden.includes("&hv=0&"));
-  const minimal = buildGlobeEmbedUrl();
+  const minimal = buildGlobeEmbedUrl(DEFAULT_GLOBE_CAMERA, "minimal");
+  const defaultHidden = buildGlobeEmbedUrl();
+  assert.ok(defaultHidden.includes("&hud=minimal&hv=0&"), "default embed keeps the viewer HUD hidden");
   assert.ok(minimal.includes("&hud=minimal&hv=1&"));
   assert.ok(!minimal.includes("i.c.0"), "minimal collapses every panel");
   const full = buildGlobeEmbedUrl(DEFAULT_GLOBE_CAMERA, "full");
