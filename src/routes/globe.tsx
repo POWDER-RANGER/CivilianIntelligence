@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import {
   Camera,
   ExternalLink,
@@ -10,7 +10,6 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
-import { AlprAtlas } from "@/components/watchtower/alpr-atlas";
 import {
   DEFAULT_GLOBE_CAMERA,
   DEFAULT_TOOLS_MODE,
@@ -21,6 +20,13 @@ import {
   type GlobeCamera,
   type GlobeToolsMode,
 } from "@/lib/globe-url";
+
+// Keep MapLibre and its WebGL worker out of the initial 3D globe bundle.
+// The ALPR atlas is requested only after its tab becomes active.
+const LazyAlprAtlas = lazy(async () => {
+  const { AlprAtlas } = await import("@/components/watchtower/alpr-atlas");
+  return { default: AlprAtlas };
+});
 
 const TOOLS_STORAGE_KEY = "civwatch.globe.tools";
 const TOOLS_LABELS: Record<GlobeToolsMode, string> = { hidden: "Hidden", minimal: "Minimal", full: "Full" };
@@ -156,7 +162,10 @@ function CameraFeedPortal() {
             <button
               type="button"
               aria-pressed={showMap}
-              onClick={() => setActiveView("map")}
+              onClick={() => {
+                setLoaded(false);
+                setActiveView("map");
+              }}
               className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-medium transition-colors ${
                 showMap
                   ? "border-primary bg-accent text-accent-foreground"
@@ -195,7 +204,17 @@ function CameraFeedPortal() {
               </span>
             </div>
             <div className="overflow-hidden rounded-xl border border-border bg-card">
-              <AlprAtlas />
+              {showMap && (
+                <Suspense
+                  fallback={
+                    <div role="status" className="flex min-h-[420px] items-center justify-center p-6 text-sm text-muted-foreground">
+                      Loading ALPR map…
+                    </div>
+                  }
+                >
+                  <LazyAlprAtlas />
+                </Suspense>
+              )}
             </div>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
               Selecting an observation identifies its available public metadata. It does not establish that a device is
@@ -239,7 +258,7 @@ function CameraFeedPortal() {
             </header>
 
             <div className="relative h-[min(70dvh,820px)] min-h-[420px] bg-background md:min-h-[540px] xl:h-[calc(100dvh-290px)] xl:min-h-[540px]">
-              {!viewerRequested ? (
+              {!showMap && (!viewerRequested ? (
                 <div className="absolute inset-0 flex items-center justify-center p-5 md:p-8">
                   <div className="w-full max-w-md rounded-xl border border-border bg-card p-5 text-center md:p-7">
                     <div className="mx-auto flex size-12 items-center justify-center rounded-xl border border-border bg-muted text-primary">
@@ -309,7 +328,7 @@ function CameraFeedPortal() {
                     onLoad={() => setLoaded(true)}
                   />
                 </>
-              )}
+              ))}
             </div>
             <footer className="border-t border-border px-3 py-3 text-xs leading-relaxed text-muted-foreground md:px-4">
               Public data can be delayed, incomplete, estimated, or unavailable. A loaded viewer is not proof that
