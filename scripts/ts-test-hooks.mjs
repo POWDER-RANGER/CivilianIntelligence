@@ -6,7 +6,7 @@ import { register } from "node:module";
 
 register(
   "data:text/javascript," +
-    encodeURIComponent(`
+    encodeURIComponent(String.raw`
 import { existsSync, statSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { resolve as resolvePath } from "node:path";
