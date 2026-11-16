@@ -413,3 +413,36 @@ export async function upsertRecordEdge(
 export function sourceAsRecordContext(source: SourceDefinition): { id: string; name: string; originalUrl: string } {
   return { id: source.id, name: source.name, originalUrl: source.endpoint };
 }
+
+const SEARCH_STRING_FIELDS = ["query", "identifier", "kind", "agency", "sourceId", "from", "to"] as const;
+
+/**
+ * Validate an untrusted search body (POST /api/civint/records/search). Returns
+ * the filters or an error message; unknown fields and wrong types are rejected
+ * so a malformed request is a 400, not a database error.
+ */
+export function parseRecordSearchFilters(body: unknown): { ok: true; filters: RecordSearchFilters } | { ok: false; error: string } {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return { ok: false, error: "Request body must be a JSON object." };
+  }
+  const input = body as Record<string, unknown>;
+  const allowed = new Set<string>([...SEARCH_STRING_FIELDS, "limit"]);
+  const extra = Object.keys(input).filter((key) => !allowed.has(key));
+  if (extra.length) return { ok: false, error: `Unsupported field(s): ${extra.join(", ")}.` };
+  const filters: RecordSearchFilters = {};
+  for (const field of SEARCH_STRING_FIELDS) {
+    const value = input[field];
+    if (value === undefined || value === null) continue;
+    if (typeof value !== "string" || value.length > 300) {
+      return { ok: false, error: `${field} must be a string of at most 300 characters.` };
+    }
+    filters[field] = value;
+  }
+  if (input.limit !== undefined) {
+    if (typeof input.limit !== "number" || !Number.isInteger(input.limit) || input.limit < 1 || input.limit > 100) {
+      return { ok: false, error: "limit must be an integer from 1 to 100." };
+    }
+    filters.limit = input.limit;
+  }
+  return { ok: true, filters };
+}
