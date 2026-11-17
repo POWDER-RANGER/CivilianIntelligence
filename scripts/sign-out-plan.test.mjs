@@ -271,3 +271,32 @@ test("the defaults are bounded, and deployed waits longer than preview", async (
   await done;
   assert.deepEqual(h.order, ["clear", "redirect"]);
 });
+
+test("pre-sign-in: synchronous server exceptions fail closed before token clearing", async () => {
+  let cleared = false;
+  await assert.rejects(runPreSignInSignOut({
+    livePreview: false,
+    hasBearer: false,
+    requestSignOut: () => { throw new Error("network setup failed"); },
+    clearToken: () => { cleared = true; },
+  }), /sign-out failed/);
+  assert.equal(cleared, false);
+});
+
+test("pre-sign-in: a late server response cannot resume OAuth after timeout", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let finish;
+  let cleared = false;
+  const done = runPreSignInSignOut({
+    livePreview: false,
+    hasBearer: false,
+    requestSignOut: () => new Promise((resolve) => { finish = resolve; }),
+    clearToken: () => { cleared = true; },
+    timeoutMs: 100,
+  });
+  t.mock.timers.tick(100);
+  await assert.rejects(done, /timed out/);
+  finish();
+  await flush();
+  assert.equal(cleared, false, "a late completion must not trigger provider switching");
+});
