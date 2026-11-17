@@ -135,13 +135,10 @@ export async function runSignOut({
  * Drop any prior session before a new sign-in starts, so switching providers
  * actually switches identity.
  *
- * Deliberately BEST EFFORT — unlike `runSignOut` this never throws. It also
- * runs when there is no prior session at all, so treating a failure as fatal
- * would block first-time sign-in on a transport hiccup, for a visitor with no
- * session to protect. The subsequent OAuth flow issues a fresh session either
- * way. Only the wait is bounded, and by the same per-environment rule as
- * `runSignOut`: a deployed session dies server-side, so it gets the full
- * window rather than the preview's aggressive one.
+ * Preview is best effort: clearing its bearer token ends local authentication.
+ * Deployed sessions use HttpOnly cookies, so a failed or timed-out server
+ * sign-out must abort provider switching rather than leave the old session
+ * active while starting a new OAuth flow. The wait remains bounded.
  * @param {PreSignInSteps} steps
  * @returns {Promise<void>}
  */
@@ -154,7 +151,12 @@ export async function runPreSignInSignOut({
 }) {
   // In the preview a missing bearer means there is nothing to clear.
   if (hasBearer || !livePreview) {
-    await settleWithin(requestSignOut, timeoutMs ?? signOutTimeoutMs(livePreview));
+    const outcome = await settleWithin(requestSignOut, timeoutMs ?? signOutTimeoutMs(livePreview));
+    if (!livePreview && outcome !== "ok") {
+      throw new Error(outcome === "timeout"
+        ? "Previous session sign-out timed out — retry sign-in."
+        : "Previous session sign-out failed — retry sign-in.");
+    }
   }
   clearToken();
 }

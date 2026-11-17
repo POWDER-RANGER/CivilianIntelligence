@@ -205,14 +205,17 @@ test("pre-sign-in: a deployed session gets the deployed window, not the preview 
   );
 
   t.mock.timers.tick(DEPLOYED_SIGN_OUT_TIMEOUT_MS - PREVIEW_SIGN_OUT_TIMEOUT_MS);
-  await h.done;
-  assert.equal(h.cleared, 1);
+  await assert.rejects(h.done, /timed out/);
+  assert.equal(h.cleared, 0, "deployed session cannot be locally invalidated");
 });
 
-test("pre-sign-in: a failed clear never blocks sign-in", async () => {
-  // Best effort by design: this also runs with no prior session to clear.
-  await preSignIn(false, { requestSignOut: rejects, timeoutMs: TEST_TIMEOUT_MS }).done;
-  await preSignIn(true, { requestSignOut: rejects, timeoutMs: TEST_TIMEOUT_MS }).done;
+test("pre-sign-in: deployed failures abort provider switching; preview remains best effort", async () => {
+  const deployed = preSignIn(false, { requestSignOut: rejects, timeoutMs: TEST_TIMEOUT_MS });
+  await assert.rejects(deployed.done, /sign-out failed/);
+  assert.equal(deployed.cleared, 0);
+  const preview = preSignIn(true, { requestSignOut: rejects, timeoutMs: TEST_TIMEOUT_MS });
+  await preview.done;
+  assert.equal(preview.cleared, 1);
 });
 
 test("pre-sign-in: the preview skips the request when there is no bearer", async () => {
