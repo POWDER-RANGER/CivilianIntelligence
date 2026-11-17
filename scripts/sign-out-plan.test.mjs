@@ -300,3 +300,34 @@ test("pre-sign-in: a late server response cannot resume OAuth after timeout", as
   await flush();
   assert.equal(cleared, false, "a late completion must not trigger provider switching");
 });
+
+test("deployed: synchronous sign-out exceptions never clear tokens or redirect", async () => {
+  const events = [];
+  await assert.rejects(runSignOut({
+    livePreview: false,
+    hasBearer: false,
+    requestSignOut: () => { throw new Error("transport initialization failed"); },
+    clearToken: () => { events.push("clear"); },
+    redirect: () => { events.push("redirect"); },
+  }), /Sign-out failed/);
+  assert.deepEqual(events, []);
+});
+
+test("deployed: late sign-out success after timeout cannot clear or redirect", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let finish;
+  const events = [];
+  const done = runSignOut({
+    livePreview: false,
+    hasBearer: false,
+    requestSignOut: () => new Promise((resolve) => { finish = resolve; }),
+    clearToken: () => { events.push("clear"); },
+    redirect: () => { events.push("redirect"); },
+    timeoutMs: 100,
+  });
+  t.mock.timers.tick(100);
+  await assert.rejects(done, /timed out/);
+  finish();
+  await flush();
+  assert.deepEqual(events, []);
+});
