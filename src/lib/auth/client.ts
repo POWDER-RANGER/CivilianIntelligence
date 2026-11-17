@@ -183,6 +183,11 @@ function waitForPopupToken(popup: Window): Promise<string | null> {
     const origin = window.location.origin;
     let settled = false;
     let closeTimer: number | undefined;
+    // A stalled broker callback must not leave this promise pending indefinitely.
+    const expiryTimer = window.setTimeout(() => {
+      popup.close();
+      settle(null);
+    }, 5 * 60_000);
     const settle = (token: string | null) => {
       if (settled) return;
       settled = true;
@@ -205,6 +210,7 @@ function waitForPopupToken(popup: Window): Promise<string | null> {
     }, 300);
     function cleanup() {
       window.clearInterval(pollTimer);
+      window.clearTimeout(expiryTimer);
       if (closeTimer !== undefined) window.clearTimeout(closeTimer);
       window.removeEventListener("message", onMessage);
     }
