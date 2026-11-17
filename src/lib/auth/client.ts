@@ -49,7 +49,9 @@ const BEARER_KEY = "grok-auth.bearer-token";
 export function getBearerToken(): string | null {
   if (typeof window === "undefined") return null;
   try {
-    return window.sessionStorage.getItem(BEARER_KEY);
+    const stored = window.sessionStorage.getItem(BEARER_KEY);
+    const token = stored?.trim();
+    return token || null;
   } catch {
     return null;
   }
