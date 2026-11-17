@@ -132,7 +132,11 @@ export async function signIn(
   } catch (error) {
     // The popup was opened before awaiting sign-out to preserve user activation.
     // Do not leave an orphaned authentication window on preflight failure.
-    popup?.close();
+    try {
+      popup?.close();
+    } catch {
+      // Preserve the original sign-out failure if the browser refuses to close.
+    }
     throw error;
   }
 
