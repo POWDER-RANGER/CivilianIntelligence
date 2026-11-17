@@ -196,8 +196,11 @@ function waitForPopupToken(popup: Window): Promise<string | null> {
     let closeTimer: number | undefined;
     // A stalled broker callback must not leave this promise pending indefinitely.
     const expiryTimer = window.setTimeout(() => {
-      popup.close();
-      settle(null);
+      try {
+        popup.close();
+      } finally {
+        settle(null);
+      }
     }, 5 * 60_000);
     const settle = (token: string | null) => {
       if (settled) return;
