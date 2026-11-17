@@ -128,7 +128,7 @@ export async function signIn(
   // start OAuth with the old session still live.
   try {
     await runPreSignInSignOut({
-      livePreview: inLivePreview(),
+      livePreview,
       hasBearer: Boolean(getBearerToken()),
       requestSignOut: async () => {
         const { error } = await authClient.signOut();
@@ -147,7 +147,7 @@ export async function signIn(
     throw error;
   }
 
-  if (inLivePreview()) {
+  if (livePreview) {
     if (!popup) throw new Error("Pop-up blocked — allow pop-ups for sign-in");
     const token = await waitForPopupToken(popup);
     if (!token) throw new Error("Sign-in was cancelled or failed");
