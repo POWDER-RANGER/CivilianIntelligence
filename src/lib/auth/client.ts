@@ -202,9 +202,10 @@ function waitForPopupToken(popup: Window): Promise<string | null> {
     const expiryTimer = window.setTimeout(() => {
       try {
         popup.close();
-      } finally {
-        settle(null);
+      } catch {
+        // Cross-origin popup handles can reject close(); timeout still cancels sign-in.
       }
+      settle(null);
     }, 5 * 60_000);
     const settle = (token: string | null) => {
       if (settled) return;
