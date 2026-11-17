@@ -232,6 +232,28 @@ test("pre-sign-in: the preview skips the request when there is no bearer", async
   assert.equal(h.cleared, 1);
 });
 
+test("pre-sign-in: deployed cookie sessions require server sign-out even without a bearer", async () => {
+  const events = [];
+  await runPreSignInSignOut({
+    livePreview: false,
+    hasBearer: false,
+    requestSignOut: async () => { events.push("server"); },
+    clearToken: () => { events.push("clear"); },
+  });
+  assert.deepEqual(events, ["server", "clear"]);
+});
+
+test("pre-sign-in: deployed sign-out rejection never clears a missing bearer session", async () => {
+  let cleared = false;
+  await assert.rejects(runPreSignInSignOut({
+    livePreview: false,
+    hasBearer: false,
+    requestSignOut: rejects,
+    clearToken: () => { cleared = true; },
+  }), /sign-out failed/);
+  assert.equal(cleared, false);
+});
+
 test("every sign-out bound comes from one rule", () => {
   assert.equal(signOutTimeoutMs(true), PREVIEW_SIGN_OUT_TIMEOUT_MS);
   assert.equal(signOutTimeoutMs(false), DEPLOYED_SIGN_OUT_TIMEOUT_MS);
