@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { GROK_PROVIDERS } from "./providers";
+import { GROK_PROVIDERS } from "./providers.ts";
 
 test("broker-backed OAuth provider IDs are unique and distinct from upstream hints", () => {
   assert.ok(GROK_PROVIDERS.length > 0);

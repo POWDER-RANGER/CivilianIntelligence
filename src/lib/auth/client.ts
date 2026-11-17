@@ -115,7 +115,10 @@ export async function signIn(
     await runPreSignInSignOut({
       livePreview: inLivePreview(),
       hasBearer: Boolean(getBearerToken()),
-      requestSignOut: () => authClient.signOut(),
+      requestSignOut: async () => {
+        const { error } = await authClient.signOut();
+        if (error) throw new Error(error.message ?? "Pre-sign-in sign-out failed");
+      },
       clearToken: () => setBearerToken(null),
     });
   } catch (error) {
