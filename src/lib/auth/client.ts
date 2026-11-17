@@ -51,10 +51,17 @@ export function getBearerToken(): string | null {
   try {
     const stored = window.sessionStorage.getItem(BEARER_KEY);
     const token = stored?.trim();
-    return token || null;
+    return token && !hasControlCharacters(token) ? token : null;
   } catch {
     return null;
   }
+}
+
+function hasControlCharacters(value: string): boolean {
+  return Array.from(value).some((char) => {
+    const code = char.charCodeAt(0);
+    return code < 32 || code === 127;
+  });
 }
 
 function setBearerToken(token: string | null): void {
@@ -220,7 +227,7 @@ function waitForPopupToken(popup: Window): Promise<string | null> {
       if (data.token !== null && typeof data.token !== "string") return;
       const token = typeof data.token === "string" ? data.token.trim() : null;
       // Do not persist padded or whitespace-only credentials in sessionStorage.
-      if (data.token !== null && !token) return;
+      if (data.token !== null && (!token || hasControlCharacters(token))) return;
       settle(token);
     };
     // Fallback when the user dismisses the popup. Grace period lets the
