@@ -106,7 +106,10 @@ export async function signIn(
   // Open the popup SYNCHRONOUSLY on the user gesture — before any await
   // (including signOut). Awaiting first drops user-gesture privilege in some
   // browsers when the opener is a cross-origin live-preview iframe.
-  const popup = inLivePreview() ? openSignInPopup(providerId) : null;
+  const livePreview = inLivePreview();
+  const popup = livePreview ? openSignInPopup(providerId) : null;
+  // A blocked popup must not invalidate the currently authenticated session.
+  if (livePreview && !popup) throw new Error("Pop-up blocked - allow pop-ups for sign-in");
 
   // Clear any prior session so switching providers actually switches identity.
   // Bounded because the popup is already open — a request that never settles
