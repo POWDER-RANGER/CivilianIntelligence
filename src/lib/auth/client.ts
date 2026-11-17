@@ -207,8 +207,11 @@ function waitForPopupToken(popup: Window): Promise<string | null> {
       if (event.origin !== origin || event.source !== popup) return;
       const data = event.data as PopupMessage | undefined;
       if (!data || data.source !== "grok-auth-popup") return;
-      if (data.token !== null && (typeof data.token !== "string" || !data.token.trim())) return;
-      settle(data.token ?? null);
+      if (data.token !== null && typeof data.token !== "string") return;
+      const token = typeof data.token === "string" ? data.token.trim() : null;
+      // Do not persist padded or whitespace-only credentials in sessionStorage.
+      if (data.token !== null && !token) return;
+      settle(token);
     };
     // Fallback when the user dismisses the popup. Grace period lets the
     // completion page's postMessage win over a racing `popup.closed`.
