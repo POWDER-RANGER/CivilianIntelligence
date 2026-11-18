@@ -37,7 +37,12 @@ async function readFile(owner: string, repo: string, path: string) {
     const value = await gh("/repos/" + encodeURIComponent(owner) + "/" + encodeURIComponent(repo) + "/contents/" + path.split("/").map(encodeURIComponent).join("/")) as { type?: string; content?: string; path?: string };
     if (value.type !== "file" || !value.content) return null;
     return { path: value.path ?? path, content: Buffer.from(value.content.replace(/\n/g, ""), "base64").toString("utf8") };
-  } catch { return null; }
+  } catch (error) {
+    // Missing optional files are normal. Rate limits and upstream failures are
+    // not: hiding them produces a misleading, incomplete repository inspection.
+    if (error instanceof GitHubError && error.status === 404) return null;
+    throw error;
+  }
 }
 function signals(files: Array<{content: string}>) {
   const all = files.map((file) => file.content).join("\n");
@@ -60,7 +65,7 @@ export const Route = createFileRoute("/api/civint/github/repository")({ server: 
     const readme = await readFile(parsed.owner, parsed.repo, "README.md");
     const manifestPaths = files.filter((item) => item.type === "file" && MANIFESTS.has(item.path.split("/").pop() ?? "")).slice(0,12).map((item) => item.path);
     const manifests = (await Promise.all(manifestPaths.map((path) => readFile(parsed.owner, parsed.repo, path)))).filter((item): item is {path:string;content:string} => item !== null);
-    let workflowRaw:any[] = []; try { workflowRaw = await gh("/repos/" + owner + "/" + repo + "/contents/.github/workflows") as any[]; } catch { /* Workflow listings are optional for repositories without Actions. */ }
+    let workflowRaw:any[] = []; try { workflowRaw = await gh("/repos/" + owner + "/" + repo + "/contents/.github/workflows") as any[]; } catch (error) { if (!(error instanceof GitHubError && error.status === 404)) throw error; /* Repositories may not have Actions workflows. */ }
     const workflowPaths = workflowRaw.filter((item) => item?.type === "file" && typeof item.path === "string").slice(0,20).map((item) => item.path as string);
     const workflows = (await Promise.all(workflowPaths.map((path) => readFile(parsed.owner, parsed.repo, path)))).filter((item): item is {path:string;content:string} => item !== null);
     return Response.json({ repository:{ full_name:root.full_name, html_url:root.html_url, description:root.description ?? null, default_branch:root.default_branch, created_at:root.created_at, updated_at:root.updated_at, archived:Boolean(root.archived), fork:Boolean(root.fork), stargazers_count:Number(root.stargazers_count ?? 0), forks_count:Number(root.forks_count ?? 0), open_issues_count:Number(root.open_issues_count ?? 0), license:root.license?.spdx_id ?? root.license?.name ?? null }, readme:readme ? { path:readme.path, content:readme.content.slice(0,12000) } : null, files, workflows:workflows.map(({path})=>({path,type:"file"})), manifests:manifests.map(({path})=>({path,type:"file"})), signals:signals([...manifests,...workflows]), checked_at:new Date().toISOString() }, { headers:{"Cache-Control":"public, max-age=300, s-maxage=300, stale-while-revalidate=900"} });
