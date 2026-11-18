@@ -9,6 +9,17 @@ if [ -z "$apk" ] || [ ! -f "$apk" ]; then
   exit 2
 fi
 
+# 10.0.2.2 is Android Emulator's host-loopback alias. Configure the
+# Android System Proxy (honored by WebView) rather than relying on the
+# emulator-level proxy flag. This setting is confined to the disposable AVD.
+adb shell settings put global http_proxy 10.0.2.2:18443
+proxy_setting="$(adb shell settings get global http_proxy | tr -d '\r')"
+if [ "$proxy_setting" != "10.0.2.2:18443" ]; then
+  echo "FAIL: Android system proxy not configured: $proxy_setting" >&2
+  exit 1
+fi
+trap 'adb shell settings delete global http_proxy >/dev/null 2>&1 || true' EXIT
+
 mkdir -p android-smoke-evidence
 launch_status=0
 python3 native/android_smoke.py --apk "$apk" --install || launch_status=$?

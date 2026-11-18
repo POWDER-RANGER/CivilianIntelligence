@@ -292,7 +292,7 @@ jobs:
           target: google_apis
           arch: x86_64
           disable-animations: true
-          emulator-options: -no-window -no-audio -no-snapshot -gpu swiftshader_indirect -no-boot-anim -http-proxy http://127.0.0.1:18443
+          emulator-options: -no-window -no-audio -no-snapshot -gpu swiftshader_indirect -no-boot-anim
           script: bash native/android_emulator_ci.sh android-smoke-apk/app-debug.apk
       - name: Preserve Android emulator screenshot
         if: always()

@@ -72,7 +72,9 @@ to compiling and validating packages:
   accessibility hierarchy for CIVWATCH content. Known WebView DNS/network
   error pages and unverified/empty views fail the runtime gate. The Linux
   runner provides a loopback-only, host-DNS HTTPS CONNECT tunnel with an
-  explicit public-origin allowlist. TLS is forwarded unmodified; there is
+  explicit public-origin allowlist. Android System Proxy is configured to
+  10.0.2.2 (the emulator alias for host loopback) during this disposable
+  test and cleared on exit. TLS is forwarded unmodified; there is
   no certificate interception or production proxy configuration.
 - iOS: the macOS build job selects an available iPhone simulator, installs
   the unsigned .app, launches its bundle ID and captures a PNG screenshot.
