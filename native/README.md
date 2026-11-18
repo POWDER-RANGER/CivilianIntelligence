@@ -67,8 +67,11 @@ The native CI launches development artifacts on **emulators** in addition
 to compiling and validating packages:
 
 - Android: an Android 15 (API 35) x86_64 GitHub-hosted emulator installs
-  the CI-produced debug APK. The smoke harness verifies that the app is
-  installed and observed as the resumed foreground activity.
+  the CI-produced debug APK. The smoke harness verifies the app is
+  installed and resumed, then captures a screenshot and inspects the
+  accessibility hierarchy for CIVWATCH content. Known WebView DNS/network
+  error pages and unverified/empty views fail the runtime gate. DNS servers
+  are explicitly configured for the emulator as recommended by Android.
 - iOS: the macOS build job selects an available iPhone simulator, installs
   the unsigned .app, launches its bundle ID and captures a PNG screenshot.
 - The provenance job requires successful Android emulator smoke and iOS

@@ -30,6 +30,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Verify remote-content configuration safety
         run: python3 native/native_config_policy.py
+      - name: Validate emulator smoke shell syntax
+        run: bash -n native/android_emulator_ci.sh
       - name: Run native policy and artifact-verifier unit tests
         run: python3 -m unittest discover -s native -p 'test_*.py' -v
 
@@ -277,31 +279,14 @@ jobs:
           target: google_apis
           arch: x86_64
           disable-animations: true
-          emulator-options: -no-window -no-audio -no-snapshot -gpu swiftshader_indirect -no-boot-anim
-          script: |
-            set +e
-            python3 native/android_smoke.py --apk android-smoke-apk/app-debug.apk --install
-            status=$?
-            mkdir -p android-smoke-evidence
-            adb exec-out screencap -p > android-smoke-evidence/launch.png
-            capture=$?
-            if [ "$capture" -ne 0 ]; then
-              echo "Failed to capture emulator screenshot" >&2
-              exit 1
-            fi
-            python3 -c 'from pathlib import Path; p=Path("android-smoke-evidence/launch.png"); assert p.read_bytes().startswith(bytes.fromhex("89504e470d0a1a0a")) and p.stat().st_size > 1024, "Invalid screenshot"'
-            image_status=$?
-            if [ "$status" -ne 0 ]; then
-              echo "Android app installation/foreground smoke failed" >&2
-              exit "$status"
-            fi
-            exit "$image_status"
+          emulator-options: -no-window -no-audio -no-snapshot -gpu swiftshader_indirect -no-boot-anim -dns-server 8.8.8.8,8.8.4.4
+          script: bash native/android_emulator_ci.sh android-smoke-apk/app-debug.apk
       - name: Preserve Android emulator screenshot
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: native-android-emulator-smoke
-          path: android-smoke-evidence/launch.png
+          path: android-smoke-evidence/
           if-no-files-found: ignore
 
   provenance:
