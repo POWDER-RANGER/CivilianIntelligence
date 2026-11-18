@@ -20,6 +20,7 @@ export CIVINT_PBF=iowa-latest.osm.pbf
 export CIVINT_ATLAS_URL=https://www.atlasofsurveillance.org/download.csv
 
 python civint_ingest.py nws
+python civint_ingest.py usgs
 python civint_ingest.py usaspending
 python civint_ingest.py osm --pbf iowa-latest.osm.pbf
 python civint_ingest.py verify --chunks chunks.json
@@ -32,6 +33,7 @@ python civint_ingest.py daily
 |------|---------|
 | `civint.db` | SQLite master (alerts, awards, points, surveillance records) |
 | `alerts.json` | Active NWS alerts |
+| `earthquakes.json` | Official USGS significant-day earthquakes with severity-based display priority, observed/fetched timestamps, geographic coordinates, and publication provenance |
 | `awards.json` | Federal awards matching search terms |
 | `alpr_overpass.json` | Backward-compatible ALPR nodes |
 | `surveillance.json` | Normalized ALPR, gunshot-detector, camera, and other mapped surveillance infrastructure with provenance |
@@ -40,11 +42,13 @@ python civint_ingest.py daily
 
 ### Design notes
 
-- **No API keys.** The ingest uses public HTTP sources; NWS still requires a descriptive `NWS_USER_AGENT`.
+- **No API keys.** The ingest uses public HTTP sources, including the USGS significant-day GeoJSON feed; NWS still requires a descriptive `NWS_USER_AGENT`.
   Atlas can be enabled for `daily` with `CIVINT_ATLAS_URL`.
 - USAspending covers **federal** awards only — local city contracts with Flock Safety will not appear; those need the Legistar + PDF agenda pipeline.
 - Quote verifier enforces closed entity/relation sets, quote presence after normalization (including hyphenated PDF line-breaks), length bounds, and endpoint presence in the chunk's entity list. Missing page endpoints are kept with `endpoints_on_page` flags rather than rejected (jurisdictions are often header-implied).
 - `daily` continues if one source fails.
+- USGS records distinguish the **federal publisher** from an **unresolved event jurisdiction**; geographic location does not establish city, county, state, or federal legal jurisdiction. The feed's magnitude-only priority does not constitute an emergency declaration.
+- USGS output is written atomically only after the response validates, retaining the last good snapshot on HTTP or schema failure. Records older than 24 hours are marked historical, not live.
 
 ### Integration now active
 
