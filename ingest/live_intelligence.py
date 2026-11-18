@@ -101,4 +101,6 @@ def normalize_usgs_feed(payload, fetched_at=None):
         event = normalize_usgs_feature(feature, timestamp)
         if event is not None:
             seen[event["id"]] = event
+    if features and not seen:
+        raise ValueError("USGS feed contains no usable features")
     return sorted(seen.values(), key=lambda x: (x["importance"], x["observed_at"]), reverse=True)

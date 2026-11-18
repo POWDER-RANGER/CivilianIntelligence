@@ -63,6 +63,20 @@ class LiveIntelligenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             normalize_usgs_feed({"type": "FeatureCollection", "features": None}, REF)
 
+    def test_valid_empty_feed_is_accepted(self):
+        self.assertEqual(normalize_usgs_feed({"type": "FeatureCollection", "features": []}, REF), [])
+
+    def test_nonempty_unusable_feed_preserves_the_last_good_snapshot(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "earthquakes.json"
+            path.write_text('[{"id": "usgs:existing"}]', encoding="utf-8")
+            response = {"type": "FeatureCollection", "features": [{"type": "Feature"}]}
+            with patch.object(ingest, "OUT", Path(td)), patch.object(ingest.requests, "get") as get:
+                get.return_value.json.return_value = response
+                with self.assertRaisesRegex(ValueError, "no usable features"):
+                    ingest.usgs()
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8")), [{"id": "usgs:existing"}])
+
     def test_duplicates_and_priority_order(self):
         events = normalize_usgs_feed({"type": "FeatureCollection", "features": [
             quake("small", 4.1), quake("big", 6.5), quake("big", 6.5)
