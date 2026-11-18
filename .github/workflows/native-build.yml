@@ -233,7 +233,9 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-      - name: Test artifact verifier
+      - name: Verify remote-content configuration safety
+        run: python3 native/native_config_policy.py
+      - name: Test artifact verifier and native configuration policy
         run: python3 -m unittest discover -s native -p 'test_*.py' -v
       - uses: actions/download-artifact@v4
         with:
