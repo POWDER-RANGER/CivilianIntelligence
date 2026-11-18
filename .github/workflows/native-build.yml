@@ -154,11 +154,37 @@ jobs:
           assert app.get(ns + "usesCleartextTraffic") == "false", "Android cleartext traffic must be disabled"
           print("Android backup and cleartext policies verified")
           PY
+      - name: Restore Gradle dependency cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/wrapper
+          key: android-gradle-${{ runner.os }}-${{ hashFiles('native/desktop/android/**/*.gradle', 'native/desktop/android/**/*.gradle.kts', 'native/desktop/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            android-gradle-${{ runner.os }}-
       - name: Compile debug APK
         working-directory: native/desktop/android
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon assembleDebug
+          # Retry only dependency-resolution failures caused by upstream HTTP 429/5xx.
+          # Compiler and test failures remain fatal on the first attempt.
+          for attempt in 1 2 3; do
+            if ./gradlew --no-daemon --max-workers=2 assembleDebug > "$RUNNER_TEMP/android-gradle.log" 2>&1; then
+              cat "$RUNNER_TEMP/android-gradle.log"
+              exit 0
+            fi
+            cat "$RUNNER_TEMP/android-gradle.log"
+            if ! grep -Eq "Received status code (429|5[0-9][0-9])|Read timed out|Connection reset" "$RUNNER_TEMP/android-gradle.log"; then
+              echo "Non-transient Gradle failure; refusing retry" >&2
+              exit 1
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "Gradle upstream transient failure persists after 3 attempts" >&2
+              exit 1
+            fi
+            sleep $((attempt * 30))
+          done
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
