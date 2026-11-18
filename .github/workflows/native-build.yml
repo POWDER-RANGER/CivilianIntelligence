@@ -18,10 +18,23 @@ permissions:
 
 concurrency:
   group: native-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Preserve expensive cross-platform builds when another commit is pushed.
+  # A newer run does not invalidate the diagnostic value of a running job.
+  cancel-in-progress: false
 
 jobs:
+  preflight:
+    name: Native security policy and verifier tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify remote-content configuration safety
+        run: python3 native/native_config_policy.py
+      - name: Run native policy and artifact-verifier unit tests
+        run: python3 -m unittest discover -s native -p 'test_*.py' -v
+
   windows:
+    needs: preflight
     name: Windows installer (NSIS)
     runs-on: windows-latest
     defaults:
@@ -49,6 +62,7 @@ jobs:
           if-no-files-found: error
 
   linux:
+    needs: preflight
     name: Linux packages (DEB and AppImage)
     runs-on: ubuntu-24.04
     defaults:
@@ -81,8 +95,9 @@ jobs:
           if-no-files-found: error
 
   macos:
+    needs: preflight
     name: macOS application (DMG)
-    runs-on: macos-latest
+    runs-on: macos-15
     defaults:
       run:
         working-directory: native/desktop
@@ -107,6 +122,7 @@ jobs:
           if-no-files-found: error
 
   android:
+    needs: preflight
     name: Android debug APK
     runs-on: ubuntu-24.04
     defaults:
@@ -193,8 +209,9 @@ jobs:
           if-no-files-found: error
 
   ios:
+    needs: preflight
     name: iOS simulator (unsigned development app)
-    runs-on: macos-latest
+    runs-on: macos-15
     defaults:
       run:
         working-directory: native/desktop
@@ -227,16 +244,12 @@ jobs:
 
   provenance:
     name: Verify all native deliverables and checksums
-    needs: [windows, linux, macos, android, ios]
+    needs: [preflight, windows, linux, macos, android, ios]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v4
-      - name: Verify remote-content configuration safety
-        run: python3 native/native_config_policy.py
-      - name: Test artifact verifier and native configuration policy
-        run: python3 -m unittest discover -s native -p 'test_*.py' -v
       - uses: actions/download-artifact@v4
         with:
           pattern: civintelligence-*
