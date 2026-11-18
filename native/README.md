@@ -7,15 +7,22 @@ The mobile `server.url` configuration is for **development/testing only**, not A
 Before store release, create a locally bundled native frontend and audited API/auth bridge.
 No native IPC capabilities are granted to remote web content.
 
-Desktop on Windows:
+Desktop on Windows requires Rust 1.90 or later with the MSVC target:
   cd native/desktop
-  npm install
-  npm run desktop:build
+  npm ci
+  npm run desktop:build -- --bundles nsis
 
-Mobile requires Android SDK/JDK or macOS + Xcode:
+Android debug builds require JDK 21 and Android SDK Platform 36.
+Set JAVA_HOME and ANDROID_HOME to those installations:
   cd native/desktop
-  npm install
-  npx cap add android
+  npm ci
+  npm run mobile:sync -- android
+  cd android
+  .\gradlew.bat --no-daemon assembleDebug
+
+iOS development requires macOS and Xcode:
+  cd native/desktop
+  npm ci
   npx cap add ios
 
 Do not ship or submit these prototypes as store-ready applications.
