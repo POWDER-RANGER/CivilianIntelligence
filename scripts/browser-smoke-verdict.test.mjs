@@ -246,7 +246,7 @@ test("multiple signals across viewports all accumulate", () => {
   );
   assert.match(reasons.join(";"), /desktop: HTTP status changed/);
   assert.match(reasons.join(";"), /mobile: console\/page errors appeared/);
-  assert.equal(reasons.length, 2);
+  assert.equal(reasons.length, 3);
 });
 
 test("baselineComparison round-trips a valid baseline", () => {
@@ -413,4 +413,10 @@ test("browser-smoke file I/O only touches guarded paths", () => {
   assert.deepEqual(reads, ["baselinePath"]);
   const stats = [...src.matchAll(/statSync\(\s*([A-Za-z_$][\w$.]*)/g)].map((m) => m[1]);
   assert.deepEqual(stats, ["baselinePath"]);
+});
+ 
+test("unchanged HTTP 500 fails baseline comparison", () => {
+  const result = compareToBaseline(verdict({ status: 500 }), verdict({ status: 500 }));
+  assert.equal(result.divergesFromBaseline, true);
+  assert.match(result.reasons.join(";"), /unhealthy HTTP status 500/);
 });
