@@ -26,3 +26,26 @@ iOS development requires macOS and Xcode:
   npx cap add ios
 
 Do not ship or submit these prototypes as store-ready applications.
+
+## Five-platform CI builds
+
+GitHub Actions workflow: `.github/workflows/native-build.yml`.
+Trigger it through pull requests changing `native/` or manually with workflow dispatch.
+Every job uploads a build artifact if successful:
+
+- Windows: unsigned NSIS installer (`civintelligence-windows-nsis`)
+- Linux: unsigned DEB and AppImage (`civintelligence-linux`)
+- macOS: unsigned/unnotarized DMG (`civintelligence-macos`)
+- Android: development-signed debug APK (`civintelligence-android-debug`)
+- iOS: unsigned **simulator-only** application (`civintelligence-ios-simulator`)
+
+A successful compile does not mean store approval or production readiness.
+Native OAuth and deep-link callbacks must be validated. Android's Capacitor
+`server.url` is a developer preview feature and must be replaced before store
+submission with a bundled local app interface/API client. Desktop clients
+currently load the live hosted website and require internet connectivity.
+Public releases additionally require platform-specific signing/notarization,
+permission review, real-device testing and app-store compliance.
+
+The iOS job uses a hosted macOS runner for Xcode; it cannot produce an
+installable device IPA without a valid Apple development team/profile.
