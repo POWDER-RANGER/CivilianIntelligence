@@ -1,24 +1,38 @@
-"""Explicit, non-destructive Android physical-device smoke harness.
+"""Opt-in, non-destructive Android physical-device launch verification.
 
-Requires Android platform-tools and a connected, authorized device.
-No APK is installed unless --install is supplied.
+Requires Android platform-tools and an authorized device.
+Does not install unless --install is explicitly requested.
 """
 import argparse
+import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 PACKAGE = "org.civintelligence.mobile"
 ACTIVITY = ".MainActivity"
+COMPONENT = PACKAGE + "/" + ACTIVITY
 
 
 def parse_devices(output: str) -> list[str]:
     devices = []
-    for line in output.splitlines()[1:]:
+    for line in output.splitlines():
         parts = line.split()
-        if len(parts) >= 2 and parts[1] == "device":
+        if len(parts) >= 2 and parts[1] == "device" and not parts[0].startswith("*"):
             devices.append(parts[0])
     return devices
+
+
+def is_foreground_activity(output: str) -> bool:
+    """Match an actual resumed/top activity, never incidental process/history text."""
+    for line in output.splitlines():
+        if not re.search(r"\b(?:mResumedActivity|topResumedActivity|ResumedActivity)\s*[:=]", line):
+            continue
+        if re.search(r"(?<![\w.])" + re.escape(PACKAGE) + r"/(?:\.MainActivity|" +
+                     re.escape(PACKAGE) + r"\.MainActivity)(?![\w.])", line):
+            return True
+    return False
 
 
 def run_adb(adb: str, serial: str | None, *args: str) -> str:
@@ -63,17 +77,25 @@ def main(argv: list[str] | None = None) -> int:
             print("INSTALL: explicitly authorized debug APK")
             run_adb(args.adb, serial, "install", "-r", str(args.apk.resolve()))
         installed = run_adb(args.adb, serial, "shell", "pm", "path", PACKAGE).strip()
-        if not installed.startswith("package:"):
+        if not any(line.startswith("package:") for line in installed.splitlines()):
             print("BLOCKED: App not installed; provide --apk ... --install", file=sys.stderr)
             return 2
-        run_adb(args.adb, serial, "shell", "am", "start", "-W", "-n", PACKAGE + "/" + ACTIVITY)
-        foreground = run_adb(args.adb, serial, "shell", "dumpsys", "activity", "activities")
-        if PACKAGE not in foreground:
-            print("FAIL: Could not verify app in activity state", file=sys.stderr)
+        launch = run_adb(args.adb, serial, "shell", "am", "start", "-W", "-n", COMPONENT)
+        if "Error:" in launch or "Exception" in launch:
+            print("FAIL: Activity manager rejected launch", file=sys.stderr)
             return 1
-        print("PASS: Installed package launched and appears in activity state")
-        print("NOT VERIFIED: web content rendering, OAuth, offline behavior, network access or production signing")
-        return 0
+        # The process may appear in task history without actually being foreground.
+        # Poll resumed activity briefly to avoid both false positives and launch races.
+        for attempt in range(5):
+            state = run_adb(args.adb, serial, "shell", "dumpsys", "activity", "activities")
+            if is_foreground_activity(state):
+                print("PASS: Installed package launched and is the resumed foreground activity")
+                print("NOT VERIFIED: web content rendering, OAuth, offline behavior, network access or production signing")
+                return 0
+            if attempt < 4:
+                time.sleep(1)
+        print("FAIL: App did not become the resumed foreground activity", file=sys.stderr)
+        return 1
     except (OSError, subprocess.TimeoutExpired, RuntimeError) as exc:
         print(f"BLOCKED: {exc}", file=sys.stderr)
         return 2
