@@ -142,6 +142,18 @@ jobs:
         run: npm ci
       - name: Sync Android project
         run: npx cap sync android
+      - name: Validate Android security manifest
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          root = ET.parse("android/app/src/main/AndroidManifest.xml").getroot()
+          app = root.find("application")
+          assert app is not None
+          ns = "{http://schemas.android.com/apk/res/android}"
+          assert app.get(ns + "allowBackup") == "false", "Android app data backup must be disabled"
+          assert app.get(ns + "usesCleartextTraffic") == "false", "Android cleartext traffic must be disabled"
+          print("Android backup and cleartext policies verified")
+          PY
       - name: Compile debug APK
         working-directory: native/desktop/android
         run: |
