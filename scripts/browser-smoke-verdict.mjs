@@ -63,6 +63,9 @@ export function compareToBaseline(current, baseline) {
       reasons.push(`${name}: no baseline data for this viewport`);
       continue;
     }
+    if (!Number.isInteger(cur.status) || cur.status < 200 || cur.status >= 400) {
+      reasons.push(`${name}: unhealthy HTTP status ${cur.status}`);
+    }
     if (cur.status !== base.status) {
       reasons.push(`${name}: HTTP status changed ${base.status} -> ${cur.status}`);
     }
