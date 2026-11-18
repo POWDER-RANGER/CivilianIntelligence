@@ -123,6 +123,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
+      - uses: android-actions/setup-android@v3
       - name: Install Android SDK packages
         run: |
           yes | sdkmanager --licenses > /dev/null || true
@@ -164,7 +165,7 @@ jobs:
         run: npx cap sync ios
       - name: Build unsigned iOS simulator app
         run: |
-          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath "$RUNNER_TEMP/CivintelligenceIOS" CODE_SIGNING_ALLOWED=NO build
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath "$RUNNER_TEMP/CivintelligenceIOS" CODE_SIGNING_ALLOWED=NO build
       - name: Package simulator app
         run: |
           cd "$RUNNER_TEMP/CivintelligenceIOS/Build/Products/Debug-iphonesimulator"
