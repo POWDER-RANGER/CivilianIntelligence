@@ -61,6 +61,26 @@ Every job uploads a build artifact if successful:
 
 The artifact inventory now checks native package headers (PE, ELF, Debian archive, UDIF) and APK/iOS ZIP structure before hashing. This catches mislabeled or corrupt files; it does **not** verify code signatures, notarization, provenance of downloaded dependencies, runtime functionality or store approval.
 
+## Automated runtime emulator smoke checks
+
+The native CI launches development artifacts on **emulators** in addition
+to compiling and validating packages:
+
+- Android: an Android 15 (API 35) x86_64 GitHub-hosted emulator installs
+  the CI-produced debug APK. The smoke harness verifies that the app is
+  installed and observed as the resumed foreground activity.
+- iOS: the macOS build job selects an available iPhone simulator, installs
+  the unsigned .app, launches its bundle ID and captures a PNG screenshot.
+- The provenance job requires successful Android emulator smoke and iOS
+  simulator smoke (inside the iOS build job), plus all five builds.
+- Separate native-android-emulator-smoke and native-ios-simulator-smoke
+  artifacts contain screenshots, not release packages.
+
+These are launch smoke checks, not end-to-end UI tests. They do not prove
+remote content loaded, authenticated navigation worked, or a physical
+phone is supported. GitHub runners provide the virtual devices so the Dell
+does not need a multi-GB local AVD image or an Apple VM.
+
 A successful compile does not mean store approval or production readiness.
 Native OAuth and deep-link callbacks must be validated. Android's Capacitor
 `server.url` is a developer preview feature and must be replaced before store

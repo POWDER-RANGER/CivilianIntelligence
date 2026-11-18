@@ -231,6 +231,18 @@ jobs:
       - name: Build unsigned iOS simulator app
         run: |
           xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath "$RUNNER_TEMP/CivintelligenceIOS" CODE_SIGNING_ALLOWED=NO build
+      - name: Install and launch on iOS Simulator
+        run: |
+          python3 "$GITHUB_WORKSPACE/native/ios_simulator_smoke.py" \
+            --app "$RUNNER_TEMP/CivintelligenceIOS/Build/Products/Debug-iphonesimulator/App.app" \
+            --screenshot "$RUNNER_TEMP/ios-simulator-smoke.png"
+      - name: Preserve iOS simulator screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-ios-simulator-smoke
+          path: ${{ runner.temp }}/ios-simulator-smoke.png
+          if-no-files-found: ignore
       - name: Package simulator app
         run: |
           cd "$RUNNER_TEMP/CivintelligenceIOS/Build/Products/Debug-iphonesimulator"
@@ -242,9 +254,59 @@ jobs:
           path: civintelligence-ios-simulator.zip
           if-no-files-found: error
 
+  android-emulator:
+    name: Android emulator install and launch smoke
+    needs: android
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: civintelligence-android-debug
+          path: android-smoke-apk
+      - name: Enable Linux KVM acceleration
+        run: |
+          test -c /dev/kvm
+          sudo chmod 666 /dev/kvm
+      - name: Run debug APK on Android 15 emulator
+        # Verified v2 upstream commit, pinned to avoid mutable action-tag drift.
+        uses: reactivecircus/android-emulator-runner@4c44018e59b437e86cdfc41da381398f93ed8808
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -no-audio -no-snapshot -gpu swiftshader_indirect -no-boot-anim
+          script: |
+            set +e
+            python3 native/android_smoke.py --apk android-smoke-apk/app-debug.apk --install
+            status=$?
+            mkdir -p android-smoke-evidence
+            adb exec-out screencap -p > android-smoke-evidence/launch.png
+            capture=$?
+            if [ "$capture" -ne 0 ]; then
+              echo "Failed to capture emulator screenshot" >&2
+              exit 1
+            fi
+            python3 -c 'from pathlib import Path; p=Path("android-smoke-evidence/launch.png"); assert p.read_bytes().startswith(bytes.fromhex("89504e470d0a1a0a")) and p.stat().st_size > 1024, "Invalid screenshot"'
+            image_status=$?
+            if [ "$status" -ne 0 ]; then
+              echo "Android app installation/foreground smoke failed" >&2
+              exit "$status"
+            fi
+            exit "$image_status"
+      - name: Preserve Android emulator screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-android-emulator-smoke
+          path: android-smoke-evidence/launch.png
+          if-no-files-found: ignore
+
   provenance:
     name: Verify all native deliverables and checksums
-    needs: [preflight, windows, linux, macos, android, ios]
+    needs: [preflight, windows, linux, macos, android, android-emulator, ios]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
