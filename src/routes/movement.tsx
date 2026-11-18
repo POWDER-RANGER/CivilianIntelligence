@@ -3,33 +3,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MOVEMENT_EVENTS, type MovementEvent } from "@/data/desks";
 import { getRegisterFeed, type RegisterDoc } from "@/lib/feeds";
-import { cn } from "@/lib/utils";
-import { ExampleBadge, IllustrativeNotice } from "@/components/illustrative-notice";
 
 export const Route = createFileRoute("/movement")({ component: MovementPage });
 
-const KINDS: Array<MovementEvent["kind"] | "all"> = [
-  "all",
-  "executive",
-  "legislative",
-  "judicial",
-  "diplomatic",
-  "agency",
-  "local",
-];
-
-function formatWhen(iso: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZoneName: "short",
-  }).format(new Date(iso));
-}
+const KINDS = ["all", "executive", "legislative", "judicial", "diplomatic", "agency", "local"] as const;
 
 function MovementPage() {
   const [kind, setKind] = useState<(typeof KINDS)[number]>("all");
@@ -47,10 +25,6 @@ function MovementPage() {
       cancelled = true;
     };
   }, []);
-
-  const events = MOVEMENT_EVENTS.filter((e) => kind === "all" || e.kind === kind).sort(
-    (a, b) => +new Date(a.when) - +new Date(b.when),
-  );
 
   return (
     <AppShell>
@@ -72,39 +46,12 @@ function MovementPage() {
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-3">
-          <IllustrativeNotice feed="public calendar" />
-          <ol className="relative space-y-3 border-l border-border pl-5">
-            {events.map((event) => (
-              <li key={event.id} className="relative">
-                <span
-                  className={cn(
-                    "absolute -left-[25px] top-2 size-2.5 rounded-full border",
-                    // Fixture status is not observed state: neutral dot only.
-                    "border-border bg-muted",
-                  )}
-                />
-                <article className="rounded-lg border border-border bg-card p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <ExampleBadge />
-                    <Badge variant="default">{event.kind}</Badge>
-                    <span className="font-mono text-xs text-muted-foreground">{formatWhen(event.when)}</span>
-                  </div>
-                  <h2 className="mt-2 text-base font-medium">{event.title}</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {event.actor} · {event.body} · {event.location}
-                  </p>
-                  <a
-                    href={event.sourceUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-3 inline-block text-xs text-steel hover:underline"
-                  >
-                    Source: {event.source}
-                  </a>
-                </article>
-              </li>
-            ))}
-          </ol>
+          <div role="status" className="rounded-xl border border-border bg-card p-6">
+            <h2 className="text-lg font-semibold">No verified government calendar events available</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Illustrative calendar entries have been removed. {kind === "all" ? "Government" : kind} events will appear after a verified public calendar source is integrated.
+            </p>
+          </div>
           </div>
 
           <aside className="space-y-4">

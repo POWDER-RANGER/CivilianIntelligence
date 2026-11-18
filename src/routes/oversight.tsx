@@ -1,31 +1,14 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/app-shell";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { OVERSIGHT_ITEMS, type OversightItem } from "@/data/desks";
-import { ExampleBadge, IllustrativeNotice } from "@/components/illustrative-notice";
 
 export const Route = createFileRoute("/oversight")({ component: OversightPage });
 
-const KINDS: Array<OversightItem["kind"] | "all"> = [
-  "all",
-  "ig",
-  "gao",
-  "foia",
-  "ethics",
-  "spending",
-  "lobbying",
-  "hearing",
-];
+const KINDS = ["all", "ig", "gao", "foia", "ethics", "spending", "lobbying", "hearing"] as const;
 
 function OversightPage() {
   const [kind, setKind] = useState<(typeof KINDS)[number]>("all");
-  const items = useMemo(
-    () => OVERSIGHT_ITEMS.filter((i) => kind === "all" || i.kind === kind),
-    [kind],
-  );
-
   return (
     <AppShell>
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
@@ -44,41 +27,11 @@ function OversightPage() {
           ))}
         </div>
 
-        <div className="mt-8">
-          <IllustrativeNotice feed="oversight filings" />
-        </div>
-
-        <div className="mt-3 overflow-hidden rounded-xl border border-border">
-          <div className="hidden grid-cols-[7rem_7rem_1fr_6rem] gap-3 border-b border-border bg-card px-4 py-2 text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground md:grid">
-            <span>Date</span>
-            <span>Office</span>
-            <span>Filing</span>
-            <span>Type</span>
-          </div>
-          <ul>
-            {items.map((item) => (
-              <li key={item.id} className="border-b border-border last:border-b-0">
-                <a
-                  href={item.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="grid gap-2 px-4 py-4 hover:bg-muted md:grid-cols-[7rem_7rem_1fr_6rem] md:items-start"
-                >
-                  <span className="font-mono text-xs text-muted-foreground">{item.date}</span>
-                  <span className="text-xs uppercase tracking-wide text-steel">{item.office}</span>
-                  <div>
-                    <p className="text-sm font-medium">{item.title}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{item.summary}</p>
-                    {/* Fixture dollar amounts are not sourced; never display them as figures. */}
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <ExampleBadge />
-                    <Badge variant="outline">{item.kind}</Badge>
-                  </div>
-                </a>
-              </li>
-            ))}
-          </ul>
+        <div role="status" className="mt-8 rounded-xl border border-border bg-card p-6">
+          <h2 className="font-display text-xl">No verified oversight filings available</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            CIVWATCH does not display illustrative filings as current records. The {kind === "all" ? "oversight" : kind.toUpperCase()} feed requires verified source ingestion before records can appear here.
+          </p>
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
