@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CIVINTELLIGENCE</string>
+    <string name="title_activity_main">CIVINTELLIGENCE</string>
+    <string name="package_name">org.civintelligence.mobile</string>
+    <string name="custom_url_scheme">org.civintelligence.mobile</string>
+</resources>
