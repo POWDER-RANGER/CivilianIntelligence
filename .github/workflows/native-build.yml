@@ -170,7 +170,7 @@ jobs:
           # Retry only dependency-resolution failures caused by upstream HTTP 429/5xx.
           # Compiler and test failures remain fatal on the first attempt.
           for attempt in 1 2 3; do
-            if ./gradlew --no-daemon --max-workers=2 assembleDebug > "$RUNNER_TEMP/android-gradle.log" 2>&1; then
+            if ./gradlew --no-daemon --max-workers=2 testDebugUnitTest assembleDebug > "$RUNNER_TEMP/android-gradle.log" 2>&1; then
               cat "$RUNNER_TEMP/android-gradle.log"
               exit 0
             fi

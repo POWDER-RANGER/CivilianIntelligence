@@ -42,13 +42,8 @@ public class MainActivity extends BridgeActivity {
                 popup.setWebViewClient(new WebViewClient() {
                     private void openExternally(String url) {
                         if (url == null) return;
-                        Uri target = Uri.parse(url);
-                        // Reject malformed URLs, credentials in the authority, and
-                        // non-HTTPS schemes before handing control to another app.
-                        if (!"https".equalsIgnoreCase(target.getScheme())
-                                || target.getHost() == null
-                                || target.getHost().isEmpty()
-                                || target.getUserInfo() != null) return;
+                        // Strict JVM-tested URL validation before crossing into the system browser.
+                        if (!ExternalUrlPolicy.isSafeExternalHttps(url)) return;
                         if (!dispatched.compareAndSet(false, true)) return;
                         try {
                             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));

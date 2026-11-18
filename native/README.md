@@ -7,6 +7,8 @@ The mobile `server.url` configuration is for **development/testing only**, not A
 Before store release, create a locally bundled native frontend and audited API/auth bridge.
 No native IPC capabilities are granted to remote web content.
 
+Android external-browser popup dispatch now validates URLs using a strict, JVM-testable HTTPS policy. CI runs `testDebugUnitTest` before accepting the debug APK. This is not an OAuth callback implementation: no deep-link callback or token exchange is registered. The debug APK remains unsuitable for production distribution.
+
 Desktop on Windows requires Rust 1.90 or later with the MSVC target:
   cd native/desktop
   npm ci
