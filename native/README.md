@@ -41,6 +41,8 @@ Every job uploads a build artifact if successful:
 - Android: development-signed debug APK (`civintelligence-android-debug`)
 - iOS: unsigned **simulator-only** application (`civintelligence-ios-simulator`)
 
+The artifact inventory now checks native package headers (PE, ELF, Debian archive, UDIF) and APK/iOS ZIP structure before hashing. This catches mislabeled or corrupt files; it does **not** verify code signatures, notarization, provenance of downloaded dependencies, runtime functionality or store approval.
+
 A successful compile does not mean store approval or production readiness.
 Native OAuth and deep-link callbacks must be validated. Android's Capacitor
 `server.url` is a developer preview feature and must be replaced before store

@@ -234,7 +234,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Test artifact verifier
-        run: python3 -m unittest discover -s native -p 'test_verify_artifacts.py' -v
+        run: python3 -m unittest discover -s native -p 'test_*.py' -v
       - uses: actions/download-artifact@v4
         with:
           pattern: civintelligence-*

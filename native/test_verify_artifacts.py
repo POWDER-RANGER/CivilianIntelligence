@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from zipfile import ZipFile
 
 from verify_artifacts import EXPECTED, inventory
 
@@ -11,7 +12,17 @@ class ArtifactVerificationTests(unittest.TestCase):
             folder = root / name
             folder.mkdir()
             for suffix in suffixes:
-                (folder / ("fixture" + suffix)).write_bytes(b"test-binary")
+                path = folder / ("fixture" + suffix)
+                if suffix == ".apk":
+                    with ZipFile(path, "w") as archive:
+                        archive.writestr("AndroidManifest.xml", b"manifest")
+                        archive.writestr("classes.dex", b"dex")
+                elif suffix == ".zip":
+                    with ZipFile(path, "w") as archive:
+                        archive.writestr("App.app/Info.plist", b"plist")
+                else:
+                    headers = {".exe": b"MZ", ".AppImage": b"\x7fELF", ".deb": b"!<arch>\n"}
+                    path.write_bytes(headers.get(suffix, b"") + (b"koly" + b"\0" * 508 if suffix == ".dmg" else b"test-binary"))
 
     def test_complete_inventory_and_digests(self):
         with tempfile.TemporaryDirectory() as temp:

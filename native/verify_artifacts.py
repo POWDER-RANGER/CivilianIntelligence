@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from package_validation import validate_package
 
 EXPECTED = {
     "civintelligence-windows-nsis": (".exe",),
@@ -29,6 +30,8 @@ def inventory(root: Path, commit: str) -> dict:
             relative = path.relative_to(root).as_posix()
             if path.stat().st_size == 0:
                 raise ValueError(f"Empty artifact: {relative}")
+            if path.suffix.lower() in (".exe", ".appimage", ".deb", ".dmg", ".apk", ".zip"):
+                validate_package(path)
             digest = hashlib.sha256()
             with path.open("rb") as source:
                 for chunk in iter(lambda: source.read(1024 * 1024), b""):
