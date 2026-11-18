@@ -60,6 +60,11 @@ export const Route = createFileRoute("/api/civint/github/repository")({ server: 
   try {
     const owner = encodeURIComponent(parsed.owner), repo = encodeURIComponent(parsed.repo);
     const root = await gh("/repos/" + owner + "/" + repo) as any;
+    // A server token may have access to private repositories. Never expose
+    // their contents through this unauthenticated public inspection endpoint.
+    if (root.private !== false) {
+      return Response.json({ message: "Repository not found or not public." }, { status: 404, headers: { "Cache-Control": "no-store" } });
+    }
     const raw = await gh("/repos/" + owner + "/" + repo + "/contents") as any[];
     const files = raw.filter((item) => item && typeof item.path === "string").map((item) => ({ path:String(item.path), type:item.type === "dir" ? "dir" : "file", size:typeof item.size === "number" ? item.size : undefined }));
     const readme = await readFile(parsed.owner, parsed.repo, "README.md");
