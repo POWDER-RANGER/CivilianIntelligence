@@ -1,17 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { parseRecordSearchFilters, searchIndexedRecords, type RecordSearchFilters } from "@/lib/record-index";
+import { parseRecordSearchFilters, searchIndexedRecords } from "@/lib/record-index";
 
-function parseFilters(url: URL): RecordSearchFilters {
-  return {
-    query: url.searchParams.get("q") ?? undefined,
-    identifier: url.searchParams.get("identifier") ?? undefined,
-    kind: url.searchParams.get("kind") ?? undefined,
-    agency: url.searchParams.get("agency") ?? undefined,
-    sourceId: url.searchParams.get("source") ?? undefined,
-    from: url.searchParams.get("from") ?? undefined,
-    to: url.searchParams.get("to") ?? undefined,
-    limit: Number(url.searchParams.get("limit") ?? 25),
-  };
+function parseFilters(url: URL): ReturnType<typeof parseRecordSearchFilters> {
+  // Apply the same validation to GET and POST. Number(NaN) previously reached
+  // the SQL LIMIT parameter and converted malformed requests into 503s.
+  const input: Record<string, unknown> = {};
+  const names: Record<string, string> = { q: "query", identifier: "identifier", kind: "kind", agency: "agency", source: "sourceId", from: "from", to: "to" };
+  for (const [key, value] of url.searchParams) {
+    if (key === "limit") {
+      input.limit = /^\d+$/.test(value) ? Number(value) : NaN;
+    } else if (names[key]) {
+      input[names[key]] = value;
+    } else {
+      return { ok: false, error: `Unsupported query parameter: ${key}.` };
+    }
+  }
+  return parseRecordSearchFilters(input);
 }
 
 function jsonResult(results: Awaited<ReturnType<typeof searchIndexedRecords>>) {
@@ -31,7 +35,11 @@ export const Route = createFileRoute("/api/civint/records/search")({
     handlers: {
       GET: async ({ request }) => {
         try {
-          return jsonResult(await searchIndexedRecords(parseFilters(new URL(request.url))));
+          const parsed = parseFilters(new URL(request.url));
+          if (!parsed.ok) {
+            return Response.json({ state: "invalid-request", error: parsed.error }, { status: 400, headers: { "Cache-Control": "no-store" } });
+          }
+          return jsonResult(await searchIndexedRecords(parsed.filters));
         } catch (error) {
           // Keep the public response stable and non-sensitive while preserving
           // the actual database error in Render logs for production diagnosis.
