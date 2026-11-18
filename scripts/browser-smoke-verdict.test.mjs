@@ -420,3 +420,12 @@ test("unchanged HTTP 500 fails baseline comparison", () => {
   assert.equal(result.divergesFromBaseline, true);
   assert.match(result.reasons.join(";"), /unhealthy HTTP status 500/);
 });
+
+test("exit code rejects malformed and non-success HTTP statuses", () => {
+  for (const status of [undefined, null, NaN, 0, 100, 199, 400, 500, "200", 200.5]) {
+    assert.equal(exitCodeFor({ desktop: viewport({ status }) }), 1, `status ${status}`);
+  }
+  for (const status of [200, 201, 204, 299, 301, 302, 399]) {
+    assert.equal(exitCodeFor({ desktop: viewport({ status }) }), 0, `status ${status}`);
+  }
+});
