@@ -32,6 +32,8 @@ jobs:
         run: python3 native/native_config_policy.py
       - name: Validate emulator smoke shell syntax
         run: bash -n native/android_emulator_ci.sh
+      - name: Test loopback-only emulator proxy policy
+        run: node --test native/test_emulator_https_proxy.mjs
       - name: Run native policy and artifact-verifier unit tests
         run: python3 -m unittest discover -s native -p 'test_*.py' -v
 
@@ -267,6 +269,17 @@ jobs:
         with:
           name: civintelligence-android-debug
           path: android-smoke-apk
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Start loopback-only HTTPS tunnel for emulator DNS isolation
+        run: |
+          node native/emulator_https_proxy.mjs > "$RUNNER_TEMP/emulator-proxy.log" 2>&1 &
+          for attempt in 1 2 3 4 5; do
+            if curl -fsS --max-time 2 http://127.0.0.1:18443/healthz; then break; fi
+            sleep 1
+          done
+          curl -fsSI --max-time 25 --proxy http://127.0.0.1:18443 --noproxy "" https://civintelligence.onrender.com/
       - name: Enable Linux KVM acceleration
         run: |
           test -c /dev/kvm
@@ -279,14 +292,16 @@ jobs:
           target: google_apis
           arch: x86_64
           disable-animations: true
-          emulator-options: -no-window -no-audio -no-snapshot -gpu swiftshader_indirect -no-boot-anim -dns-server 8.8.8.8,8.8.4.4
+          emulator-options: -no-window -no-audio -no-snapshot -gpu swiftshader_indirect -no-boot-anim -http-proxy http://127.0.0.1:18443
           script: bash native/android_emulator_ci.sh android-smoke-apk/app-debug.apk
       - name: Preserve Android emulator screenshot
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: native-android-emulator-smoke
-          path: android-smoke-evidence/
+          path: |
+            android-smoke-evidence/
+            ${{ runner.temp }}/emulator-proxy.log
           if-no-files-found: ignore
 
   provenance:

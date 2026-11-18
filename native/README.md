@@ -70,8 +70,10 @@ to compiling and validating packages:
   the CI-produced debug APK. The smoke harness verifies the app is
   installed and resumed, then captures a screenshot and inspects the
   accessibility hierarchy for CIVWATCH content. Known WebView DNS/network
-  error pages and unverified/empty views fail the runtime gate. DNS servers
-  are explicitly configured for the emulator as recommended by Android.
+  error pages and unverified/empty views fail the runtime gate. The Linux
+  runner provides a loopback-only, host-DNS HTTPS CONNECT tunnel with an
+  explicit public-origin allowlist. TLS is forwarded unmodified; there is
+  no certificate interception or production proxy configuration.
 - iOS: the macOS build job selects an available iPhone simulator, installs
   the unsigned .app, launches its bundle ID and captures a PNG screenshot.
 - The provenance job requires successful Android emulator smoke and iOS
