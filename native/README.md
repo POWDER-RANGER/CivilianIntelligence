@@ -49,3 +49,18 @@ permission review, real-device testing and app-store compliance.
 
 The iOS job uses a hosted macOS runner for Xcode; it cannot produce an
 installable device IPA without a valid Apple development team/profile.
+
+## Android external-link behavior
+
+The Android Capacitor launcher preserves the hosted CIVWATCH session inside the
+app and dispatches user-initiated HTTPS `target=_blank` links to the system
+browser. It does not grant the linked website native IPC permissions.
+
+Device smoke test (November 17, 2026): Android debug APK installed on Samsung
+SM-X518U via ADB; home page and ALPR map rendered; `/globe` route rendered but
+its embedded viewer was blocked by the document policies on both origins.
+Selecting **Open viewer separately** launched the device browser and the
+independent Cesium/Esri 3D global viewer rendered imagery successfully.
+This is a fallback, not an integrated offline globe. OAuth and offline
+operation remain unvalidated. Do not weaken `frame-ancestors` restrictions to
+force remote-origin embedding.
