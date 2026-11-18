@@ -41,7 +41,14 @@ public class MainActivity extends BridgeActivity {
                 WebView popup = new WebView(MainActivity.this);
                 popup.setWebViewClient(new WebViewClient() {
                     private void openExternally(String url) {
-                        if (url == null || !url.startsWith("https://")) return;
+                        if (url == null) return;
+                        Uri target = Uri.parse(url);
+                        // Reject malformed URLs, credentials in the authority, and
+                        // non-HTTPS schemes before handing control to another app.
+                        if (!"https".equalsIgnoreCase(target.getScheme())
+                                || target.getHost() == null
+                                || target.getHost().isEmpty()
+                                || target.getUserInfo() != null) return;
                         if (!dispatched.compareAndSet(false, true)) return;
                         try {
                             Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
