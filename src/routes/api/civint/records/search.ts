@@ -6,7 +6,12 @@ function parseFilters(url: URL): ReturnType<typeof parseRecordSearchFilters> {
   // the SQL LIMIT parameter and converted malformed requests into 503s.
   const input: Record<string, unknown> = {};
   const names: Record<string, string> = { q: "query", identifier: "identifier", kind: "kind", agency: "agency", source: "sourceId", from: "from", to: "to" };
+  const seen = new Set<string>();
   for (const [key, value] of url.searchParams) {
+    if (seen.has(key)) {
+      return { ok: false, error: `Duplicate query parameter: ${key}.` };
+    }
+    seen.add(key);
     if (key === "limit") {
       input.limit = /^\d+$/.test(value) ? Number(value) : NaN;
     } else if (names[key]) {
