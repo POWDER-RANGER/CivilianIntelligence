@@ -198,3 +198,26 @@ jobs:
           name: civintelligence-ios-simulator
           path: civintelligence-ios-simulator.zip
           if-no-files-found: error
+
+  provenance:
+    name: Verify all native deliverables and checksums
+    needs: [windows, linux, macos, android, ios]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test artifact verifier
+        run: python3 -m unittest discover -s native -p 'test_verify_artifacts.py' -v
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: civintelligence-*
+          path: native-artifacts
+      - name: Verify packages and generate SHA-256 inventory
+        run: python3 native/verify_artifacts.py native-artifacts --commit "$GITHUB_SHA" --out native-provenance
+      - name: Upload native artifact provenance
+        uses: actions/upload-artifact@v4
+        with:
+          name: civintelligence-native-provenance
+          path: native-provenance/
+          if-no-files-found: error
