@@ -29,6 +29,24 @@ iOS development requires macOS and Xcode:
 
 Do not ship or submit these prototypes as store-ready applications.
 
+## Physical Android launch smoke test
+
+The opt-in harness `native/android_smoke.py` verifies that a selected, authorized ADB device
+has the package installed, starts its main activity, and observes its activity state.
+It does not validate the hosted website, OAuth, rendering, or production signing.
+It refuses ambiguous multiple-device selection and does not install an APK by default.
+
+```powershell
+# Read-only installation/launch check (use full adb.exe path if not on PATH):
+python native/android_smoke.py --adb 'C:\path\to\platform-tools\adb.exe' --serial DEVICE_SERIAL
+# Explicitly replace/install a debug APK only when authorized:
+python native/android_smoke.py --adb 'C:\path\to\platform-tools\adb.exe' --serial DEVICE_SERIAL --apk 'native\desktop\android\app\build\outputs\apk\debug\app-debug.apk' --install
+```
+
+The harness returns 0 for observed launch, 1 for failed launch verification, and 2 for
+missing tooling, missing/ambiguous device, or other blocked prerequisites.
+
+
 ## Five-platform CI builds
 
 GitHub Actions workflow: `.github/workflows/native-build.yml`.
