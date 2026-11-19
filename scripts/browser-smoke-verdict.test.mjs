@@ -447,3 +447,15 @@ test("exit code rejects malformed and non-success HTTP statuses", () => {
     assert.equal(exitCodeFor({ desktop: viewport({ status }) }), 0, `status ${status}`);
   }
 });
+
+test("baselineComparison rejects malformed viewport records without throwing", () => {
+  for (const malformed of [null, true, 200, "invalid", []]) {
+    const current = verdict();
+    const name = Object.keys(current.viewports)[0];
+    const baseline = structuredClone(current);
+    baseline.viewports[name] = malformed;
+    const result = baselineComparison(current, JSON.stringify(baseline));
+    assert.equal(result.divergesFromBaseline, true);
+    assert.ok(result.reasons.some((reason) => reason.includes(malformed == null ? "no baseline data" : "malformed baseline viewport data")));
+  }
+});
