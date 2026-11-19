@@ -73,7 +73,7 @@ export function compareToBaseline(current, baseline) {
       reasons.push(`${name}: malformed current viewport data`);
       continue;
     }
-    const base = baseViewports[name];
+    const base = Object.hasOwn(baseViewports, name) ? baseViewports[name] : undefined;
     if (base == null) {
       reasons.push(`${name}: no baseline data for this viewport`);
       continue;

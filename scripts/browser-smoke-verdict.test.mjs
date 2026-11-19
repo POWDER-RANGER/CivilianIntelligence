@@ -468,3 +468,12 @@ test("compareToBaseline rejects malformed current viewport containers", () => {
     assert.match(result.reasons.join(";"), viewports == null ? /no viewport data/ : /malformed viewport data/);
   }
 });
+
+test("compareToBaseline rejects inherited viewport names as missing baselines", () => {
+  const current = { viewports: JSON.parse('{"__proto__":{"status":200,"bodyTextLen":10},"constructor":{"status":200}}') };
+  const baseline = { viewports: { desktop: { status: 200 } } };
+  const result = compareToBaseline(current, baseline);
+  assert.equal(result.divergesFromBaseline, true);
+  assert.ok(result.reasons.some((reason) => reason.includes("__proto__: no baseline data")));
+  assert.ok(result.reasons.some((reason) => reason.includes("constructor: no baseline data")));
+});
