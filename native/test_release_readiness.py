@@ -25,6 +25,16 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.desktop["app"]["security"]["csp"] = "default-src 'self'"
         self.assertEqual(assess(self.mobile, self.desktop, "<html>Bundled application</html>", signed), [])
 
+    def test_non_http_remote_and_obfuscated_desktop_urls_are_blocked(self):
+        signed = dict.fromkeys(("android", "ios", "macos", "windows", "oauth_callbacks", "physical_devices"), True)
+        self.mobile["server"] = {"cleartext": False}
+        self.desktop["app"]["security"]["csp"] = "default-src 'self'"
+        for url in (" HTTPS://example.org/", "file:///tmp/unsafe.html", "data:text/html,unsafe", "javascript:alert(1)"):
+            with self.subTest(url=url):
+                self.desktop["app"]["windows"] = [{"url": url}]
+                issues = assess(self.mobile, self.desktop, "<html>Bundled application</html>", signed)
+                self.assertTrue(any("remote startup" in issue for issue in issues))
+
     def test_real_checkout_is_blocked(self):
         mobile = json.loads((ROOT / "capacitor.config.json").read_text(encoding="utf-8"))
         desktop = json.loads((ROOT / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))

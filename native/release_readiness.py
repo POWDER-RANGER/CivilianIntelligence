@@ -10,7 +10,7 @@ def assess(mobile: dict, desktop: dict, shell_html: str, signing: dict | None = 
     if server.get("url"):
         issues.append("mobile: remote startup URL prevents an independently bundled frontend")
     windows = (desktop.get("app") or {}).get("windows") or []
-    if any(isinstance(w, dict) and str(w.get("url", "")).startswith(("https://", "http://")) for w in windows):
+    if any(isinstance(w, dict) and str(w.get("url") or "").strip() for w in windows):
         issues.append("desktop: remote startup URL prevents an independently bundled frontend")
     if not shell_html.strip() or ("network" in shell_html.lower() and "required" in shell_html.lower()):
         issues.append("frontend: packaged shell is a network-required placeholder")
