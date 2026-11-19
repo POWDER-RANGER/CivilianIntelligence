@@ -38,12 +38,26 @@ image_status=$?
 
 # Preserve the accessibility text for CI diagnostics. Refuse to call the
 # WebView usable when Chromium reports a known connection failure.
-if ! timeout 30s adb shell uiautomator dump /sdcard/civwatch-window.xml >/dev/null 2>&1; then
-  echo "FAIL: Android UIAutomator could not inspect WebView content" >&2
+# A cold Render startup or Android WebView initialization may take longer
+# than the first foreground frame. Retry only observation, never weaken
+# the content classifier or treat a browser error as a successful launch.
+webview_ready=false
+for attempt in 1 2 3 4; do
+  if timeout 30s adb shell uiautomator dump /sdcard/civwatch-window.xml >/dev/null 2>&1 &&
+     adb shell cat /sdcard/civwatch-window.xml > android-smoke-evidence/window.xml; then
+    if python3 native/android_webview_health.py android-smoke-evidence/window.xml; then
+      webview_ready=true
+      break
+    fi
+  fi
+  echo "WebView content not verified (observation $attempt/4)" >&2
+  if [ "$attempt" -lt 4 ]; then sleep 10; fi
+done
+if [ "$webview_ready" != true ]; then
+  adb logcat -d -t 300 -s chromium WebViewFactory cr_WebViewLibraryLoader > android-smoke-evidence/webview-logcat.txt 2>&1 || true
+  echo "FAIL: WebView did not render verified CIVWATCH content; evidence retained" >&2
   exit 1
 fi
-adb shell cat /sdcard/civwatch-window.xml > android-smoke-evidence/window.xml
-python3 native/android_webview_health.py android-smoke-evidence/window.xml || exit 1
 
 if [ "$launch_status" -ne 0 ]; then
   echo "Android emulator installation/foreground check failed" >&2
