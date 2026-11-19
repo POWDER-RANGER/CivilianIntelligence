@@ -74,6 +74,12 @@ class LiveIntelligenceTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             normalize_usgs_feed({"type": "FeatureCollection", "features": None}, REF)
 
+    def test_invalid_fetch_timestamps_fail_closed(self):
+        payload = {"type": "FeatureCollection", "features": []}
+        for invalid in (0, False, "2026-11-19", object(), datetime(2026, 11, 19)):
+            with self.subTest(invalid=repr(invalid)), self.assertRaisesRegex(ValueError, "timezone-aware datetime"):
+                normalize_usgs_feed(payload, invalid)
+
     def test_valid_empty_feed_is_accepted(self):
         self.assertEqual(normalize_usgs_feed({"type": "FeatureCollection", "features": []}, REF), [])
 

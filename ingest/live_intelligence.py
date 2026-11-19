@@ -93,9 +93,9 @@ def normalize_usgs_feed(payload, fetched_at=None):
     features = payload.get("features")
     if not isinstance(features, list):
         raise ValueError("USGS feed missing features array")
-    timestamp = fetched_at or datetime.now(timezone.utc)
-    if timestamp.tzinfo is None:
-        raise ValueError("fetched_at must be timezone-aware")
+    timestamp = datetime.now(timezone.utc) if fetched_at is None else fetched_at
+    if not isinstance(timestamp, datetime) or timestamp.tzinfo is None or timestamp.utcoffset() is None:
+        raise ValueError("fetched_at must be a timezone-aware datetime")
     timestamp = timestamp.astimezone(timezone.utc)
     seen = {}
     for feature in features:
