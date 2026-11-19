@@ -57,6 +57,11 @@ export function compareToBaseline(current, baseline) {
   }
   const reasons = [];
   const baseViewports = baseline?.viewports ?? {};
+  for (const name of Object.keys(baseViewports)) {
+    if (!Object.hasOwn(current.viewports, name)) {
+      reasons.push(`${name}: viewport missing from current verdict`);
+    }
+  }
   for (const [name, cur] of entries) {
     const base = baseViewports[name];
     if (!base) {
