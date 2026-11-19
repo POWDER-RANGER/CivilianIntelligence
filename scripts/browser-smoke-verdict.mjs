@@ -63,6 +63,10 @@ export function compareToBaseline(current, baseline) {
     }
   }
   for (const [name, cur] of entries) {
+    if (cur === null || typeof cur !== "object" || Array.isArray(cur)) {
+      reasons.push(`${name}: malformed current viewport data`);
+      continue;
+    }
     const base = baseViewports[name];
     if (!base) {
       reasons.push(`${name}: no baseline data for this viewport`);

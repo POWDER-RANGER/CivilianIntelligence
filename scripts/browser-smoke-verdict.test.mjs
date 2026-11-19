@@ -256,6 +256,16 @@ test("multiple signals across viewports all accumulate", () => {
   assert.equal(reasons.length, 3);
 });
 
+test("malformed current viewport data fails closed without throwing", () => {
+  for (const malformed of [null, false, 42, "bad", []]) {
+    const current = verdict();
+    current.viewports.desktop = malformed;
+    const result = compareToBaseline(current, verdict());
+    assert.equal(result.divergesFromBaseline, true);
+    assert.match(result.reasons.join(";"), /desktop: malformed current viewport data/);
+  }
+});
+
 test("baselineComparison round-trips a valid baseline", () => {
   const { divergesFromBaseline } = baselineComparison(verdict(), JSON.stringify(verdict()));
   assert.equal(divergesFromBaseline, false);
