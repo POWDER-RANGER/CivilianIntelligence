@@ -101,7 +101,13 @@ def normalize_usgs_feed(payload, fetched_at=None):
     for feature in features:
         event = normalize_usgs_feature(feature, timestamp)
         if event is not None:
-            seen[event["id"]] = event
+            previous = seen.get(event["id"])
+            if (previous is None
+                    or event["observed_at"] > previous["observed_at"]
+                    or (event["observed_at"] == previous["observed_at"]
+                        and event["review_status"] == "reviewed"
+                        and previous["review_status"] != "reviewed")):
+                seen[event["id"]] = event
     if features and not seen:
         raise ValueError("USGS feed contains no usable features")
     return sorted(seen.values(), key=lambda x: (x["importance"], x["observed_at"]), reverse=True)
