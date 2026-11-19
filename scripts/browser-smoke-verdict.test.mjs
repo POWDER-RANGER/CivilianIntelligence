@@ -459,3 +459,12 @@ test("baselineComparison rejects malformed viewport records without throwing", (
     assert.ok(result.reasons.some((reason) => reason.includes(malformed == null ? "no baseline data" : "malformed baseline viewport data")));
   }
 });
+
+test("compareToBaseline rejects malformed current viewport containers", () => {
+  const baseline = verdict();
+  for (const viewports of [null, undefined, true, 123, "invalid", []]) {
+    const result = compareToBaseline({ viewports }, baseline);
+    assert.equal(result.divergesFromBaseline, true);
+    assert.match(result.reasons.join(";"), viewports == null ? /no viewport data/ : /malformed viewport data/);
+  }
+});
