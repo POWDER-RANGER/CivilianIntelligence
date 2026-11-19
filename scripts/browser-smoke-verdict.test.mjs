@@ -286,6 +286,7 @@ test("baselineComparison fails closed on malformed or wrong-shape baselines", ()
     "{}",
     '{"viewports": null}',
     '{"viewports": []}',
+    '{"viewports": {}}',
   ]) {
     const { divergesFromBaseline, reasons } = baselineComparison(verdict(), raw);
     assert.equal(divergesFromBaseline, true);
