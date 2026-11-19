@@ -222,6 +222,13 @@ test("missing baseline viewport diverges", () => {
   assert.match(reasons.join(";"), /mobile: no baseline data/);
 });
 
+test("missing current viewport fails closed even when remaining viewport matches", () => {
+  const current = { viewports: { desktop: viewport() } };
+  const result = compareToBaseline(current, verdict());
+  assert.equal(result.divergesFromBaseline, true);
+  assert.deepEqual(result.reasons, ["mobile: viewport missing from current verdict"]);
+});
+
 test("empty or null baseline diverges for every viewport", () => {
   for (const baseline of [{}, null]) {
     const { divergesFromBaseline, reasons } = compareToBaseline(verdict(), baseline);
