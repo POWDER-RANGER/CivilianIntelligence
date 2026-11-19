@@ -48,7 +48,13 @@ const TRIVIAL_LEN_DELTA = 20;
 const TRIVIAL_LEN_RATIO = 0.1;
 const COLLAPSE_RATIO = 0.5;
 export function compareToBaseline(current, baseline) {
-  const entries = Object.entries(current?.viewports ?? {});
+  if (current?.viewports == null) {
+    return { divergesFromBaseline: true, reasons: ["current verdict has no viewport data"] };
+  }
+  if (typeof current.viewports !== "object" || Array.isArray(current.viewports)) {
+    return { divergesFromBaseline: true, reasons: ["current verdict has malformed viewport data"] };
+  }
+  const entries = Object.entries(current.viewports);
   if (entries.length === 0) {
     return {
       divergesFromBaseline: true,
