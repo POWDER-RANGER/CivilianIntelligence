@@ -279,7 +279,24 @@ jobs:
             if curl -fsS --max-time 2 http://127.0.0.1:18443/healthz; then break; fi
             sleep 1
           done
-          curl -fsSI --max-time 25 --proxy http://127.0.0.1:18443 --noproxy "" https://civintelligence.onrender.com/
+          # Render can temporarily reset TLS connections during cold starts.
+          # Retry the full TLS handshake, but fail closed if it never succeeds.
+          ready=false
+          for attempt in 1 2 3; do
+            if curl --fail --silent --show-error --head --max-time 35 \
+                --proxy http://127.0.0.1:18443 --noproxy "" \
+                https://civintelligence.onrender.com/; then
+              ready=true
+              break
+            fi
+            echo "HTTPS proxy upstream check failed (attempt $attempt/3)" >&2
+            sleep 5
+          done
+          if [ "$ready" != true ]; then
+            echo "Emulator HTTPS upstream unavailable; proxy diagnostics:" >&2
+            cat "$RUNNER_TEMP/emulator-proxy.log" >&2
+            exit 1
+          fi
       - name: Enable Linux KVM acceleration
         run: |
           test -c /dev/kvm
