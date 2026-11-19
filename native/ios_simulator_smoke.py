@@ -69,7 +69,17 @@ def main(argv: list[str] | None = None) -> int:
             booted_here = True
         run("bootstatus", udid, "-b", timeout=240)
         run("install", udid, str(args.app.resolve()), timeout=180)
-        launch = run("launch", udid, bundle)
+        # Simulator launch services can stall on shared macOS runners even after bootstatus.
+        # Retry only a timed-out launch; a nonzero simctl exit remains a hard failure.
+        for attempt in range(2):
+            try:
+                launch = run("launch", udid, bundle, timeout=90)
+                break
+            except subprocess.TimeoutExpired:
+                if attempt:
+                    raise
+                print("Simulator launch timed out; checking boot readiness before one retry", flush=True)
+                run("bootstatus", udid, "-b", timeout=120)
         if bundle not in launch:
             raise RuntimeError(f"Simulator launch did not report bundle ID: {launch!r}")
         time.sleep(3)
