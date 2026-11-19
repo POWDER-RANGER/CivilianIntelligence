@@ -48,6 +48,17 @@ class OAuthCallbackTests(unittest.TestCase):
         with self.assertRaises(CallbackError):
             self.check("code=abc&state=" + self.state + "&access_token=bad")
 
+    def test_rejects_registered_redirect_with_userinfo(self):
+        registered = "https://trusted.example@evil.example/oauth/callback"
+        callback = registered + "?code=abc&state=" + self.state
+        with self.assertRaises(CallbackError):
+            validate_callback(callback, registered, self.state)
+
+    def test_rejects_registered_http_redirect_without_host(self):
+        with self.assertRaises(CallbackError):
+            validate_callback("https:///callback?code=abc&state=" + self.state,
+                              "https:///callback", self.state)
+
 
 if __name__ == "__main__":
     unittest.main()

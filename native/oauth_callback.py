@@ -22,8 +22,12 @@ def validate_callback(callback_url: str, redirect_uri: str, expected_state: str)
         registered = urlsplit(redirect_uri)
     except ValueError as exc:
         raise CallbackError("invalid redirect URL") from exc
-    if not registered.scheme or not registered.netloc and registered.scheme in ("http", "https"):
+    if not registered.scheme or (registered.scheme in ("http", "https") and not registered.netloc):
         raise CallbackError("invalid registered redirect")
+    if registered.username is not None or registered.password is not None:
+        raise CallbackError("registered redirect contains credentials")
+    if registered.scheme in ("http", "https") and not registered.hostname:
+        raise CallbackError("registered redirect missing hostname")
     if (callback.scheme, callback.netloc, callback.path) != (registered.scheme, registered.netloc, registered.path):
         raise CallbackError("redirect mismatch")
     if callback.fragment or callback.username or callback.password or registered.query or registered.fragment:
