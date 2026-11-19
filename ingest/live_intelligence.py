@@ -38,7 +38,8 @@ def _source_link(value):
         return None
     try:
         url = urlsplit(value)
-        if url.scheme == "https" and url.hostname == "earthquake.usgs.gov" and not url.username:
+        if (url.scheme == "https" and url.hostname == "earthquake.usgs.gov"
+                and url.port in (None, 443) and not url.username and not url.password):
             return value
     except ValueError:
         pass

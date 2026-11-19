@@ -57,6 +57,17 @@ class LiveIntelligenceTests(unittest.TestCase):
         event = normalize_usgs_feature(quake(url="https://earthquake.usgs.gov.evil.example/x"), REF)
         self.assertIsNone(event["source_url"])
 
+    def test_source_links_reject_nonstandard_and_invalid_ports(self):
+        for url in (
+            "https://earthquake.usgs.gov:444/earthquakes/eventpage/abcd",
+            "https://earthquake.usgs.gov:invalid/earthquakes/eventpage/abcd",
+            "https://earthquake.usgs.gov:99999/earthquakes/eventpage/abcd",
+        ):
+            with self.subTest(url=url):
+                self.assertIsNone(normalize_usgs_feature(quake(url=url), REF)["source_url"])
+        valid = "https://earthquake.usgs.gov:443/earthquakes/eventpage/abcd"
+        self.assertEqual(normalize_usgs_feature(quake(url=valid), REF)["source_url"], valid)
+
     def test_invalid_payload_does_not_become_empty_feed(self):
         with self.assertRaises(ValueError):
             normalize_usgs_feed({"features": []}, REF)
