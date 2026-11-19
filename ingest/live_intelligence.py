@@ -34,7 +34,7 @@ def _coordinates(geometry):
 
 
 def _source_link(value):
-    if not isinstance(value, str):
+    if not isinstance(value, str) or any(ord(char) < 32 or ord(char) == 127 for char in value):
         return None
     try:
         url = urlsplit(value)
