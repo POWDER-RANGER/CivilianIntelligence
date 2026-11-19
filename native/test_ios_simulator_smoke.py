@@ -1,12 +1,38 @@
 import plistlib
 import tempfile
 import unittest
+import subprocess
+from unittest.mock import patch
 from pathlib import Path
 
-from ios_simulator_smoke import select_ios_device, app_bundle_id
+from ios_simulator_smoke import select_ios_device, app_bundle_id, launch_with_recovery
 
 
 class IOSSimulatorSmokeTests(unittest.TestCase):
+    @patch("ios_simulator_smoke.run")
+    def test_timeout_recovers_by_reboot_and_reinstall(self, runner):
+        runner.side_effect = [subprocess.TimeoutExpired("simctl", 90), "", "", "", "",
+                              "org.civintelligence.mobile: 123"]
+        with tempfile.TemporaryDirectory() as directory:
+            result = launch_with_recovery("udid", "org.civintelligence.mobile", Path(directory))
+        self.assertIn("org.civintelligence.mobile", result)
+        self.assertEqual([c.args[0] for c in runner.call_args_list],
+                         ["launch", "shutdown", "boot", "bootstatus", "install", "launch"])
+
+    @patch("ios_simulator_smoke.run")
+    def test_second_timeout_fails_closed(self, runner):
+        runner.side_effect = [subprocess.TimeoutExpired("simctl", 90), "", "", "", "",
+                              subprocess.TimeoutExpired("simctl", 90)]
+        with self.assertRaises(subprocess.TimeoutExpired):
+            launch_with_recovery("udid", "org.civintelligence.mobile", Path("."))
+
+    @patch("ios_simulator_smoke.run")
+    def test_nonzero_launch_fails_without_recovery(self, runner):
+        runner.side_effect = subprocess.CalledProcessError(1, "simctl")
+        with self.assertRaises(subprocess.CalledProcessError):
+            launch_with_recovery("udid", "org.civintelligence.mobile", Path("."))
+        self.assertEqual(runner.call_count, 1)
+
     def test_picks_newest_available_iphone(self):
         items = {"devices": {
             "com.apple.CoreSimulator.SimRuntime.iOS-17-5": [
