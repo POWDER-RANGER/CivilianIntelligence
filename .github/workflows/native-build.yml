@@ -187,15 +187,19 @@ jobs:
         working-directory: native/desktop/android
         run: |
           chmod +x gradlew
-          # Retry only dependency-resolution failures caused by upstream HTTP 429/5xx.
+          # Retry dependency resolution failures, refreshing stale Gradle metadata.
           # Compiler and test failures remain fatal on the first attempt.
+          gradle_refresh=""
           for attempt in 1 2 3; do
-            if ./gradlew --no-daemon --max-workers=2 testDebugUnitTest assembleDebug > "$RUNNER_TEMP/android-gradle.log" 2>&1; then
+            if ./gradlew --no-daemon --max-workers=2 $gradle_refresh testDebugUnitTest assembleDebug > "$RUNNER_TEMP/android-gradle.log" 2>&1; then
               cat "$RUNNER_TEMP/android-gradle.log"
               exit 0
             fi
             cat "$RUNNER_TEMP/android-gradle.log"
-            if ! grep -Eq "Received status code (429|5[0-9][0-9])|Read timed out|Connection reset" "$RUNNER_TEMP/android-gradle.log"; then
+            if grep -Eq "Could not find junit:junit:4[.]13[.]2|Could not resolve all files for configuration.*UnitTestCompileClasspath" "$RUNNER_TEMP/android-gradle.log"; then
+              gradle_refresh="--refresh-dependencies"
+              echo "Gradle test dependency resolution failed; retrying with refreshed metadata" >&2
+            elif ! grep -Eq "Received status code (429|5[0-9][0-9])|Read timed out|Connection reset" "$RUNNER_TEMP/android-gradle.log"; then
               echo "Non-transient Gradle failure; refusing retry" >&2
               exit 1
             fi
