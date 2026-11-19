@@ -68,8 +68,12 @@ export function compareToBaseline(current, baseline) {
       continue;
     }
     const base = baseViewports[name];
-    if (!base) {
+    if (base == null) {
       reasons.push(`${name}: no baseline data for this viewport`);
+      continue;
+    }
+    if (typeof base !== "object" || Array.isArray(base)) {
+      reasons.push(`${name}: malformed baseline viewport data`);
       continue;
     }
     if (!Number.isInteger(cur.status) || cur.status < 200 || cur.status >= 400) {
