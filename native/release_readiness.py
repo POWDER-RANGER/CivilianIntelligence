@@ -9,13 +9,20 @@ def assess(mobile: dict, desktop: dict, shell_html: str, signing: dict | None = 
     server = mobile.get("server") or {}
     if server.get("url"):
         issues.append("mobile: remote startup URL prevents an independently bundled frontend")
+    if server.get("cleartext") is not False:
+        issues.append("mobile: cleartext transport must be explicitly disabled")
+    if server.get("allowNavigation"):
+        issues.append("mobile: arbitrary WebView navigation allowlist is not release-approved")
     windows = (desktop.get("app") or {}).get("windows") or []
     if any(isinstance(w, dict) and str(w.get("url") or "").strip() for w in windows):
         issues.append("desktop: remote startup URL prevents an independently bundled frontend")
     if not shell_html.strip() or ("network" in shell_html.lower() and "required" in shell_html.lower()):
         issues.append("frontend: packaged shell is a network-required placeholder")
-    if (desktop.get("app") or {}).get("security", {}).get("csp") is None:
+    csp = (desktop.get("app") or {}).get("security", {}).get("csp")
+    if not isinstance(csp, str) or not csp.strip():
         issues.append("desktop: content security policy is unset")
+    elif "default-src 'self'" not in csp.lower() or "unsafe-eval" in csp.lower() or "*" in csp:
+        issues.append("desktop: content security policy is overly permissive")
     signing = signing or {}
     for platform in ("android", "ios", "macos", "windows"):
         if signing.get(platform) is not True:

@@ -35,6 +35,24 @@ class ReleaseReadinessTests(unittest.TestCase):
                 issues = assess(self.mobile, self.desktop, "<html>Bundled application</html>", signed)
                 self.assertTrue(any("remote startup" in issue for issue in issues))
 
+    def test_cleartext_and_navigation_bypass_are_blocked(self):
+        signed = dict.fromkeys(("android", "ios", "macos", "windows", "oauth_callbacks", "physical_devices"), True)
+        self.mobile["server"] = {"cleartext": True, "allowNavigation": ["*"]}
+        self.desktop["app"]["windows"] = [{"title": "CIVINTELLIGENCE"}]
+        self.desktop["app"]["security"]["csp"] = "default-src 'self'"
+        issues = assess(self.mobile, self.desktop, "<html>Bundled application</html>", signed)
+        self.assertTrue(any("cleartext" in issue for issue in issues))
+        self.assertTrue(any("navigation" in issue for issue in issues))
+
+    def test_permissive_or_empty_csp_is_blocked(self):
+        signed = dict.fromkeys(("android", "ios", "macos", "windows", "oauth_callbacks", "physical_devices"), True)
+        self.mobile["server"] = {"cleartext": False}
+        self.desktop["app"]["windows"] = [{"title": "CIVINTELLIGENCE"}]
+        for csp in ("", "default-src *", "default-src 'self'; script-src 'unsafe-eval'"):
+            with self.subTest(csp=csp):
+                self.desktop["app"]["security"]["csp"] = csp
+                self.assertTrue(any("content security policy" in issue for issue in assess(self.mobile, self.desktop, "<html>App</html>", signed)))
+
     def test_real_checkout_is_blocked(self):
         mobile = json.loads((ROOT / "capacitor.config.json").read_text(encoding="utf-8"))
         desktop = json.loads((ROOT / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))
