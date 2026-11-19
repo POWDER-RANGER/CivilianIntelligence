@@ -100,6 +100,22 @@ class LiveIntelligenceTests(unittest.TestCase):
         ]}, REF)
         self.assertEqual([x["id"] for x in events], ["usgs:big", "usgs:small"])
 
+    def test_duplicate_ids_keep_latest_observation_and_reviewed_tie(self):
+        recent = quake("same", 5.5, age_hours=1)
+        old = quake("same", 4.0, age_hours=10)
+        events = normalize_usgs_feed(
+            {"type": "FeatureCollection", "features": [recent, old]}, REF)
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["magnitude"], 5.5)
+        preliminary = quake("same", 5.5, age_hours=1)
+        preliminary["properties"]["status"] = "automatic"
+        events = normalize_usgs_feed(
+            {"type": "FeatureCollection", "features": [recent, preliminary]}, REF)
+        self.assertEqual(events[0]["review_status"], "reviewed")
+        events = normalize_usgs_feed(
+            {"type": "FeatureCollection", "features": [preliminary, recent]}, REF)
+        self.assertEqual(events[0]["review_status"], "reviewed")
+
     def test_snapshot_write_is_atomic_and_source_failure_preserves_data(self):
         class Response:
             def raise_for_status(self):
