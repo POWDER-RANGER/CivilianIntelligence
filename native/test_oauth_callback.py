@@ -59,6 +59,16 @@ class OAuthCallbackTests(unittest.TestCase):
             validate_callback("https:///callback?code=abc&state=" + self.state,
                               "https:///callback", self.state)
 
+    def test_rejects_malformed_percent_escape(self):
+        for suffix in ("%", "%G0", "%2"):
+            with self.subTest(suffix=suffix), self.assertRaises(CallbackError):
+                self.check("code=abc" + suffix + "&state=" + self.state)
+
+    def test_rejects_control_characters_before_url_normalization(self):
+        for character in ("\n", "\r", "\t", "\x00", "\x7f"):
+            with self.subTest(character=repr(character)), self.assertRaises(CallbackError):
+                self.check("code=abc&state=" + self.state + character)
+
 
 if __name__ == "__main__":
     unittest.main()

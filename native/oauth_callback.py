@@ -5,6 +5,11 @@ short-lived, single-use transaction store; never put them in a WebView URL.
 """
 from urllib.parse import parse_qs, urlsplit
 import hmac
+import re
+
+
+_BAD_PERCENT_ESCAPE = re.compile(r"%(?![0-9A-Fa-f]{2})")
+_CONTROL_CHARACTER = re.compile(r"[\x00-\x1f\x7f]")
 
 
 class CallbackError(ValueError):
@@ -17,6 +22,11 @@ def validate_callback(callback_url: str, redirect_uri: str, expected_state: str)
     This validates the inbound message, not the token exchange. The caller must
     atomically consume the stored transaction before exchanging code with PKCE.
     """
+    # urllib's URL and query parsers tolerate malformed percent escapes and
+    # may normalize control characters. Reject these before parsing.
+    if any(_CONTROL_CHARACTER.search(url) or _BAD_PERCENT_ESCAPE.search(url)
+           for url in (callback_url, redirect_uri)):
+        raise CallbackError("malformed redirect encoding or control character")
     try:
         callback = urlsplit(callback_url)
         registered = urlsplit(redirect_uri)
