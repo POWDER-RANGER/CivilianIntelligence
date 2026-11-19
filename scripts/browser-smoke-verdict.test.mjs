@@ -387,6 +387,10 @@ test("exitCodeFor: 4xx boundary and missing status", () => {
 test("exitCodeFor: no viewport data is a failure", () => {
   assert.equal(exitCodeFor({}), 1);
   assert.equal(exitCodeFor(undefined), 1);
+  assert.equal(exitCodeFor(null), 1);
+  assert.equal(exitCodeFor([]), 1);
+  assert.equal(exitCodeFor([viewport()]), 1);
+  assert.equal(exitCodeFor("invalid"), 1);
 });
 
 test("browser-smoke wires the guard and verdict helpers", () => {

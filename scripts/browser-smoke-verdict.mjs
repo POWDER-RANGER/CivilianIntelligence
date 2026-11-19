@@ -141,7 +141,8 @@ export function baselineComparison(current, rawText) {
   return compareToBaseline(current, baseline);
 }
 export function exitCodeFor(viewports) {
-  const list = Object.values(viewports ?? {});
+  if (viewports === null || typeof viewports !== "object" || Array.isArray(viewports)) return 1;
+  const list = Object.values(viewports);
   if (list.length === 0) return 1;
   if (list.some((v) => !Number.isInteger(v?.status) || v.status < 200 || v.status >= 400)) return 1;
   if (list.some((v) => (v.consoleErrors?.length ?? 0) > 0 || (v.pageErrors?.length ?? 0) > 0)) {
