@@ -481,3 +481,17 @@ test("compareToBaseline rejects inherited viewport names as missing baselines", 
   assert.ok(result.reasons.some((reason) => reason.includes("__proto__: no baseline data")));
   assert.ok(result.reasons.some((reason) => reason.includes("constructor: no baseline data")));
 });
+
+
+test("baseline comparison rejects malformed error collections on either side", () => {
+  for (const field of ["consoleErrors", "pageErrors"]) {
+    for (const bad of [undefined, null, "", "error", 0, {}, { length: 0 }]) {
+      const current = compareToBaseline(verdict({ [field]: bad }), verdict());
+      assert.equal(current.divergesFromBaseline, true);
+      assert.match(current.reasons.join(";"), new RegExp(`desktop: malformed current ${field} collection`));
+      const baseline = compareToBaseline(verdict(), verdict({ [field]: bad }));
+      assert.equal(baseline.divergesFromBaseline, true);
+      assert.match(baseline.reasons.join(";"), new RegExp(`desktop: malformed baseline ${field} collection`));
+    }
+  }
+});
