@@ -3,7 +3,6 @@
   "appName": "CIVINTELLIGENCE",
   "webDir": "shell",
   "server": {
-    "url": "https://civintelligence.onrender.com/",
     "cleartext": false
   }
 }

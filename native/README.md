@@ -1,10 +1,12 @@
 ﻿# CIVINTELLIGENCE native clients — initial engineering scaffold
 
 Desktop: Tauri 2 (Windows, macOS, Linux). Mobile: Capacitor 8 (Android, iOS).
-The current app is SSR-backed TanStack Start; it is **not** a standalone static frontend.
-These are connected native WebView prototypes pointing at the existing Render website.
-The mobile `server.url` configuration is for **development/testing only**, not App Store / Play Store distribution.
-Before store release, create a locally bundled native frontend and audited API/auth bridge.
+The website remains SSR-backed TanStack Start; its full React routes are not yet portable as static assets.
+Native clients now launch a **locally bundled navigation shell** with responsive navigation,
+connection/error status and explicit external-browser links to the live website.
+This is not yet the full intelligence frontend or a production-ready client.
+See [LOCAL_FRONTEND_STATUS.md](LOCAL_FRONTEND_STATUS.md) for implementation scope and limitations.
+Release still requires authenticated API wiring, secure OAuth callbacks, signing and physical-device tests.
 No native IPC capabilities are granted to remote web content.
 
 Android external-browser popup dispatch now validates URLs using a strict, JVM-testable HTTPS policy. CI runs `testDebugUnitTest` before accepting the debug APK. This is not an OAuth callback implementation: no deep-link callback or token exchange is registered. The debug APK remains unsuitable for production distribution.
