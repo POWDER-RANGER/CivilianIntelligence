@@ -34,13 +34,14 @@
 </section>
 <section class="panel" id="records-panel" aria-labelledby="records-heading" hidden>
 <h2 id="records-heading">Public records search</h2>
-<p class="fine">Live public records from the CIVINTELLIGENCE index. Requires connectivity; no records are stored on this device.</p>
+<p class="fine">Live public records from the CIVINTELLIGENCE index. Recent public searches are stored locally for up to 24 hours; no credentials are stored.</p>
 <form id="record-form" role="search">
 <label for="record-query">Search public records</label>
 <div class="record-controls"><input id="record-query" type="search" maxlength="160" placeholder="Agency, document or identifier" autocomplete="off"><button type="submit">Search</button></div>
 </form>
 <p id="record-status" role="status" aria-live="polite">Enter a query to search the public index.</p>
 <div id="record-list" class="source-list"></div>
+<div class="panel-head"><p id="offline-count" role="status">Checking saved searches</p><button id="clear-offline" type="button">Clear saved searches</button></div>
 </section>
 <section class="panel" id="sources-panel" aria-labelledby="sources-heading" hidden>
 <h2 id="sources-heading">Public source directory</h2>
@@ -53,5 +54,5 @@
 <div id="source-list" class="source-list"></div>
 </section>
 </main></div>
-<footer>Locally bundled interface · Prototype · No offline intelligence data is implied</footer>
+<footer>Locally bundled interface · Prototype · Public search results may be saved locally for 24 hours</footer>
 </body></html>

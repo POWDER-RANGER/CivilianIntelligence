@@ -1,3 +1,4 @@
+import {safeRecord, saveCache, findCached, clearCache, readCache} from "./offline-records.mjs";
 const ORIGIN = "https://civintelligence.onrender.com";
 const SECTIONS = Object.freeze({
   watchtower: ["Watchtower", "Situational awareness", "Monitor public intelligence and location-aware reporting.", "/"],
@@ -94,6 +95,36 @@ render();
 loadCatalog();
 checkConnection();
 
+// Render only validated public fields using textContent; never inject HTML.
+function renderRecordResults(records) {
+  const list = byId("record-list");
+  list.replaceChildren();
+  for (const item of records) {
+    const article = document.createElement("article");
+    article.className = "source-card";
+    const title = document.createElement("h3");
+    title.textContent = item.title;
+    const meta = document.createElement("p");
+    meta.textContent = [item.agency, item.kind, item.publishedAt].filter(Boolean).join(" / ");
+    const link = document.createElement("a");
+    link.href = item.sourceUrl;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "View original record";
+    article.append(title, meta, link);
+    list.append(article);
+  }
+}
+function updateOfflineCount() {
+  byId("offline-count").textContent = readCache(localStorage).length + " saved public searches (24-hour retention).";
+}
+byId("clear-offline").addEventListener("click", () => {
+  const ok = clearCache(localStorage);
+  updateOfflineCount();
+  byId("record-status").textContent = ok ? "Saved public searches cleared." : "Unable to clear local storage.";
+});
+updateOfflineCount();
+
 // Public read-only API; never send cookies, bearer tokens, or local credentials.
 let recordRequest;
 async function searchRecords(event) {
@@ -122,34 +153,25 @@ async function searchRecords(event) {
     const data = await response.json();
     if (data.state !== "available" || !Array.isArray(data.results)) throw new Error("Invalid index response");
     if (current !== recordRequest) return;
-    const records = data.results.slice(0, 20);
-    for (const item of records) {
-      if (typeof item.title !== "string" || typeof item.sourceUrl !== "string") continue;
-      let url;
-      try {
-        url = new URL(item.sourceUrl);
-        if (url.protocol !== "https:" || url.username || url.password) continue;
-      } catch { continue; }
-      const article = document.createElement("article");
-      article.className = "source-card";
-      const title = document.createElement("h3");
-      title.textContent = item.title;
-      const meta = document.createElement("p");
-      meta.textContent = [item.agency, item.kind, item.publishedAt].filter(v => typeof v === "string" && v).join(" / ");
-      const link = document.createElement("a");
-      link.href = url.href;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      link.textContent = "View original record";
-      article.append(title, meta, link);
-      list.append(article);
-    }
-    byId("record-status").textContent = list.childElementCount + " public records shown. Results are live, not cached.";
-  } catch (error) {
+    const records = data.results.slice(0, 20).map(safeRecord).filter(Boolean);
+    renderRecordResults(records);
+    const stored = saveCache(localStorage, query, records);
+    updateOfflineCount();
+    byId("record-status").textContent = records.length + " live public records shown." +
+      (stored ? " Saved for offline reference (up to 24 hours)." : " Offline storage unavailable.");
+    } catch (error) {
     if (current !== recordRequest) return;
-    byId("record-status").textContent = navigator.onLine
-      ? "Public index unavailable or cross-origin access blocked. Retry later or open the web workspace."
-      : "Offline. Public record search requires a connection.";
+    const cached = findCached(localStorage, query);
+    if (cached) {
+      renderRecordResults(cached.records);
+      byId("record-status").textContent = "Offline fallback: " + cached.records.length +
+        " saved public records from " + new Date(cached.savedAt).toLocaleString() +
+        ". These results may be outdated; verify against the original source.";
+    } else {
+      byId("record-status").textContent = navigator.onLine
+        ? "Public index unavailable or cross-origin access blocked. No saved results for this query."
+        : "Offline. No saved results for this query.";
+    }
   } finally {
     clearTimeout(timeout);
   }
