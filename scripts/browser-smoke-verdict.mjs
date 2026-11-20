@@ -101,14 +101,14 @@ export function compareToBaseline(current, baseline) {
       reasons.push(`${name}: horizontal overflow appeared`);
     }
     for (const field of ["consoleErrors", "pageErrors"]) {
-      if (!Array.isArray(cur[field])) {
+      if (!Array.isArray(cur[field]) || !cur[field].every((entry) => typeof entry === "string")) {
         reasons.push(`${name}: malformed current ${field} collection`);
       }
-      if (!Array.isArray(base[field])) {
+      if (!Array.isArray(base[field]) || !base[field].every((entry) => typeof entry === "string")) {
         reasons.push(`${name}: malformed baseline ${field} collection`);
       }
     }
-    if (!["consoleErrors", "pageErrors"].every((field) => Array.isArray(cur[field]) && Array.isArray(base[field]))) {
+    if (!["consoleErrors", "pageErrors"].every((field) => Array.isArray(cur[field]) && cur[field].every((entry) => typeof entry === "string") && Array.isArray(base[field]) && base[field].every((entry) => typeof entry === "string"))) {
       continue;
     }
     const baseErrs = (base.consoleErrors?.length ?? 0) + (base.pageErrors?.length ?? 0);
@@ -167,7 +167,7 @@ export function exitCodeFor(viewports) {
   const list = Object.values(viewports);
   if (list.length === 0) return 1;
   if (list.some((v) => !Number.isInteger(v?.status) || v.status < 200 || v.status >= 400)) return 1;
-  if (list.some((v) => !Array.isArray(v.consoleErrors) || !Array.isArray(v.pageErrors))) return 1;
+  if (list.some((v) => !Array.isArray(v.consoleErrors) || !Array.isArray(v.pageErrors) || !v.consoleErrors.every((entry) => typeof entry === "string") || !v.pageErrors.every((entry) => typeof entry === "string"))) return 1;
   if (list.some((v) => v.consoleErrors.length > 0 || v.pageErrors.length > 0)) {
     return 2;
   }
