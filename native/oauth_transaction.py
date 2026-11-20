@@ -29,9 +29,13 @@ class Pending:
 class OAuthTransactions:
     """In-memory reference store; not durable or suitable for cross-process callbacks."""
 
-    def __init__(self, ttl_seconds: int = 300, clock=monotonic):
+    def __init__(self, ttl_seconds: int = 300, clock=monotonic,
+                 max_pending: int = 32):
         if not 1 <= ttl_seconds <= 900:
             raise ValueError("invalid OAuth TTL")
+        if not 1 <= max_pending <= 1024:
+            raise ValueError("invalid pending OAuth transaction limit")
+        self._max_pending = max_pending
         self._ttl = ttl_seconds
         self._clock = clock
         self._lock = Lock()
@@ -50,10 +54,13 @@ class OAuthTransactions:
         verifier = token_urlsafe(64)
         challenge = _b64(sha256(verifier.encode("ascii")).digest())
         with self._lock:
+            now = self._clock()
             self._pending = {k: v for k, v in self._pending.items()
-                             if v.deadline > self._clock()}
+                             if v.deadline > now}
+            if len(self._pending) >= self._max_pending:
+                raise ValueError("too many pending OAuth transactions")
             self._pending[state] = Pending(state, verifier, redirect_uri,
-                                           self._clock() + self._ttl)
+                                           now + self._ttl)
         query = urlencode({"response_type": "code", "client_id": client_id,
                            "redirect_uri": redirect_uri, "scope": scope,
                            "state": state, "code_challenge": challenge,

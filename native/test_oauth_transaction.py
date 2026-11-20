@@ -50,6 +50,27 @@ class TransactionTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.store.begin(endpoint, "id", "app:/callback", "openid")
 
+    def test_pending_limit_and_recovery_after_consumption(self):
+        store = OAuthTransactions(clock=lambda: self.now[0], max_pending=1)
+        args = ("https://auth.example.com/authorize", "id", "app:/callback", "openid")
+        _, state = store.begin(*args)
+        with self.assertRaisesRegex(ValueError, "too many pending"):
+            store.begin(*args)
+        store.consume("app:/callback?code=ok&state=" + state, state)
+        store.begin(*args)
+
+    def test_pending_limit_releases_expired_entries(self):
+        store = OAuthTransactions(clock=lambda: self.now[0], ttl_seconds=1, max_pending=1)
+        args = ("https://auth.example.com/authorize", "id", "app:/callback", "openid")
+        store.begin(*args)
+        self.now[0] += 2
+        store.begin(*args)
+
+    def test_invalid_pending_limit(self):
+        for limit in (0, 1025):
+            with self.assertRaises(ValueError):
+                OAuthTransactions(max_pending=limit)
+
     def test_no_transaction_on_bad_endpoint(self):
         with self.assertRaises(ValueError):
             self.store.begin("https://example.com/a?injected=1", "id", "app:/callback", "openid")
