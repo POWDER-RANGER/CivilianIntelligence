@@ -12,6 +12,15 @@ test("malformed browser error entries fail smoke exit validation", () => {
   }
 });
 
+test("malformed error collections do not suppress independent body text regression evidence", () => {
+  const current = { viewports: { desktop: { ...viewport(), consoleErrors: [null], bodyTextLen: 10, bodyTextHash: "changed" } } };
+  const baseline = { viewports: { desktop: viewport() } };
+  const result = compareToBaseline(current, baseline);
+  assert.equal(result.divergesFromBaseline, true);
+  assert.match(result.reasons.join(";"), /malformed current consoleErrors collection/);
+  assert.match(result.reasons.join(";"), /body text collapsed/);
+});
+
 test("malformed browser error entries fail baseline comparison on either side", () => {
   for (const field of ["consoleErrors", "pageErrors"]) {
     for (const side of ["current", "baseline"]) {
