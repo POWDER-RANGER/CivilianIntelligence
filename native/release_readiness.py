@@ -13,8 +13,10 @@ def assess(mobile: dict, desktop: dict, shell_html: str, signing: dict | None = 
         issues.append("mobile: cleartext transport must be explicitly disabled")
     if server.get("allowNavigation"):
         issues.append("mobile: arbitrary WebView navigation allowlist is not release-approved")
-    windows = (desktop.get("app") or {}).get("windows") or []
-    if any(isinstance(w, dict) and str(w.get("url") or "").strip() for w in windows):
+    windows = (desktop.get("app") or {}).get("windows")
+    if not isinstance(windows, list) or not windows or any(not isinstance(w, dict) for w in windows):
+        issues.append("desktop: at least one valid application window must be configured")
+    elif any(str(w.get("url") or "").strip() for w in windows):
         issues.append("desktop: remote startup URL prevents an independently bundled frontend")
     if not shell_html.strip() or ("network" in shell_html.lower() and "required" in shell_html.lower()):
         issues.append("frontend: packaged shell is a network-required placeholder")

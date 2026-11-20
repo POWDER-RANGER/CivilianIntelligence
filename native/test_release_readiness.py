@@ -53,6 +53,16 @@ class ReleaseReadinessTests(unittest.TestCase):
                 self.desktop["app"]["security"]["csp"] = csp
                 self.assertTrue(any("content security policy" in issue for issue in assess(self.mobile, self.desktop, "<html>App</html>", signed)))
 
+    def test_missing_or_invalid_window_cannot_pass_release_gate(self):
+        signed = dict.fromkeys(("android", "ios", "macos", "windows", "oauth_callbacks", "physical_devices"), True)
+        self.mobile["server"] = {"cleartext": False}
+        self.desktop["app"]["security"]["csp"] = "default-src 'self'"
+        for windows in (None, [], {}, [None], ["invalid"], [{"title": "App"}, None]):
+            with self.subTest(windows=windows):
+                self.desktop["app"]["windows"] = windows
+                issues = assess(self.mobile, self.desktop, "<html>Bundled application</html>", signed)
+                self.assertTrue(any("valid application window" in issue for issue in issues))
+
     def test_real_checkout_is_blocked(self):
         mobile = json.loads((ROOT / "capacitor.config.json").read_text(encoding="utf-8"))
         desktop = json.loads((ROOT / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))
