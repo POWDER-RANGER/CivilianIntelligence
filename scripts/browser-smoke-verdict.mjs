@@ -76,6 +76,18 @@ export function compareToBaseline(current, baseline) {
       reasons.push(`${name}: malformed current viewport data`);
       continue;
     }
+    // Validate current evidence even when this viewport has no baseline.
+    if (!Number.isInteger(cur.status) || cur.status < 200 || cur.status >= 400) {
+      reasons.push(`${name}: unhealthy HTTP status ${cur.status}`);
+    }
+    if (!Number.isSafeInteger(cur.bodyTextLen) || cur.bodyTextLen < 0) {
+      reasons.push(`${name}: malformed current body text length`);
+    }
+    for (const field of ["consoleErrors", "pageErrors"]) {
+      if (!Array.isArray(cur[field]) || !cur[field].every((entry) => typeof entry === "string")) {
+        reasons.push(`${name}: malformed current ${field} collection`);
+      }
+    }
     const base = Object.hasOwn(baseViewports, name) ? baseViewports[name] : undefined;
     if (base == null) {
       reasons.push(`${name}: no baseline data for this viewport`);
@@ -84,9 +96,6 @@ export function compareToBaseline(current, baseline) {
     if (typeof base !== "object" || Array.isArray(base)) {
       reasons.push(`${name}: malformed baseline viewport data`);
       continue;
-    }
-    if (!Number.isInteger(cur.status) || cur.status < 200 || cur.status >= 400) {
-      reasons.push(`${name}: unhealthy HTTP status ${cur.status}`);
     }
     if (cur.status !== base.status) {
       reasons.push(`${name}: HTTP status changed ${base.status} -> ${cur.status}`);
@@ -101,9 +110,6 @@ export function compareToBaseline(current, baseline) {
       reasons.push(`${name}: horizontal overflow appeared`);
     }
     for (const field of ["consoleErrors", "pageErrors"]) {
-      if (!Array.isArray(cur[field]) || !cur[field].every((entry) => typeof entry === "string")) {
-        reasons.push(`${name}: malformed current ${field} collection`);
-      }
       if (!Array.isArray(base[field]) || !base[field].every((entry) => typeof entry === "string")) {
         reasons.push(`${name}: malformed baseline ${field} collection`);
       }
@@ -119,10 +125,7 @@ export function compareToBaseline(current, baseline) {
         reasons.push(`${name}: console/page errors appeared (${curErrs})`);
       }
     }
-    if (!Number.isSafeInteger(cur.bodyTextLen) || cur.bodyTextLen < 0) {
-      reasons.push(`${name}: malformed current body text length`);
-      continue;
-    }
+    if (!Number.isSafeInteger(cur.bodyTextLen) || cur.bodyTextLen < 0) continue;
     if (!Number.isSafeInteger(base.bodyTextLen) || base.bodyTextLen < 0) {
       reasons.push(`${name}: malformed baseline body text length`);
       continue;

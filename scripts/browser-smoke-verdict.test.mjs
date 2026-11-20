@@ -537,3 +537,14 @@ test("baseline comparison rejects malformed body text lengths on either side", (
     }
   }
 });
+
+// Unbaselined viewports must still report independent evidence defects.
+test("unbaselined viewport retains current evidence failures", () => {
+  const current = { viewports: { desktop: { status: 200, bodyTextLen: 100, consoleErrors: [], pageErrors: [] }, mobile: { status: 503, bodyTextLen: -1, consoleErrors: [null], pageErrors: [] } } };
+  const baseline = { viewports: { desktop: { status: 200, bodyTextLen: 100, consoleErrors: [], pageErrors: [] } } };
+  const result = compareToBaseline(current, baseline);
+  assert.equal(result.divergesFromBaseline, true);
+  assert.ok(result.reasons.some((reason) => reason.includes("mobile: unhealthy HTTP status")));
+  assert.ok(result.reasons.some((reason) => reason.includes("mobile: malformed current body text length")));
+  assert.ok(result.reasons.some((reason) => reason.includes("mobile: malformed current consoleErrors")));
+});
