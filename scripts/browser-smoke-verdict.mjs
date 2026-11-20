@@ -108,13 +108,16 @@ export function compareToBaseline(current, baseline) {
         reasons.push(`${name}: malformed baseline ${field} collection`);
       }
     }
-    if (!["consoleErrors", "pageErrors"].every((field) => Array.isArray(cur[field]) && cur[field].every((entry) => typeof entry === "string") && Array.isArray(base[field]) && base[field].every((entry) => typeof entry === "string"))) {
-      continue;
-    }
-    const baseErrs = (base.consoleErrors?.length ?? 0) + (base.pageErrors?.length ?? 0);
-    const curErrs = (cur.consoleErrors?.length ?? 0) + (cur.pageErrors?.length ?? 0);
-    if (curErrs > 0 && baseErrs === 0) {
-      reasons.push(`${name}: console/page errors appeared (${curErrs})`);
+    const validErrorCollections = ["consoleErrors", "pageErrors"].every((field) =>
+      Array.isArray(cur[field]) && cur[field].every((entry) => typeof entry === "string") &&
+      Array.isArray(base[field]) && base[field].every((entry) => typeof entry === "string")
+    );
+    if (validErrorCollections) {
+      const baseErrs = base.consoleErrors.length + base.pageErrors.length;
+      const curErrs = cur.consoleErrors.length + cur.pageErrors.length;
+      if (curErrs > 0 && baseErrs === 0) {
+        reasons.push(`${name}: console/page errors appeared (${curErrs})`);
+      }
     }
     if (!Number.isSafeInteger(cur.bodyTextLen) || cur.bodyTextLen < 0) {
       reasons.push(`${name}: malformed current body text length`);
