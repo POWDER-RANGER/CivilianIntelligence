@@ -23,13 +23,16 @@ test("native source catalog is generated from the canonical public registry", ()
     assert.equal(url.password, "");
   }
 });
-test("local navigation renders the bundled directory without remote data or HTML injection", () => {
+test("React owns source and records routes without duplicate legacy forms", () => {
+  const react = readFileSync(resolve(root, "react-workspace.tsx"), "utf8");
   const js = readFileSync(resolve(root, "shell/native.js"), "utf8");
   const html = readFileSync(resolve(root, "shell/index.html"), "utf8");
-  assert.match(js, /fetch\("\.\/source-catalog\.json"/);
-  assert.match(js, /createElement\("article"\)/);
-  assert.match(js, /textContent = source\.name/);
-  assert.doesNotMatch(js, /innerHTML/);
-  assert.match(html, /id="sources-panel"/);
-  assert.match(html, /id="source-search"/);
+  assert.match(react, /fetch\("\.\/source-catalog\.json"/);
+  assert.match(react, /filtered\.map\(s=>/);
+  assert.match(react, /route==="sources"/);
+  assert.match(react, /route==="records"/);
+  assert.doesNotMatch(react, /dangerouslySetInnerHTML/);
+  assert.match(js, /civint:route/);
+  assert.match(html, /id="react-workspace"/);
+  assert.doesNotMatch(html, /id="sources-panel"|id="records-panel"/);
 });

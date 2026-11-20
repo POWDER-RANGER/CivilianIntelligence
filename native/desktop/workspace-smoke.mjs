@@ -18,7 +18,7 @@ try{
  await page.route("https://civintelligence.onrender.com/api/civint/records/search**",route=>route.fulfill({status:200,contentType:"application/json",headers:{"access-control-allow-origin":"*"},body:JSON.stringify({results:[{title:"Verified public disclosure",sourceUrl:"https://example.gov/disclosure",agency:"Public agency"}]})}));
  await page.getByRole("searchbox",{name:"Search public records"}).last().fill("disclosure");
  await page.getByRole("search",{name:"Native public record search"}).getByRole("button",{name:"Search"}).click();
- await page.getByRole("link",{name:"Verified public disclosure"}).waitFor();
+ await page.getByLabel("Record search results").getByRole("link",{name:"Verified public disclosure"}).waitFor();
  await page.getByText("1 live records.",{exact:false}).waitFor();
  await page.unroute("https://civintelligence.onrender.com/api/civint/records/search**");
  await page.route("https://civintelligence.onrender.com/api/civint/records/search**",route=>route.abort());
@@ -26,6 +26,15 @@ try{
  await page.getByText("Offline fallback:",{exact:false}).waitFor();
  await page.context().setOffline(true);
  await page.getByText("Offline mode. Local sources and saved searches remain accessible.").waitFor();
+ await page.getByRole("link",{name:"Public records",exact:true}).click();
+ await page.getByRole("heading",{name:"Public record discovery"}).waitFor();
+ if(await page.locator("#records-panel").count())throw Error("Legacy records UI remains");
+ if(await page.getByRole("search",{name:"Native public record search"}).count()!==1)throw Error("Duplicate record forms");
+ await page.getByRole("link",{name:"Sources",exact:true}).click();
+ await page.getByRole("heading",{name:"Public source network",level:2}).waitFor();
+ if(await page.locator("#sources-panel").count())throw Error("Legacy source UI remains");
+ await page.getByRole("link",{name:"Watchtower",exact:true}).click();
+ await page.getByRole("heading",{name:"Operational overview"}).waitFor();
  if(errors.length)throw Error("Browser exceptions: "+errors.join("; "));
  console.log("PASS: React bundle mounted, public catalog rendered, filtering works, offline status shown, zero page errors");
 }finally{await browser.close();server.close();}

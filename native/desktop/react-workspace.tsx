@@ -14,6 +14,14 @@ function useConnectivity() {
   return online;
 }
 function Workspace() {
+  const [route,setRoute]=useState(()=>location.hash.slice(1)||"watchtower");
+  useEffect(()=>{
+    const update=(event:Event)=>setRoute((event as CustomEvent<string>).detail||"watchtower");
+    const hash=()=>setRoute(location.hash.slice(1)||"watchtower");
+    window.addEventListener("civint:route",update);
+    window.addEventListener("hashchange",hash);
+    return ()=>{window.removeEventListener("civint:route",update);window.removeEventListener("hashchange",hash);};
+  },[]);
   const online=useConnectivity();
   const [sources,setSources]=useState<Source[]>([]);
   const [status,setStatus]=useState<Status>("loading");
@@ -88,20 +96,20 @@ function Workspace() {
   },[online,refresh]);
   const filtered=useMemo(()=>sources.filter(s=>[s.name,s.category,s.attribution].some(v=>v.toLowerCase().includes(filter.trim().toLowerCase()))),[sources,filter]);
   return <section aria-label="Native intelligence overview" className="react-workspace">
-    <div className="workspace-heading"><div><p className="eyebrow">LOCAL INTELLIGENCE DESK</p><h2>Operational overview</h2></div><button type="button" onClick={()=>setRefresh(v=>v+1)}>Refresh intelligence</button></div>
-    <div className="workspace-metrics" role="group" aria-label="Workspace metrics">
+    <div className="workspace-heading"><div><p className="eyebrow">LOCAL INTELLIGENCE DESK</p><h2>{route==="records"?"Public record discovery":route==="sources"?"Public source network":"Operational overview"}</h2></div><button type="button" onClick={()=>setRefresh(v=>v+1)}>Refresh intelligence</button></div>
+    {route==="watchtower"&&<div className="workspace-metrics" role="group" aria-label="Workspace metrics">
       <div><strong>{sources.length}</strong><span>Bundled public sources</span></div>
       <div><strong>{saved.length}</strong><span>Saved record searches</span></div>
       <div><strong>{online?"Online":"Offline"}</strong><span>Device connectivity</span></div>
-    </div>
+    </div>}
     <p role="status" aria-live="polite">{status==="error"?"Bundled source catalog unavailable.":healthStatus==="loading"?"Checking public source health…":healthStatus==="error"?"Live source status unavailable; local sources remain accessible.":!online?"Offline mode. Local sources and saved searches remain accessible.":"Local workspace ready."}</p>
     <div className="workspace-columns">
-      <section aria-labelledby="desk-sources"><h3 id="desk-sources">Public source network</h3>
+      {(route==="watchtower"||route==="sources")&&<section aria-labelledby="desk-sources"><h3 id="desk-sources">Public source network</h3>
         <label htmlFor="desk-filter">Filter sources</label><input id="desk-filter" type="search" value={filter} onChange={e=>setFilter(e.target.value)} placeholder="Agency or category" />
         <p>{filtered.length} sources shown</p>
         <div className="workspace-scroll">{filtered.map(s=><article key={s.id} className="source-card"><h4>{s.name}</h4><p>{s.category} · {s.attribution}</p><p>{health[s.name]==="reachable"?"Responded at last check":health[s.name]==="unavailable"?"Unavailable at last check":"Status not verified"}</p><a href={s.endpoint} target="_blank" rel="noopener noreferrer">Original source</a></article>)}</div>
-      </section>
-      <section aria-labelledby="desk-records"><h3 id="desk-records">Public record discovery</h3>
+      </section>}
+      {(route==="watchtower"||route==="records")&&<section aria-labelledby="desk-records"><h3 id="desk-records">Public record discovery</h3>
         <form onSubmit={search} role="search" aria-label="Native public record search">
           <label htmlFor="desk-record-query">Search public records</label>
           <div className="record-controls"><input id="desk-record-query" type="search" maxLength={160} value={query} onChange={e=>setQuery(e.target.value)} placeholder="Agency, document or identifier" required/><button type="submit" disabled={recordState==="loading"}>Search</button></div>
@@ -110,7 +118,7 @@ function Workspace() {
         {records.length>0&&<div className="workspace-scroll" aria-label="Record search results">{records.map((r,i)=><article className="source-card" key={r.sourceUrl+i}><h4><a href={r.sourceUrl} target="_blank" rel="noopener noreferrer">{r.title}</a></h4><p>{r.agency||"Public record"}{r.kind?" · "+r.kind:""}</p></article>)}</div>}
         <h4>Saved public intelligence</h4><p>Local results may be up to 24 hours old. Verify original sources before acting.</p>
         {saved.length===0?<p>No recent saved searches. Use Public records to search and save results.</p>:<div className="workspace-scroll">{saved.map(s=><article className="source-card" key={s.query}><h4>{s.query}</h4><p>{s.records.length} public records · Saved {new Date(s.savedAt).toLocaleString()}</p>{s.records.slice(0,3).map((r,i)=><p key={i}>{allowed(r.sourceUrl)?<a href={r.sourceUrl} target="_blank" rel="noopener noreferrer">{r.title}</a>:r.title}</p>)}</article>)}</div>}
-      </section>
+      </section>}
     </div>
   </section>;
 }
