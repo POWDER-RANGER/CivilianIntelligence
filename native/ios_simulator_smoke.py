@@ -50,6 +50,18 @@ def run(*args: str, timeout: int = 120) -> str:
     return result.stdout
 
 
+def install_with_recovery(udid: str, app: Path) -> None:
+    """Retry one timed-out simulator install after a clean simulator reboot."""
+    try:
+        run("install", udid, str(app.resolve()), timeout=180)
+    except subprocess.TimeoutExpired:
+        print("Simulator install timed out; restarting before one retry", flush=True)
+        run("shutdown", udid, timeout=60)
+        run("boot", udid, timeout=120)
+        run("bootstatus", udid, "-b", timeout=240)
+        run("install", udid, str(app.resolve()), timeout=180)
+
+
 def launch_with_recovery(udid: str, bundle: str, app: Path) -> str:
     """Restart and reinstall after a timed-out simulator launch; fail on repeat."""
     try:
@@ -81,7 +93,7 @@ def main(argv: list[str] | None = None) -> int:
             run("boot", udid)
             booted_here = True
         run("bootstatus", udid, "-b", timeout=240)
-        run("install", udid, str(args.app.resolve()), timeout=180)
+        install_with_recovery(udid, args.app)
         launch = launch_with_recovery(udid, bundle, args.app)
         if bundle not in launch:
             raise RuntimeError(f"Simulator launch did not report bundle ID: {launch!r}")

@@ -5,10 +5,31 @@ import subprocess
 from unittest.mock import patch
 from pathlib import Path
 
-from ios_simulator_smoke import select_ios_device, app_bundle_id, launch_with_recovery
+from ios_simulator_smoke import select_ios_device, app_bundle_id, launch_with_recovery, install_with_recovery
 
 
 class IOSSimulatorSmokeTests(unittest.TestCase):
+    @patch("ios_simulator_smoke.run")
+    def test_install_timeout_reboots_and_retries_once(self, runner):
+        runner.side_effect = [subprocess.TimeoutExpired("simctl", 180), "", "", "", ""]
+        install_with_recovery("udid", Path("."))
+        self.assertEqual([c.args[0] for c in runner.call_args_list],
+                         ["install", "shutdown", "boot", "bootstatus", "install"])
+
+    @patch("ios_simulator_smoke.run")
+    def test_second_install_timeout_fails_closed(self, runner):
+        runner.side_effect = [subprocess.TimeoutExpired("simctl", 180), "", "", "",
+                              subprocess.TimeoutExpired("simctl", 180)]
+        with self.assertRaises(subprocess.TimeoutExpired):
+            install_with_recovery("udid", Path("."))
+
+    @patch("ios_simulator_smoke.run")
+    def test_nonzero_install_fails_without_retry(self, runner):
+        runner.side_effect = subprocess.CalledProcessError(1, "simctl")
+        with self.assertRaises(subprocess.CalledProcessError):
+            install_with_recovery("udid", Path("."))
+        self.assertEqual(runner.call_count, 1)
+
     @patch("ios_simulator_smoke.run")
     def test_timeout_recovers_by_reboot_and_reinstall(self, runner):
         runner.side_effect = [subprocess.TimeoutExpired("simctl", 90), "", "", "", "",
