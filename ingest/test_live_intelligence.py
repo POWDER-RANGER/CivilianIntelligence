@@ -68,6 +68,13 @@ class LiveIntelligenceTests(unittest.TestCase):
         valid = "https://earthquake.usgs.gov:443/earthquakes/eventpage/abcd"
         self.assertEqual(normalize_usgs_feature(quake(url=valid), REF)["source_url"], valid)
 
+    def test_source_links_reject_control_characters(self):
+        canonical = "https://earthquake.usgs.gov/earthquakes/eventpage/abcd"
+        for char in ("\n", "\r", "\t", "\x00", "\x1f", "\x7f"):
+            with self.subTest(char=repr(char)):
+                event = normalize_usgs_feature(quake(url=canonical + char), REF)
+                self.assertIsNone(event["source_url"])
+
     def test_invalid_payload_does_not_become_empty_feed(self):
         with self.assertRaises(ValueError):
             normalize_usgs_feed({"features": []}, REF)
