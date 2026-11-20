@@ -35,7 +35,7 @@ jobs:
       - name: Validate emulator smoke shell syntax
         run: bash -n native/android_emulator_ci.sh
       - name: Test loopback-only emulator proxy policy
-        run: node --test native/test_emulator_https_proxy.mjs native/desktop/test-offline-records.mjs
+        run: node --test native/test_emulator_https_proxy.mjs native/desktop/test-offline-records.mjs native/desktop/test-record-client.mjs
       - name: Run native policy and artifact-verifier unit tests
         run: python3 -m unittest discover -s native -p 'test_*.py' -v
 

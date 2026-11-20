@@ -1,6 +1,7 @@
 import React, {useEffect, useMemo, useState} from "react";
 import {createRoot} from "react-dom/client";
 import {readCache} from "./shell/offline-records.mjs";
+import {searchPublicRecords} from "./record-client.mjs";
 
 type Source = {id:string;name:string;category:string;endpoint:string;attribution:string};
 type Catalog = {schema:number;sources:Source[]};
@@ -21,6 +22,41 @@ function Workspace() {
   const [filter,setFilter]=useState("");
   const [refresh,setRefresh]=useState(0);
   const [saved,setSaved]=useState<ReturnType<typeof readCache>>([]);
+  const [query,setQuery]=useState("");
+  const [recordState,setRecordState]=useState<"idle"|"loading"|"live"|"cache"|"error">("idle");
+  const [records,setRecords]=useState<Array<{title:string;sourceUrl:string;agency?:string;kind?:string}>>([]);
+  const [recordMessage,setRecordMessage]=useState("Search the public index or recover a saved query.");
+  useEffect(()=>{
+    const refreshSaved=()=>{try{setSaved(readCache(localStorage));}catch{setSaved([]);}};
+    window.addEventListener("storage",refreshSaved);
+    window.addEventListener("civint:records-updated",refreshSaved);
+    return ()=>{window.removeEventListener("storage",refreshSaved);window.removeEventListener("civint:records-updated",refreshSaved);};
+  },[]);
+  const searchController=React.useRef<AbortController|null>(null);
+  useEffect(()=>()=>searchController.current?.abort(),[]);
+  async function search(event:React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    searchController.current?.abort();
+    const controller=new AbortController();
+    searchController.current=controller;
+    setRecordState("loading");
+    setRecordMessage("Searching public records…");
+    try {
+      const result=await searchPublicRecords(query,{signal:controller.signal});
+      if(controller.signal.aborted)return;
+      setRecords(result.records);
+      setRecordState(result.source);
+      setRecordMessage(result.source==="cache"
+        ? "Offline fallback: saved results from "+new Date(result.savedAt).toLocaleString()+". Verify before acting."
+        : result.records.length+" live records. "+(result.saved?"Saved for offline reference.":"Local storage unavailable."));
+      setRefresh(v=>v+1);
+    } catch {
+      if(controller.signal.aborted)return;
+      setRecords([]);
+      setRecordState("error");
+      setRecordMessage("Public index unavailable and no matching saved results found.");
+    }
+  }
   useEffect(()=>{
     let active=true;
     fetch("./source-catalog.json",{credentials:"omit"}).then(async response=>{
@@ -65,7 +101,14 @@ function Workspace() {
         <p>{filtered.length} sources shown</p>
         <div className="workspace-scroll">{filtered.map(s=><article key={s.id} className="source-card"><h4>{s.name}</h4><p>{s.category} · {s.attribution}</p><p>{health[s.name]==="reachable"?"Responded at last check":health[s.name]==="unavailable"?"Unavailable at last check":"Status not verified"}</p><a href={s.endpoint} target="_blank" rel="noopener noreferrer">Original source</a></article>)}</div>
       </section>
-      <section aria-labelledby="desk-records"><h3 id="desk-records">Saved public intelligence</h3><p>Local results may be up to 24 hours old. Verify original sources before acting.</p>
+      <section aria-labelledby="desk-records"><h3 id="desk-records">Public record discovery</h3>
+        <form onSubmit={search} role="search" aria-label="Native public record search">
+          <label htmlFor="desk-record-query">Search public records</label>
+          <div className="record-controls"><input id="desk-record-query" type="search" maxLength={160} value={query} onChange={e=>setQuery(e.target.value)} placeholder="Agency, document or identifier" required/><button type="submit" disabled={recordState==="loading"}>Search</button></div>
+        </form>
+        <p role="status" aria-live="polite">{recordMessage}</p>
+        {records.length>0&&<div className="workspace-scroll" aria-label="Record search results">{records.map((r,i)=><article className="source-card" key={r.sourceUrl+i}><h4><a href={r.sourceUrl} target="_blank" rel="noopener noreferrer">{r.title}</a></h4><p>{r.agency||"Public record"}{r.kind?" · "+r.kind:""}</p></article>)}</div>}
+        <h4>Saved public intelligence</h4><p>Local results may be up to 24 hours old. Verify original sources before acting.</p>
         {saved.length===0?<p>No recent saved searches. Use Public records to search and save results.</p>:<div className="workspace-scroll">{saved.map(s=><article className="source-card" key={s.query}><h4>{s.query}</h4><p>{s.records.length} public records · Saved {new Date(s.savedAt).toLocaleString()}</p>{s.records.slice(0,3).map((r,i)=><p key={i}>{allowed(r.sourceUrl)?<a href={r.sourceUrl} target="_blank" rel="noopener noreferrer">{r.title}</a>:r.title}</p>)}</article>)}</div>}
       </section>
     </div>

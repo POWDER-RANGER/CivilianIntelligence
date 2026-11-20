@@ -15,6 +15,15 @@ try{
  await page.getByRole("group",{name:"Workspace metrics"}).getByText("Bundled public sources").waitFor();
  await page.getByLabel("Filter sources").fill("nonexistent source query");
  await page.getByText("0 sources shown").waitFor();
+ await page.route("https://civintelligence.onrender.com/api/civint/records/search**",route=>route.fulfill({status:200,contentType:"application/json",headers:{"access-control-allow-origin":"*"},body:JSON.stringify({results:[{title:"Verified public disclosure",sourceUrl:"https://example.gov/disclosure",agency:"Public agency"}]})}));
+ await page.getByRole("searchbox",{name:"Search public records"}).last().fill("disclosure");
+ await page.getByRole("search",{name:"Native public record search"}).getByRole("button",{name:"Search"}).click();
+ await page.getByRole("link",{name:"Verified public disclosure"}).waitFor();
+ await page.getByText("1 live records.",{exact:false}).waitFor();
+ await page.unroute("https://civintelligence.onrender.com/api/civint/records/search**");
+ await page.route("https://civintelligence.onrender.com/api/civint/records/search**",route=>route.abort());
+ await page.getByRole("search",{name:"Native public record search"}).getByRole("button",{name:"Search"}).click();
+ await page.getByText("Offline fallback:",{exact:false}).waitFor();
  await page.context().setOffline(true);
  await page.getByText("Offline mode. Local sources and saved searches remain accessible.").waitFor();
  if(errors.length)throw Error("Browser exceptions: "+errors.join("; "));
