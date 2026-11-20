@@ -481,3 +481,18 @@ test("compareToBaseline rejects inherited viewport names as missing baselines", 
   assert.ok(result.reasons.some((reason) => reason.includes("__proto__: no baseline data")));
   assert.ok(result.reasons.some((reason) => reason.includes("constructor: no baseline data")));
 });
+
+
+test("baseline comparison rejects malformed body text lengths on either side", () => {
+  for (const value of [undefined, null, -1, 1.5, "100", NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
+    for (const side of ["current", "baseline"]) {
+      const current = verdict();
+      const baseline = verdict();
+      const target = side === "current" ? current : baseline;
+      target.viewports.desktop.bodyTextLen = value;
+      const result = compareToBaseline(current, baseline);
+      assert.equal(result.divergesFromBaseline, true, `${side}: ${String(value)}`);
+      assert.match(result.reasons.join(";"), new RegExp(`desktop: malformed ${side} body text length`));
+    }
+  }
+});
