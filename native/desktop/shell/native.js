@@ -8,6 +8,8 @@ const SECTIONS = Object.freeze({
 });
 const byId = (id) => document.getElementById(id);
 let catalog = [];
+let healthBySource = new Map();
+let healthRequest;
 function renderSources() {
   const list = byId("source-list");
   list.replaceChildren();
@@ -26,6 +28,13 @@ function renderSources() {
     link.rel = "noopener noreferrer";
     link.textContent = "Open original source";
     link.setAttribute("aria-label", "Open " + source.name + " in external browser");
+    const health = healthBySource.get(source.name);
+    if (health) {
+      const status = document.createElement("p");
+      status.className = "source-health";
+      status.textContent = health === "reachable" ? "Source responded at last check" : "Source did not respond at last check";
+      article.append(status);
+    }
     article.append(heading, detail, link);
     list.append(article);
   }
@@ -146,3 +155,41 @@ async function searchRecords(event) {
   }
 }
 byId("record-form").addEventListener("submit", searchRecords);
+
+
+// Optional read-only server-side source checks. No keys or cookies leave the device.
+// A failed check never erases the independently bundled source directory.
+async function refreshSourceHealth() {
+  if (healthRequest) healthRequest.abort();
+  const controller = new AbortController();
+  healthRequest = controller;
+  const timeout = setTimeout(() => controller.abort(), 12000);
+  byId("source-refresh").disabled = true;
+  byId("source-health-status").textContent = "Checking live source availability…";
+  try {
+    const response = await fetch(ORIGIN + "/api/civint/sources", {
+      method: "GET", mode: "cors", credentials: "omit", cache: "no-store",
+      headers: { Accept: "application/json" }, signal: controller.signal
+    });
+    if (!response.ok) throw new Error("Source status HTTP " + response.status);
+    const data = await response.json();
+    if (!Array.isArray(data.sources) || data.sources.length > 200) throw new Error("Invalid source status response");
+    if (healthRequest !== controller) return;
+    const next = new Map();
+    for (const entry of data.sources) {
+      if (!entry || !entry.source || typeof entry.source.name !== "string") continue;
+      if (entry.state !== "reachable" && entry.state !== "unavailable") continue;
+      next.set(entry.source.name, entry.state);
+    }
+    healthBySource = next;
+    renderSources();
+    byId("source-health-status").textContent = next.size + " sources checked by the server. A failed probe does not establish permanent unavailability.";
+  } catch {
+    if (healthRequest !== controller) return;
+    byId("source-health-status").textContent = "Live status unavailable. The bundled source directory remains accessible.";
+  } finally {
+    clearTimeout(timeout);
+    if (healthRequest === controller) byId("source-refresh").disabled = false;
+  }
+}
+byId("source-refresh").addEventListener("click", refreshSourceHealth);
