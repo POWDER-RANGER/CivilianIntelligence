@@ -100,6 +100,17 @@ export function compareToBaseline(current, baseline) {
     if (cur.horizontalOverflow && !base.horizontalOverflow) {
       reasons.push(`${name}: horizontal overflow appeared`);
     }
+    for (const field of ["consoleErrors", "pageErrors"]) {
+      if (!Array.isArray(cur[field])) {
+        reasons.push(`${name}: malformed current ${field} collection`);
+      }
+      if (!Array.isArray(base[field])) {
+        reasons.push(`${name}: malformed baseline ${field} collection`);
+      }
+    }
+    if (!["consoleErrors", "pageErrors"].every((field) => Array.isArray(cur[field]) && Array.isArray(base[field]))) {
+      continue;
+    }
     const baseErrs = (base.consoleErrors?.length ?? 0) + (base.pageErrors?.length ?? 0);
     const curErrs = (cur.consoleErrors?.length ?? 0) + (cur.pageErrors?.length ?? 0);
     if (curErrs > 0 && baseErrs === 0) {

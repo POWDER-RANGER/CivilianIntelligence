@@ -502,3 +502,16 @@ test("compareToBaseline rejects malformed baseline viewport containers", () => {
     assert.match(result.reasons.join(";"), /baseline verdict has malformed viewport data/);
   }
 });
+
+test("baseline comparison rejects malformed error collections on either side", () => {
+  for (const field of ["consoleErrors", "pageErrors"]) {
+    for (const bad of [undefined, null, "", "error", 0, {}, { length: 0 }]) {
+      const current = compareToBaseline(verdict({ [field]: bad }), verdict());
+      assert.equal(current.divergesFromBaseline, true);
+      assert.match(current.reasons.join(";"), new RegExp(`desktop: malformed current ${field} collection`));
+      const baseline = compareToBaseline(verdict(), verdict({ [field]: bad }));
+      assert.equal(baseline.divergesFromBaseline, true);
+      assert.match(baseline.reasons.join(";"), new RegExp(`desktop: malformed baseline ${field} collection`));
+    }
+  }
+});
