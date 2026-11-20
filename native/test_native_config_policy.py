@@ -20,6 +20,26 @@ class NativeConfigPolicyTests(unittest.TestCase):
                 m["server"]["url"] = url
                 validate(m, DESKTOP)
 
+    def test_rejects_ambiguous_authorities_on_both_platforms(self):
+        urls = (
+            "https://civintelligence.onrender.com\\@evil.example/",
+            "https://civintelligence.onrender.com/%2f",
+            "https://civintelligence.onrender.com/#fragment",
+            "https://civintelligence.onrender.com/?q=x",
+            "https://civintelligence.onrender.com:invalid/",
+            "https://[invalid/",
+            "https://civintelligence.onrender.com/é",
+        )
+        for url in urls:
+            for platform in ("mobile", "desktop"):
+                with self.subTest(url=url, platform=platform), self.assertRaises(ValueError):
+                    m, t = copy.deepcopy(MOBILE), copy.deepcopy(DESKTOP)
+                    if platform == "mobile":
+                        m["server"]["url"] = url
+                    else:
+                        t["app"]["windows"][0]["url"] = url
+                    validate(m, t)
+
     def test_rejects_cleartext_and_ipc(self):
         m = copy.deepcopy(MOBILE)
         m["server"]["cleartext"] = True

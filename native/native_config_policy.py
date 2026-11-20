@@ -15,7 +15,14 @@ def validate(mobile: dict, desktop: dict) -> None:
     for label, url in (("mobile", mobile_url), ("desktop", desktop_url)):
         if not isinstance(url, str) or any(ord(c) < 33 for c in url):
             raise ValueError(f"{label}: invalid remote URL")
-        parts = urlsplit(url)
+        # Reject parser ambiguities before checking the allowlisted origin.
+        # Browsers may normalize backslashes and percent-encoded authority bytes.
+        if any(c in url for c in ("\\", "%", "#", "?")) or not url.isascii():
+            raise ValueError(f"{label}: ambiguous remote URL")
+        try:
+            parts = urlsplit(url)
+        except ValueError as exc:
+            raise ValueError(f"{label}: malformed remote URL") from exc
         if (parts.scheme != "https" or parts.hostname != HOST or parts.username
                 or parts.password or parts.port is not None or parts.query or parts.fragment
                 or parts.path not in ("", "/")):
