@@ -32,6 +32,14 @@
 <a id="open-web" class="action" href="https://civintelligence.onrender.com/" target="_blank" rel="noopener noreferrer">Open full web workspace in browser</a>
 <p class="fine">This native interface runs from packaged files. Live intelligence features still require secure API integration. Authentication and privileged native access are not enabled.</p>
 </section>
+<section class="panel" id="sources-panel" aria-labelledby="sources-heading" hidden>
+<h2 id="sources-heading">Public source directory</h2>
+<p class="fine">Source definitions are bundled from the project's public source registry. Availability is not guaranteed and source links open externally.</p>
+<label for="source-search">Filter public sources</label>
+<input id="source-search" type="search" placeholder="Search by name, agency or category" autocomplete="off">
+<p id="source-count" role="status" aria-live="polite">Loading local catalog</p>
+<div id="source-list" class="source-list"></div>
+</section>
 </main></div>
 <footer>Locally bundled interface · Prototype · No offline intelligence data is implied</footer>
 </body></html>

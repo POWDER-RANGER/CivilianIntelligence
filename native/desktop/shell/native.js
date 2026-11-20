@@ -7,6 +7,44 @@ const SECTIONS = Object.freeze({
   sources: ["Sources", "Evidence provenance", "Browse the public information sources powering CIVWATCH.", "/sources"]
 });
 const byId = (id) => document.getElementById(id);
+let catalog = [];
+function renderSources() {
+  const list = byId("source-list");
+  list.replaceChildren();
+  const query = byId("source-search").value.trim().toLowerCase();
+  const matches = catalog.filter(s => [s.name, s.category, s.attribution, s.nativeSurface].some(v => v.toLowerCase().includes(query)));
+  for (const source of matches) {
+    const article = document.createElement("article");
+    article.className = "source-card";
+    const heading = document.createElement("h3");
+    heading.textContent = source.name;
+    const detail = document.createElement("p");
+    detail.textContent = source.category + " · " + source.attribution + " · " + source.cadence;
+    const link = document.createElement("a");
+    link.href = source.endpoint;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "Open original source";
+    link.setAttribute("aria-label", "Open " + source.name + " in external browser");
+    article.append(heading, detail, link);
+    list.append(article);
+  }
+  byId("source-count").textContent = matches.length + " of " + catalog.length + " catalogued sources";
+}
+async function loadCatalog() {
+  try {
+    const response = await fetch("./source-catalog.json", {cache: "no-store", credentials: "omit"});
+    if (!response.ok) throw new Error("Catalog HTTP " + response.status);
+    const data = await response.json();
+    if (data.schema !== 1 || !Array.isArray(data.sources)) throw new Error("Invalid catalog");
+    catalog = data.sources.filter(s => typeof s.name === "string" && typeof s.category === "string" &&
+      typeof s.attribution === "string" && typeof s.cadence === "string" && typeof s.nativeSurface === "string" &&
+      typeof s.endpoint === "string" && (() => { try { const u = new URL(s.endpoint); return u.protocol === "https:" && !u.username && !u.password; } catch { return false; } })());
+    renderSources();
+  } catch {
+    byId("source-count").textContent = "Bundled source catalog unavailable";
+  }
+}
 function render() {
   const key = location.hash.slice(1);
   const selected = Object.hasOwn(SECTIONS, key) ? key : "watchtower";
@@ -15,6 +53,7 @@ function render() {
   byId("description").textContent = description;
   byId("workspace-detail").textContent = detail;
   byId("open-web").href = ORIGIN + path;
+  byId("sources-panel").hidden = selected !== "sources";
   for (const link of document.querySelectorAll("[data-route]")) {
     if (link.dataset.route === selected) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
@@ -25,8 +64,6 @@ async function checkConnection() {
   const timeout = setTimeout(() => controller.abort(), 6500);
   byId("connection-message").textContent = "Checking service availability…";
   try {
-    // A no-credentials probe only. The server must explicitly authorize this
-    // origin via CORS before the local WebView can access its JSON APIs.
     const response = await fetch(ORIGIN + "/robots.txt", {
       method: "GET", mode: "cors", credentials: "omit", cache: "no-store", signal: controller.signal
     });
@@ -42,5 +79,7 @@ window.addEventListener("hashchange", render);
 window.addEventListener("online", checkConnection);
 window.addEventListener("offline", checkConnection);
 byId("retry").addEventListener("click", checkConnection);
+byId("source-search").addEventListener("input", renderSources);
 render();
+loadCatalog();
 checkConnection();
