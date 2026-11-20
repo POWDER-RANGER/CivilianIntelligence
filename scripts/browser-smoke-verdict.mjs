@@ -116,8 +116,16 @@ export function compareToBaseline(current, baseline) {
     if (curErrs > 0 && baseErrs === 0) {
       reasons.push(`${name}: console/page errors appeared (${curErrs})`);
     }
-    const baseLen = base.bodyTextLen ?? 0;
-    const curLen = cur.bodyTextLen ?? 0;
+    if (!Number.isSafeInteger(cur.bodyTextLen) || cur.bodyTextLen < 0) {
+      reasons.push(`${name}: malformed current body text length`);
+      continue;
+    }
+    if (!Number.isSafeInteger(base.bodyTextLen) || base.bodyTextLen < 0) {
+      reasons.push(`${name}: malformed baseline body text length`);
+      continue;
+    }
+    const baseLen = base.bodyTextLen;
+    const curLen = cur.bodyTextLen;
     if (baseLen > 0 && curLen < baseLen * COLLAPSE_RATIO) {
       reasons.push(`${name}: body text collapsed (${baseLen} -> ${curLen} chars)`);
     } else if (cur.bodyTextHash !== base.bodyTextHash) {
