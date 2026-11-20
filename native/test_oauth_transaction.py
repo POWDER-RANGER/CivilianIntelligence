@@ -71,6 +71,22 @@ class TransactionTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 OAuthTransactions(max_pending=limit)
 
+    def test_reject_unsafe_native_redirects(self):
+        args = ("https://auth.example.com/authorize", "id")
+        for redirect in ("http://attacker.example/callback", "javascript:alert(1)",
+                         "data:text/plain,secret", "file:///tmp/code", "relative/path",
+                         "https://user@trusted.example/callback", "app:/callback?state=x",
+                         "app:/callback#fragment", "app:/callback\nmalformed"):
+            with self.subTest(redirect=redirect), self.assertRaises(ValueError):
+                self.store.begin(*args, redirect, "openid")
+
+    def test_accept_loopback_and_claimed_https_redirects(self):
+        args = ("https://auth.example.com/authorize", "id")
+        for redirect in ("http://127.0.0.1:8765/callback", "http://[::1]:8765/callback",
+                         "https://app.example.com/oauth/callback", "app:/callback"):
+            with self.subTest(redirect=redirect):
+                self.store.begin(*args, redirect, "openid")
+
     def test_no_transaction_on_bad_endpoint(self):
         with self.assertRaises(ValueError):
             self.store.begin("https://example.com/a?injected=1", "id", "app:/callback", "openid")

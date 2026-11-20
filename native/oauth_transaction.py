@@ -50,6 +50,21 @@ class OAuthTransactions:
             raise ValueError("authorization endpoint must be a clean HTTPS URL")
         if not client_id or not redirect_uri:
             raise ValueError("client ID and redirect URI required")
+        # Native redirects must never send authorization codes to arbitrary HTTP hosts
+        # or executable/non-redirect URI schemes.
+        try:
+            redirect = urlsplit(redirect_uri)
+        except ValueError as exc:
+            raise ValueError("invalid native redirect URI") from exc
+        if (not redirect.scheme or redirect.query or redirect.fragment or
+                redirect.username is not None or redirect.password is not None or
+                any(ord(c) < 33 or ord(c) == 127 for c in redirect_uri) or
+                redirect.scheme in ("javascript", "data", "file")):
+            raise ValueError("unsafe native redirect URI")
+        if redirect.scheme == "http" and redirect.hostname not in ("127.0.0.1", "[::1]", "::1", "localhost"):
+            raise ValueError("non-loopback HTTP redirect URI")
+        if redirect.scheme in ("http", "https") and (not redirect.hostname or not redirect.netloc):
+            raise ValueError("invalid web redirect URI")
         state = token_urlsafe(32)
         verifier = token_urlsafe(64)
         challenge = _b64(sha256(verifier.encode("ascii")).digest())
