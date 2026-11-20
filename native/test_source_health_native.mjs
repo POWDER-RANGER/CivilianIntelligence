@@ -1,24 +1,24 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-const js = readFileSync(new URL("./desktop/shell/native.js", import.meta.url), "utf8");
+import {readFileSync} from "node:fs";
+const react = readFileSync(new URL("./desktop/react-workspace.tsx", import.meta.url), "utf8");
 const html = readFileSync(new URL("./desktop/shell/index.html", import.meta.url), "utf8");
 const api = readFileSync(new URL("../src/routes/api/civint/sources.ts", import.meta.url), "utf8");
 
-test("local directory remains available independently of live health checks", () => {
-  assert.match(js, /fetch\("\.\/source-catalog\.json"/);
-  assert.match(js, /if \(health\) \{/);
-  assert.match(js, /healthBySource = next/);
-  assert.match(js, /The bundled source directory remains accessible/);
-  assert.match(html, /id="source-refresh"/);
-  assert.match(html, /id="source-health-status"/);
+test("bundled React source directory survives source health failure", () => {
+  assert.match(react, /fetch\("\.\/source-catalog\.json"/);
+  assert.match(react, /setHealthStatus\("error"\)/);
+  assert.match(react, /Local sources remain accessible|local sources remain accessible/);
+  assert.match(react, /filtered\.map\(s=>/);
+  assert.match(html, /id="react-workspace"/);
+  assert.doesNotMatch(html, /id="sources-panel"/);
 });
-test("public source health requests omit credentials and remain read-only", () => {
-  const functionBody = js.slice(js.indexOf("async function refreshSourceHealth"));
-  assert.match(functionBody, /method: "GET"/);
-  assert.match(functionBody, /credentials: "omit"/);
-  assert.match(functionBody, /signal: controller\.signal/);
-  assert.match(functionBody, /data\.sources\.length > 200/);
+test("React source health uses bounded unauthenticated GET", () => {
+  const health = react.slice(react.indexOf('fetch(API+"/api/civint/sources"'), react.indexOf('const filtered=useMemo'));
+  assert.match(health, /method:"GET"/);
+  assert.match(health, /credentials:"omit"/);
+  assert.match(health, /signal:abort\.signal/);
+  assert.match(health, /data\.sources\.length>200/);
   assert.match(api, /"Access-Control-Allow-Origin": "\*"/);
-  assert.doesNotMatch(functionBody, /Authorization|localStorage|sessionStorage/);
+  assert.doesNotMatch(health, /Authorization|localStorage|sessionStorage/);
 });

@@ -16,7 +16,7 @@ function render() {
   byId("description").textContent = description;
   byId("workspace-detail").textContent = detail;
   byId("open-web").href = ORIGIN + path;
-  byId("react-workspace").hidden = !["watchtower", "records", "sources"].includes(selected);
+  byId("react-workspace").hidden = !["watchtower", "records", "sources", "oversight", "globe"].includes(selected);
   window.dispatchEvent(new CustomEvent("civint:route", {detail: selected}));
   for (const link of document.querySelectorAll("[data-route]")) {
     if (link.dataset.route === selected) link.setAttribute("aria-current", "page");

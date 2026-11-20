@@ -33,6 +33,7 @@ try{
  await page.getByRole("link",{name:"Sources",exact:true}).click();
  await page.getByRole("heading",{name:"Public source network",level:2}).waitFor();
  if(await page.locator("#sources-panel").count())throw Error("Legacy source UI remains");
+ await page.getByRole("link",{name:"Oversight",exact:true}).click(); await page.getByRole("heading",{name:"Public oversight desk"}).waitFor(); await page.getByRole("link",{name:"Browse verified source catalog"}).waitFor(); await page.getByRole("link",{name:"Global view",exact:true}).click(); await page.getByRole("heading",{name:"Geographic intelligence",level:2}).waitFor(); await page.getByRole("link",{name:"Open web workspace"}).waitFor();
  await page.getByRole("link",{name:"Watchtower",exact:true}).click();
  await page.getByRole("heading",{name:"Operational overview"}).waitFor();
  if(errors.length)throw Error("Browser exceptions: "+errors.join("; "));

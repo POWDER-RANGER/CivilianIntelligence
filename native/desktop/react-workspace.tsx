@@ -82,7 +82,7 @@ function Workspace() {
     const abort=new AbortController();
     const timeout=setTimeout(()=>abort.abort(),10000);
     setHealthStatus("loading");
-    fetch(API+"/api/civint/sources",{credentials:"omit",cache:"no-store",signal:abort.signal,headers:{Accept:"application/json"}})
+    fetch(API+"/api/civint/sources",{method:"GET",credentials:"omit",cache:"no-store",signal:abort.signal,headers:{Accept:"application/json"}})
       .then(async r=>{if(!r.ok)throw Error("source health");return r.json();})
       .then(data=>{
         if(abort.signal.aborted)return;
@@ -96,13 +96,22 @@ function Workspace() {
   },[online,refresh]);
   const filtered=useMemo(()=>sources.filter(s=>[s.name,s.category,s.attribution].some(v=>v.toLowerCase().includes(filter.trim().toLowerCase()))),[sources,filter]);
   return <section aria-label="Native intelligence overview" className="react-workspace">
-    <div className="workspace-heading"><div><p className="eyebrow">LOCAL INTELLIGENCE DESK</p><h2>{route==="records"?"Public record discovery":route==="sources"?"Public source network":"Operational overview"}</h2></div><button type="button" onClick={()=>setRefresh(v=>v+1)}>Refresh intelligence</button></div>
+    <div className="workspace-heading"><div><p className="eyebrow">LOCAL INTELLIGENCE DESK</p><h2>{route==="records"?"Public record discovery":route==="sources"?"Public source network":route==="oversight"?"Public oversight desk":route==="globe"?"Geographic intelligence":"Operational overview"}</h2></div><button type="button" onClick={()=>setRefresh(v=>v+1)}>Refresh intelligence</button></div>
     {route==="watchtower"&&<div className="workspace-metrics" role="group" aria-label="Workspace metrics">
       <div><strong>{sources.length}</strong><span>Bundled public sources</span></div>
       <div><strong>{saved.length}</strong><span>Saved record searches</span></div>
       <div><strong>{online?"Online":"Offline"}</strong><span>Device connectivity</span></div>
     </div>}
     <p role="status" aria-live="polite">{status==="error"?"Bundled source catalog unavailable.":healthStatus==="loading"?"Checking public source health…":healthStatus==="error"?"Live source status unavailable; local sources remain accessible.":!online?"Offline mode. Local sources and saved searches remain accessible.":"Local workspace ready."}</p>
+    {(route==="oversight"||route==="globe")&&<section className="workspace-feature" aria-label={route==="oversight"?"Oversight resources":"Geographic intelligence resources"}>
+      <h3>{route==="oversight"?"Accountability and oversight":"Geographic intelligence"}</h3>
+      <p>{route==="oversight"?"Explore accountable public-source reporting with verifiable attribution.":"Geographic context is available through the public web workspace. Offline access remains limited to the bundled source index and saved public records."}</p>
+      <div className="workspace-feature-grid">
+        <article className="source-card"><h4>Public evidence network</h4><p>{sources.length} locally bundled sources. Open original documents directly.</p><a href="#sources">Browse verified source catalog</a></article>
+        <article className="source-card"><h4>Public record discovery</h4><p>Search the public index and recover recently saved results offline.</p><a href="#records">Open record search</a></article>
+        <article className="source-card"><h4>{route==="oversight"?"Oversight workspace":"Interactive geographic workspace"}</h4><p>Full interactive functionality requires the web service. No offline map or location tracking is implied.</p><a href={API+(route==="oversight"?"/oversight":"/globe")} target="_blank" rel="noopener noreferrer">Open web workspace</a></article>
+      </div>
+    </section>}
     <div className="workspace-columns">
       {(route==="watchtower"||route==="sources")&&<section aria-labelledby="desk-sources"><h3 id="desk-sources">Public source network</h3>
         <label htmlFor="desk-filter">Filter sources</label><input id="desk-filter" type="search" value={filter} onChange={e=>setFilter(e.target.value)} placeholder="Agency or category" />
