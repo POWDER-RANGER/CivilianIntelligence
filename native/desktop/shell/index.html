@@ -32,6 +32,16 @@
 <a id="open-web" class="action" href="https://civintelligence.onrender.com/" target="_blank" rel="noopener noreferrer">Open full web workspace in browser</a>
 <p class="fine">This native interface runs from packaged files. Live intelligence features still require secure API integration. Authentication and privileged native access are not enabled.</p>
 </section>
+<section class="panel" id="records-panel" aria-labelledby="records-heading" hidden>
+<h2 id="records-heading">Public records search</h2>
+<p class="fine">Live public records from the CIVINTELLIGENCE index. Requires connectivity; no records are stored on this device.</p>
+<form id="record-form" role="search">
+<label for="record-query">Search public records</label>
+<div class="record-controls"><input id="record-query" type="search" maxlength="160" placeholder="Agency, document or identifier" autocomplete="off"><button type="submit">Search</button></div>
+</form>
+<p id="record-status" role="status" aria-live="polite">Enter a query to search the public index.</p>
+<div id="record-list" class="source-list"></div>
+</section>
 <section class="panel" id="sources-panel" aria-labelledby="sources-heading" hidden>
 <h2 id="sources-heading">Public source directory</h2>
 <p class="fine">Source definitions are bundled from the project's public source registry. Availability is not guaranteed and source links open externally.</p>

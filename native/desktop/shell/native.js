@@ -54,6 +54,7 @@ function render() {
   byId("workspace-detail").textContent = detail;
   byId("open-web").href = ORIGIN + path;
   byId("sources-panel").hidden = selected !== "sources";
+  byId("records-panel").hidden = selected !== "records";
   for (const link of document.querySelectorAll("[data-route]")) {
     if (link.dataset.route === selected) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
@@ -83,3 +84,65 @@ byId("source-search").addEventListener("input", renderSources);
 render();
 loadCatalog();
 checkConnection();
+
+// Public read-only API; never send cookies, bearer tokens, or local credentials.
+let recordRequest;
+async function searchRecords(event) {
+  event.preventDefault();
+  if (recordRequest) recordRequest.abort();
+  const query = byId("record-query").value.trim();
+  const list = byId("record-list");
+  list.replaceChildren();
+  if (!query) {
+    byId("record-status").textContent = "Enter a query to search the public index.";
+    return;
+  }
+  recordRequest = new AbortController();
+  const current = recordRequest;
+  const timeout = setTimeout(() => current.abort(), 10000);
+  byId("record-status").textContent = "Searching public records...";
+  try {
+    const url = new URL("/api/civint/records/search", ORIGIN);
+    url.searchParams.set("q", query.slice(0, 160));
+    url.searchParams.set("limit", "20");
+    const response = await fetch(url.href, {
+      method: "GET", mode: "cors", credentials: "omit", cache: "no-store",
+      headers: { Accept: "application/json" }, signal: current.signal
+    });
+    if (!response.ok) throw new Error("Public index HTTP " + response.status);
+    const data = await response.json();
+    if (data.state !== "available" || !Array.isArray(data.results)) throw new Error("Invalid index response");
+    if (current !== recordRequest) return;
+    const records = data.results.slice(0, 20);
+    for (const item of records) {
+      if (typeof item.title !== "string" || typeof item.sourceUrl !== "string") continue;
+      let url;
+      try {
+        url = new URL(item.sourceUrl);
+        if (url.protocol !== "https:" || url.username || url.password) continue;
+      } catch { continue; }
+      const article = document.createElement("article");
+      article.className = "source-card";
+      const title = document.createElement("h3");
+      title.textContent = item.title;
+      const meta = document.createElement("p");
+      meta.textContent = [item.agency, item.kind, item.publishedAt].filter(v => typeof v === "string" && v).join(" / ");
+      const link = document.createElement("a");
+      link.href = url.href;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "View original record";
+      article.append(title, meta, link);
+      list.append(article);
+    }
+    byId("record-status").textContent = list.childElementCount + " public records shown. Results are live, not cached.";
+  } catch (error) {
+    if (current !== recordRequest) return;
+    byId("record-status").textContent = navigator.onLine
+      ? "Public index unavailable or cross-origin access blocked. Retry later or open the web workspace."
+      : "Offline. Public record search requires a connection.";
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+byId("record-form").addEventListener("submit", searchRecords);
