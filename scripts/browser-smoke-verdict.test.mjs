@@ -481,3 +481,15 @@ test("compareToBaseline rejects inherited viewport names as missing baselines", 
   assert.ok(result.reasons.some((reason) => reason.includes("__proto__: no baseline data")));
   assert.ok(result.reasons.some((reason) => reason.includes("constructor: no baseline data")));
 });
+
+
+test("exitCodeFor rejects malformed error collections instead of silently passing", () => {
+  const clean = { status: 200, consoleErrors: [], pageErrors: [] };
+  assert.equal(exitCodeFor({ desktop: clean }), 0);
+  for (const key of ["consoleErrors", "pageErrors"]) {
+    for (const invalid of [undefined, null, "", "error", {}, 0, false]) {
+      assert.equal(exitCodeFor({ desktop: { ...clean, [key]: invalid } }), 1);
+    }
+  }
+  assert.equal(exitCodeFor({ desktop: { ...clean, consoleErrors: ["error"] } }), 2);
+});

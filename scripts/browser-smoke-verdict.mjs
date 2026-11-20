@@ -145,7 +145,8 @@ export function exitCodeFor(viewports) {
   const list = Object.values(viewports);
   if (list.length === 0) return 1;
   if (list.some((v) => !Number.isInteger(v?.status) || v.status < 200 || v.status >= 400)) return 1;
-  if (list.some((v) => (v.consoleErrors?.length ?? 0) > 0 || (v.pageErrors?.length ?? 0) > 0)) {
+  if (list.some((v) => !Array.isArray(v.consoleErrors) || !Array.isArray(v.pageErrors))) return 1;
+  if (list.some((v) => v.consoleErrors.length > 0 || v.pageErrors.length > 0)) {
     return 2;
   }
   return 0;
