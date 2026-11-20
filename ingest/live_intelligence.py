@@ -52,7 +52,9 @@ def normalize_usgs_feature(feature, fetched_at):
         return None
     identity = feature.get("id")
     properties = feature.get("properties")
-    if not isinstance(identity, str) or not identity.strip() or not isinstance(properties, dict):
+    if (not isinstance(identity, str) or not identity.strip()
+            or any(ord(char) < 32 or ord(char) == 127 for char in identity)
+            or not isinstance(properties, dict)):
         return None
     observed = _timestamp(properties.get("time"))
     if observed is None or observed > fetched_at + timedelta(minutes=15):
