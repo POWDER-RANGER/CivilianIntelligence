@@ -48,7 +48,7 @@ class ReleaseReadinessTests(unittest.TestCase):
         signed = dict.fromkeys(("android", "ios", "macos", "windows", "oauth_callbacks", "physical_devices"), True)
         self.mobile["server"] = {"cleartext": False}
         self.desktop["app"]["windows"] = [{"title": "CIVINTELLIGENCE"}]
-        for csp in ("", "default-src *", "default-src 'self'; script-src 'unsafe-eval'"):
+        for csp in ("", "default-src *", "default-src 'self'; script-src 'unsafe-eval'", "default-src 'self'; script-src 'unsafe-inline'"):
             with self.subTest(csp=csp):
                 self.desktop["app"]["security"]["csp"] = csp
                 self.assertTrue(any("content security policy" in issue for issue in assess(self.mobile, self.desktop, "<html>App</html>", signed)))

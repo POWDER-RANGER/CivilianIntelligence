@@ -23,7 +23,7 @@ def assess(mobile: dict, desktop: dict, shell_html: str, signing: dict | None = 
     csp = (desktop.get("app") or {}).get("security", {}).get("csp")
     if not isinstance(csp, str) or not csp.strip():
         issues.append("desktop: content security policy is unset")
-    elif "default-src 'self'" not in csp.lower() or "unsafe-eval" in csp.lower() or "*" in csp:
+    elif "default-src 'self'" not in csp.lower() or "unsafe-eval" in csp.lower() or "unsafe-inline" in csp.lower() or "*" in csp:
         issues.append("desktop: content security policy is overly permissive")
     signing = signing or {}
     for platform in ("android", "ios", "macos", "windows"):
