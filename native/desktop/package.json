@@ -4,17 +4,22 @@
   "version": "0.1.0",
   "scripts": {
     "desktop:dev": "tauri dev",
-    "desktop:build": "npm run native:catalog && tauri build",
-    "mobile:sync": "npm run native:catalog && cap sync",
+    "desktop:build": "npm run native:catalog && npm run native:react && tauri build",
+    "mobile:sync": "npm run native:catalog && npm run native:react && cap sync",
     "mobile:android": "cap open android",
     "mobile:ios": "cap open ios",
-    "native:catalog": "node build-source-catalog.mjs"
+    "native:catalog": "node build-source-catalog.mjs",
+    "native:react": "vite build --config vite.native.config.mjs"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.12.5",
+    "@capacitor/android": "^8.0.0",
     "@capacitor/cli": "^8.6.2",
     "@capacitor/core": "^8.0.0",
-    "@capacitor/android": "^8.0.0",
-    "@capacitor/ios": "^8.0.0"
+    "@capacitor/ios": "^8.0.0",
+    "@tauri-apps/cli": "^2.12.5",
+    "@vitejs/plugin-react": "^5.2.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "vite": "^8.3.8"
   }
 }

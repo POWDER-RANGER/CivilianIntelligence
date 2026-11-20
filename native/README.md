@@ -115,3 +115,11 @@ independent Cesium/Esri 3D global viewer rendered imagery successfully.
 This is a fallback, not an integrated offline globe. OAuth and offline
 operation remain unvalidated. Do not weaken `frame-ancestors` restrictions to
 force remote-origin embedding.
+
+## React intelligence overview (native milestone)
+
+The locally packaged Watchtower now mounts a React 19 intelligence overview from `native/desktop/react-workspace.tsx`, built with Vite into `shell/react-workspace.js`. This is an incremental React migration, **not** the full TanStack Start SSR application: its public source network is generated from the real source registry, its saved public-record intelligence is read from the existing bounded offline cache, and its read-only live source-health layer reconnects automatically when connectivity returns. It does not bundle backend code, credentials, or privileged IPC.
+
+Rebuild the React asset before desktop packaging or Capacitor synchronization (`npm run native:react`, included in `desktop:build` and `mobile:sync`). Browser smoke verification on the Dell: from repository root, `node native/desktop/workspace-smoke.mjs` (requires root development Playwright and installed Chromium). The smoke test checks actual React mount, source filtering, offline messaging, and uncaught browser errors. The test exposed a production-mode build issue (`process is not defined`), resolved by explicitly defining `process.env.NODE_ENV` during Vite bundling.
+
+The remaining TanStack route migration, OAuth PKCE callback integration, live authenticated APIs, device runtime tests, signing, and store distribution are not complete. The existing production release gate remains enforced.

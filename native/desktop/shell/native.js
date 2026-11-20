@@ -64,6 +64,7 @@ function render() {
   byId("workspace-detail").textContent = detail;
   byId("open-web").href = ORIGIN + path;
   byId("sources-panel").hidden = selected !== "sources";
+  byId("react-workspace").hidden = selected !== "watchtower";
   byId("records-panel").hidden = selected !== "records";
   for (const link of document.querySelectorAll("[data-route]")) {
     if (link.dataset.route === selected) link.setAttribute("aria-current", "page");
