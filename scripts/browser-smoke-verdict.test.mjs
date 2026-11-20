@@ -363,6 +363,14 @@ test("derivedPaths handles .png, .PNG, and extensionless inputs", () => {
   });
 });
 
+test("exitCodeFor: malformed body text length fails without a baseline", () => {
+  const clean = viewport();
+  assert.equal(exitCodeFor({ desktop: clean }), 0);
+  for (const invalid of [undefined, null, -1, 1.5, "10", NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
+    assert.equal(exitCodeFor({ desktop: { ...clean, bodyTextLen: invalid } }), 1);
+  }
+});
+
 test("exitCodeFor: clean run exits 0", () => {
   assert.equal(exitCodeFor(verdict().viewports), 0);
 });
@@ -484,7 +492,7 @@ test("compareToBaseline rejects inherited viewport names as missing baselines", 
 
 
 test("exitCodeFor rejects malformed error collections instead of silently passing", () => {
-  const clean = { status: 200, consoleErrors: [], pageErrors: [] };
+  const clean = { status: 200, bodyTextLen: 0, consoleErrors: [], pageErrors: [] };
   assert.equal(exitCodeFor({ desktop: clean }), 0);
   for (const key of ["consoleErrors", "pageErrors"]) {
     for (const invalid of [undefined, null, "", "error", {}, 0, false]) {
