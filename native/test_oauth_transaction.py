@@ -50,6 +50,19 @@ class TransactionTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.store.begin(endpoint, "id", "app:/callback", "openid")
 
+    def test_reject_ambiguous_authorization_endpoint_encodings(self):
+        for endpoint in (
+            "https://auth.example.com/a\n", " https://auth.example.com/a",
+            "https://auth.example.com\\@evil.example/a",
+            "https://auth.example.com:invalid/a",
+            "https://auth.example.com:99999/a",
+            "https://auth.example.com:0/a",
+            "https://auth.example.com/a%zz",
+            "https://[::1/a",
+        ):
+            with self.subTest(endpoint=endpoint), self.assertRaises(ValueError):
+                self.store.begin(endpoint, "id", "app:/callback", "openid")
+
     def test_pending_limit_and_recovery_after_consumption(self):
         store = OAuthTransactions(clock=lambda: self.now[0], max_pending=1)
         args = ("https://auth.example.com/authorize", "id", "app:/callback", "openid")

@@ -9,7 +9,8 @@ from base64 import urlsafe_b64encode
 from secrets import token_urlsafe
 from time import monotonic
 from threading import Lock
-from urllib.parse import urlencode, urlsplit, parse_qsl, urlunsplit
+from urllib.parse import urlencode, urlsplit, urlunsplit
+import re
 
 from oauth_callback import validate_callback, CallbackError
 
@@ -43,10 +44,21 @@ class OAuthTransactions:
 
     def begin(self, authorization_endpoint: str, client_id: str,
               redirect_uri: str, scope: str) -> tuple[str, str]:
-        endpoint = urlsplit(authorization_endpoint)
+        # Reject parser normalization, ambiguous authorities and malformed escapes
+        # before constructing a browser navigation URL.
+        if (not isinstance(authorization_endpoint, str) or
+                re.search(r"[\x00-\x20\x7f\\]", authorization_endpoint) or
+                re.search(r"%(?![0-9A-Fa-f]{2})", authorization_endpoint)):
+            raise ValueError("invalid authorization endpoint encoding")
+        try:
+            endpoint = urlsplit(authorization_endpoint)
+            endpoint_port = endpoint.port
+        except ValueError as exc:
+            raise ValueError("invalid authorization endpoint authority") from exc
         if (endpoint.scheme != "https" or not endpoint.hostname or
                 endpoint.username is not None or endpoint.password is not None or
-                endpoint.query or endpoint.fragment):
+                endpoint.query or endpoint.fragment or
+                endpoint_port == 0):
             raise ValueError("authorization endpoint must be a clean HTTPS URL")
         if not client_id or not redirect_uri:
             raise ValueError("client ID and redirect URI required")
