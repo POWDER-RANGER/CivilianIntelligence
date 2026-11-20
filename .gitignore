@@ -3,7 +3,10 @@ node_modules/
 .github_repo
 .env
 .env.*
-civint_data/civint.db
+civint_data/
+__pycache__/
+*.py[cod]
+.pytest_cache/
 *.osm.pbf
 .output/
 reticulum/.venv/

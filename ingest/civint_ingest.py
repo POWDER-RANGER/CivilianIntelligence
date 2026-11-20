@@ -2,11 +2,12 @@
 """CIVINT ingest: keyless sources -> SQLite (civint_data/civint.db) + dashboard-ready JSON.
 
   python civint_ingest.py nws                              active NWS alerts (IA, IL, MO)
+  python civint_ingest.py usgs                             official significant-day earthquakes
   python civint_ingest.py usaspending                      federal awards matching search terms
   python civint_ingest.py atlas                            Atlas of Surveillance public-record CSV
   python civint_ingest.py osm --pbf iowa-latest.osm.pbf    surveillance/ALPR/gunshot/camera points from OSM PBF
   python civint_ingest.py verify --chunks chunks.json      enforce the extraction-schema quote rules
-  python civint_ingest.py daily                            nws + usaspending (+ osm if CIVINT_PBF is set)
+  python civint_ingest.py daily                            nws + usgs + usaspending (+ osm if enabled)
 
 Install:  pip install requests osmium      (osmium only needed for the osm command)
 Config (env or a .env file next to this script's working dir):
@@ -26,12 +27,14 @@ import re
 import sqlite3
 import sys
 import time
+import tempfile
 import unicodedata
 from collections import Counter
 from datetime import date, datetime, timezone
 from pathlib import Path
 
 import requests
+from live_intelligence import USGS_SIGNIFICANT_DAY, normalize_usgs_feed
 
 OUT = Path(os.environ.get("CIVINT_OUT", "civint_data"))
 USA_URL = "https://api.usaspending.gov/api/v2/search/spending_by_award/"
@@ -99,6 +102,29 @@ def nws(states=("IA", "IL", "MO")):
                          p.get("onset") or p.get("effective"), p.get("ends") or p.get("expires"),
                          p.get("headline"), now()))
     print("nws: alerts ->", export(con, "alerts", "alerts.json"))
+
+
+# ---------------------------------------------------------------- USGS earthquakes
+def usgs():
+    """Store an atomic, jurisdiction-aware snapshot of the official USGS day feed."""
+    response = requests.get(USGS_SIGNIFICANT_DAY,
+                            headers={"Accept": "application/geo+json"}, timeout=30)
+    response.raise_for_status()
+    events = normalize_usgs_feed(response.json())
+    OUT.mkdir(parents=True, exist_ok=True)
+    path = OUT / "earthquakes.json"
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=OUT,
+                                         prefix=".earthquakes-", suffix=".tmp",
+                                         delete=False) as stream:
+            temporary = Path(stream.name)
+            json.dump(events, stream, indent=1)
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+    print("usgs: earthquakes ->", len(events))
 
 
 # ---------------------------------------------------------------- USAspending
@@ -508,6 +534,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("nws"); p.add_argument("--states", nargs="+", default=["IA", "IL", "MO"])
+    sub.add_parser("usgs")
     p = sub.add_parser("usaspending")
     p.add_argument("--terms", nargs="+", default=["Flock Safety", "Flock Group", "license plate reader"])
     p.add_argument("--start", default="2021-10-01"); p.add_argument("--end"); p.add_argument("--max-pages", type=int, default=5)
@@ -519,6 +546,8 @@ def main():
     a = ap.parse_args()
     if a.cmd == "nws":
         nws(a.states)
+    elif a.cmd == "usgs":
+        usgs()
     elif a.cmd == "usaspending":
         usaspending(a.terms, a.start, a.end, a.max_pages)
     elif a.cmd == "osm":
@@ -529,7 +558,7 @@ def main():
         verify(a.chunks)
     else:
         failed = []
-        for step in (nws, usaspending):
+        for step in (nws, usgs, usaspending):
             try:
                 step()
             except Exception as ex:  # one failing source must not stop the rest
