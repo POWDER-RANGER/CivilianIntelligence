@@ -493,3 +493,12 @@ test("exitCodeFor rejects malformed error collections instead of silently passin
   }
   assert.equal(exitCodeFor({ desktop: { ...clean, consoleErrors: ["error"] } }), 2);
 });
+
+test("compareToBaseline rejects malformed baseline viewport containers", () => {
+  const current = verdict();
+  for (const viewports of [false, 123, "invalid", []]) {
+    const result = compareToBaseline(current, { viewports });
+    assert.equal(result.divergesFromBaseline, true);
+    assert.match(result.reasons.join(";"), /baseline verdict has malformed viewport data/);
+  }
+});

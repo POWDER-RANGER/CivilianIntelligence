@@ -62,6 +62,9 @@ export function compareToBaseline(current, baseline) {
     };
   }
   const reasons = [];
+  if ((baseline?.viewports != null && typeof baseline?.viewports !== "object") || Array.isArray(baseline?.viewports)) {
+    return { divergesFromBaseline: true, reasons: ["baseline verdict has malformed viewport data"] };
+  }
   const baseViewports = baseline?.viewports ?? {};
   for (const name of Object.keys(baseViewports)) {
     if (!Object.hasOwn(current.viewports, name)) {
@@ -133,7 +136,7 @@ export function baselineComparison(current, rawText) {
     Array.isArray(baseline) ||
     baseline.viewports === null ||
     typeof baseline.viewports !== "object" ||
-    Array.isArray(baseline.viewports) ||
+    Array.isArray(baseline?.viewports) ||
     Object.keys(baseline.viewports).length === 0
   ) {
     return { divergesFromBaseline: true, reasons: ["baseline unreadable: not a verdict object"] };
