@@ -183,3 +183,9 @@ export function exitCodeFor(viewports) {
   }
   return 0;
 }
+
+export function parseBrowserSmokeTimeout(raw = "45000") {
+  const value = String(raw);
+  const parsed = Number(value);
+  return /^[1-9][0-9]*$/.test(value) && Number.isSafeInteger(parsed) ? parsed : null;
+}

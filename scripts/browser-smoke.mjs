@@ -18,6 +18,7 @@ import {
   normalizeBodyText,
   normalizedBodyTextHash,
   parseSmokeArgs,
+  parseBrowserSmokeTimeout,
 } from "./browser-smoke-verdict.mjs";
 
 const args = parseSmokeArgs(process.argv.slice(2), process.env);
@@ -59,8 +60,8 @@ if (baselineRequested) {
   }
 }
 
-const timeoutMs = Number(process.env.BROWSER_SMOKE_TIMEOUT_MS ?? 45000);
-if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) {
+const timeoutMs = parseBrowserSmokeTimeout(process.env.BROWSER_SMOKE_TIMEOUT_MS);
+if (timeoutMs === null) {
   console.error("BROWSER_SMOKE_TIMEOUT_MS must be a positive safe integer in milliseconds");
   process.exit(1);
 }
