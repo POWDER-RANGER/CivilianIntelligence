@@ -21,7 +21,7 @@ export function parseSmokeArgs(argv, env = {}) {
     const arg = argv[i];
     if (arg === "--baseline") {
       const value = argv[++i];
-      if (!value) return { error: "--baseline requires a path to a prior verdict JSON" };
+      if (!value || value.startsWith("--")) return { error: "--baseline requires a path to a prior verdict JSON" };
       baseline = value;
     } else if (arg.startsWith("--baseline=")) {
       const value = arg.slice("--baseline=".length);

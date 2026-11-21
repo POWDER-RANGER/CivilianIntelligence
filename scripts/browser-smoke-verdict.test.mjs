@@ -553,3 +553,4 @@ test("unbaselined viewport retains current evidence failures", () => {
   assert.ok(result.reasons.some((reason) => reason.includes("mobile: malformed current body text length")));
   assert.ok(result.reasons.some((reason) => reason.includes("mobile: malformed current consoleErrors")));
 });
+test("parseSmokeArgs rejects a flag as the baseline path", () => { assert.deepEqual(parseSmokeArgs(["--baseline", "--unknown"], {}), { error: "--baseline requires a path to a prior verdict JSON" }); });
