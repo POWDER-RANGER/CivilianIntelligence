@@ -7,6 +7,7 @@ import { searchNodes } from "@/lib/intel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { BrandLockup } from "@/components/layout/brand";
+import { NavigatorGuide } from "@/components/layout/navigator-guide";
 
 const NAV_GROUPS = [
   { label: "Start", items: [
@@ -267,6 +268,7 @@ export function AppShell({
       </div>
 
       <main className={cn("flex min-h-0 flex-1 flex-col", flush ? "lg:overflow-hidden" : "")}>{children}</main>
+      <NavigatorGuide />
 
       {!flush && (
         <footer className="border-t border-border bg-card">

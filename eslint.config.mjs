@@ -10,6 +10,10 @@ export default tseslint.config(
   {
     ignores: [
       "dist/**",
+      "native/desktop/shell/dist-*.mjs",
+      "native/desktop/shell/react-workspace.js",
+      "native/desktop/android/app/build/**",
+      "native/desktop/android/app/src/main/assets/public/**",
       ".output/**",
       ".vercel/**",
       ".nitro/**",

@@ -21,7 +21,7 @@ export function parseSmokeArgs(argv, env = {}) {
     const arg = argv[i];
     if (arg === "--baseline") {
       const value = argv[++i];
-      if (!value) return { error: "--baseline requires a path to a prior verdict JSON" };
+      if (!value || value.startsWith("--")) return { error: "--baseline requires a path to a prior verdict JSON" };
       baseline = value;
     } else if (arg.startsWith("--baseline=")) {
       const value = arg.slice("--baseline=".length);
@@ -32,6 +32,9 @@ export function parseSmokeArgs(argv, env = {}) {
     } else {
       positional.push(arg);
     }
+  }
+  if (positional.length > 2) {
+    return { error: "expected at most two positional arguments: URL and screenshot path" };
   }
   return {
     url: positional[0] || "http://127.0.0.1:8080/",
@@ -48,7 +51,13 @@ const TRIVIAL_LEN_DELTA = 20;
 const TRIVIAL_LEN_RATIO = 0.1;
 const COLLAPSE_RATIO = 0.5;
 export function compareToBaseline(current, baseline) {
-  const entries = Object.entries(current?.viewports ?? {});
+  if (current?.viewports == null) {
+    return { divergesFromBaseline: true, reasons: ["current verdict has no viewport data"] };
+  }
+  if (typeof current.viewports !== "object" || Array.isArray(current.viewports)) {
+    return { divergesFromBaseline: true, reasons: ["current verdict has malformed viewport data"] };
+  }
+  const entries = Object.entries(current.viewports);
   if (entries.length === 0) {
     return {
       divergesFromBaseline: true,
@@ -56,11 +65,39 @@ export function compareToBaseline(current, baseline) {
     };
   }
   const reasons = [];
+  if ((baseline?.viewports != null && typeof baseline?.viewports !== "object") || Array.isArray(baseline?.viewports)) {
+    return { divergesFromBaseline: true, reasons: ["baseline verdict has malformed viewport data"] };
+  }
   const baseViewports = baseline?.viewports ?? {};
+  for (const name of Object.keys(baseViewports)) {
+    if (!Object.hasOwn(current.viewports, name)) {
+      reasons.push(`${name}: viewport missing from current verdict`);
+    }
+  }
   for (const [name, cur] of entries) {
-    const base = baseViewports[name];
-    if (!base) {
+    if (cur === null || typeof cur !== "object" || Array.isArray(cur)) {
+      reasons.push(`${name}: malformed current viewport data`);
+      continue;
+    }
+    // Validate current evidence even when this viewport has no baseline.
+    if (!Number.isInteger(cur.status) || cur.status < 200 || cur.status >= 400) {
+      reasons.push(`${name}: unhealthy HTTP status ${cur.status}`);
+    }
+    if (!Number.isSafeInteger(cur.bodyTextLen) || cur.bodyTextLen < 0) {
+      reasons.push(`${name}: malformed current body text length`);
+    }
+    for (const field of ["consoleErrors", "pageErrors"]) {
+      if (!Array.isArray(cur[field]) || !cur[field].every((entry) => typeof entry === "string")) {
+        reasons.push(`${name}: malformed current ${field} collection`);
+      }
+    }
+    const base = Object.hasOwn(baseViewports, name) ? baseViewports[name] : undefined;
+    if (base == null) {
       reasons.push(`${name}: no baseline data for this viewport`);
+      continue;
+    }
+    if (typeof base !== "object" || Array.isArray(base)) {
+      reasons.push(`${name}: malformed baseline viewport data`);
       continue;
     }
     if (cur.status !== base.status) {
@@ -75,13 +112,29 @@ export function compareToBaseline(current, baseline) {
     if (cur.horizontalOverflow && !base.horizontalOverflow) {
       reasons.push(`${name}: horizontal overflow appeared`);
     }
-    const baseErrs = (base.consoleErrors?.length ?? 0) + (base.pageErrors?.length ?? 0);
-    const curErrs = (cur.consoleErrors?.length ?? 0) + (cur.pageErrors?.length ?? 0);
-    if (curErrs > 0 && baseErrs === 0) {
-      reasons.push(`${name}: console/page errors appeared (${curErrs})`);
+    for (const field of ["consoleErrors", "pageErrors"]) {
+      if (!Array.isArray(base[field]) || !base[field].every((entry) => typeof entry === "string")) {
+        reasons.push(`${name}: malformed baseline ${field} collection`);
+      }
     }
-    const baseLen = base.bodyTextLen ?? 0;
-    const curLen = cur.bodyTextLen ?? 0;
+    const validErrorCollections = ["consoleErrors", "pageErrors"].every((field) =>
+      Array.isArray(cur[field]) && cur[field].every((entry) => typeof entry === "string") &&
+      Array.isArray(base[field]) && base[field].every((entry) => typeof entry === "string")
+    );
+    if (validErrorCollections) {
+      const baseErrs = base.consoleErrors.length + base.pageErrors.length;
+      const curErrs = cur.consoleErrors.length + cur.pageErrors.length;
+      if (curErrs > 0 && baseErrs === 0) {
+        reasons.push(`${name}: console/page errors appeared (${curErrs})`);
+      }
+    }
+    if (!Number.isSafeInteger(cur.bodyTextLen) || cur.bodyTextLen < 0) continue;
+    if (!Number.isSafeInteger(base.bodyTextLen) || base.bodyTextLen < 0) {
+      reasons.push(`${name}: malformed baseline body text length`);
+      continue;
+    }
+    const baseLen = base.bodyTextLen;
+    const curLen = cur.bodyTextLen;
     if (baseLen > 0 && curLen < baseLen * COLLAPSE_RATIO) {
       reasons.push(`${name}: body text collapsed (${baseLen} -> ${curLen} chars)`);
     } else if (cur.bodyTextHash !== base.bodyTextHash) {
@@ -111,18 +164,28 @@ export function baselineComparison(current, rawText) {
     Array.isArray(baseline) ||
     baseline.viewports === null ||
     typeof baseline.viewports !== "object" ||
-    Array.isArray(baseline.viewports)
+    Array.isArray(baseline?.viewports) ||
+    Object.keys(baseline.viewports).length === 0
   ) {
     return { divergesFromBaseline: true, reasons: ["baseline unreadable: not a verdict object"] };
   }
   return compareToBaseline(current, baseline);
 }
 export function exitCodeFor(viewports) {
-  const list = Object.values(viewports ?? {});
+  if (viewports === null || typeof viewports !== "object" || Array.isArray(viewports)) return 1;
+  const list = Object.values(viewports);
   if (list.length === 0) return 1;
-  if (list.some((v) => (v.status ?? 0) >= 400 || (v.status ?? 0) === 0)) return 1;
-  if (list.some((v) => (v.consoleErrors?.length ?? 0) > 0 || (v.pageErrors?.length ?? 0) > 0)) {
+  if (list.some((v) => !Number.isInteger(v?.status) || v.status < 200 || v.status >= 400)) return 1;
+  if (list.some((v) => !Number.isSafeInteger(v.bodyTextLen) || v.bodyTextLen < 0)) return 1;
+  if (list.some((v) => !Array.isArray(v.consoleErrors) || !Array.isArray(v.pageErrors) || !v.consoleErrors.every((entry) => typeof entry === "string") || !v.pageErrors.every((entry) => typeof entry === "string"))) return 1;
+  if (list.some((v) => v.consoleErrors.length > 0 || v.pageErrors.length > 0)) {
     return 2;
   }
   return 0;
+}
+
+export function parseBrowserSmokeTimeout(raw = "45000") {
+  const value = String(raw);
+  const parsed = Number(value);
+  return /^[1-9][0-9]*$/.test(value) && Number.isSafeInteger(parsed) ? parsed : null;
 }

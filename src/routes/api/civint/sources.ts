@@ -31,7 +31,7 @@ export const Route = createFileRoute("/api/civint/sources")({
           }),
         );
         return Response.json({ generated_at: checked_at, sources: results }, {
-          headers: { "Cache-Control": "public, max-age=60, s-maxage=60, stale-while-revalidate=300" },
+          headers: { "Cache-Control": "public, max-age=60, s-maxage=60, stale-while-revalidate=300", "Access-Control-Allow-Origin": "*" },
         });
       },
     },

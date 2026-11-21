@@ -12,15 +12,21 @@ const ICONS = {
   regulatory: FileText,
 } satisfies Record<SourceDefinition["category"], typeof Activity>;
 
-type Status = { source: SourceDefinition; state: "reachable" | "unavailable"; checked_at: string };
+type Status = { source: SourceDefinition; state: "reachable" | "unavailable" | "unknown"; checked_at: string };
 
 export function SourceHealth() {
   const [items, setItems] = useState<Status[] | null>(null);
   useEffect(() => {
     fetch("/api/civint/sources", { headers: { Accept: "application/json" } })
-      .then((r) => r.json() as Promise<{ sources: Status[] }>)
-      .then((data) => setItems(data.sources))
-      .catch(() => setItems(SOURCES.map((source) => ({ source, state: "unavailable", checked_at: new Date().toISOString() }))));
+      .then((r) => {
+        if (!r.ok) throw new Error("Source health endpoint unavailable");
+        return r.json() as Promise<{ sources: Status[] }>;
+      })
+      .then((data) => {
+        if (!Array.isArray(data.sources)) throw new Error("Invalid source health response");
+        setItems(data.sources);
+      })
+      .catch(() => setItems(SOURCES.map((source) => ({ source, state: "unknown", checked_at: "" }))));
   }, []);
 
   return (
@@ -31,10 +37,10 @@ export function SourceHealth() {
           <h2 className="mt-1 font-display text-3xl">Sources at a glance</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
             CIVWATCH keeps the original source visible, but brings the useful record into the product.
-            Availability below is checked server-side.
+            Reachability below is checked server-side. A reachable website does not prove that a feed is fresh or an individual record is verified.
           </p>
         </div>
-        <Badge variant="outline">{items?.filter((x) => x.state === "reachable").length ?? 0}/{SOURCES.length} reachable</Badge>
+        <Badge variant="outline">{items ? `${items.filter((x) => x.state === "reachable").length}/${SOURCES.length} reachable` : "Checking sources"}</Badge>
       </div>
       <div className="mt-5 grid gap-3 md:grid-cols-3">
         {SOURCES.map((source) => {
@@ -55,6 +61,7 @@ export function SourceHealth() {
               <dl className="mt-4 space-y-2 text-xs">
                 <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Native surface</dt><dd className="text-right">{source.nativeSurface}</dd></div>
                 <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Cadence</dt><dd className="text-right">{source.cadence}</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Last checked</dt><dd className="text-right">{status?.checked_at && !Number.isNaN(Date.parse(status.checked_at)) ? new Date(status.checked_at).toLocaleString() : "Not checked"}</dd></div>
               </dl>
               <a href={source.endpoint} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
                 Open source <ArrowUpRight className="size-3" />
