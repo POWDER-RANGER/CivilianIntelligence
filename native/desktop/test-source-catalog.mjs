@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
@@ -25,14 +25,16 @@ test("native source catalog is generated from the canonical public registry", ()
 });
 test("React owns source and records routes without duplicate legacy forms", () => {
   const react = readFileSync(resolve(root, "react-workspace.tsx"), "utf8");
-  const js = readFileSync(resolve(root, "shell/native.js"), "utf8");
+
   const html = readFileSync(resolve(root, "shell/index.html"), "utf8");
   assert.match(react, /fetch\("\.\/source-catalog\.json"/);
   assert.match(react, /filtered\.map\(s=>/);
   assert.match(react, /route==="sources"/);
   assert.match(react, /route==="records"/);
   assert.doesNotMatch(react, /dangerouslySetInnerHTML/);
-  assert.match(js, /civint:route/);
+  assert.match(react, /window.addEventListener\("hashchange",hash\)/);
+  assert.match(react, /setRoute/);
+  assert.ok(!existsSync(resolve(root, "shell/native.js")), "legacy route controller must stay removed");
   assert.match(html, /id="react-workspace"/);
   assert.doesNotMatch(html, /id="sources-panel"|id="records-panel"/);
 });
