@@ -2,6 +2,7 @@ import React, {useEffect, useMemo, useState} from "react";
 import {createRoot} from "react-dom/client";
 import {readCache} from "./shell/offline-records.mjs";
 import {searchPublicRecords} from "./record-client.mjs";
+import {platformPublicApiTransport} from "./public-api-transport.mjs";
 import {createConnectivityProbe,reconnectDelay} from "./connectivity.mjs";
 
 type Source = {id:string;name:string;category:string;endpoint:string;attribution:string};
@@ -101,7 +102,7 @@ function Workspace() {
     const abort=new AbortController();
     const timeout=setTimeout(()=>abort.abort(),10000);
     setHealthStatus("loading");
-    fetch(API+"/api/civint/sources",{method:"GET",credentials:"omit",cache:"no-store",signal:abort.signal,headers:{Accept:"application/json"}})
+    platformPublicApiTransport().then(transport=>transport(API+"/api/civint/sources",{method:"GET",credentials:"omit",cache:"no-store",signal:abort.signal,headers:{Accept:"application/json"}}))
       .then(async r=>{if(!r.ok)throw Error("source health");return r.json();})
       .then(data=>{
         if(abort.signal.aborted)return;

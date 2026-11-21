@@ -1,3 +1,4 @@
+import {platformPublicApiTransport} from "./public-api-transport.mjs";
 import {safeRecord, saveCache, findCached, normalizeQuery} from "./shell/offline-records.mjs";
 
 export const RECORD_ENDPOINT = "https://civintelligence.onrender.com/api/civint/records/search";
@@ -17,7 +18,8 @@ export async function searchPublicRecords(query, {fetcher=fetch, storage=localSt
     const url=new URL(RECORD_ENDPOINT);
     url.searchParams.set("q",key);
     url.searchParams.set("limit","20");
-    const response=await fetcher(url.href,{method:"GET",mode:"cors",credentials:"omit",cache:"no-store",headers:{Accept:"application/json"},signal:controller.signal});
+    const transport=fetcher===fetch ? await platformPublicApiTransport() : fetcher;
+    const response=await transport(url.href,{method:"GET",mode:"cors",credentials:"omit",cache:"no-store",headers:{Accept:"application/json"},signal:controller.signal});
     if(!response.ok) throw new Error("Public index unavailable");
     const records=parseRecordResponse(await response.json());
     if(controller.signal.aborted) throw new Error("Search cancelled");
