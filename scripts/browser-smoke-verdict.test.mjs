@@ -35,6 +35,11 @@ function verdict(desktop = {}, mobile = {}) {
   return { viewports: { desktop: viewport(desktop), mobile: viewport(mobile) } };
 }
 
+test("rejects surplus positional smoke arguments rather than silently ignoring them", () => {
+  assert.match(parseSmokeArgs(["http://localhost:8080/", "shot.png", "unexpected.json"]).error, /at most two positional/);
+  assert.equal(parseSmokeArgs(["http://localhost:8080/", "shot.png"]).outPng, "shot.png");
+});
+
 test("normalizes whitespace before hashing", () => {
   assert.equal(normalizeBodyText("  a \n\t b  "), "a b");
   assert.equal(normalizedBodyTextHash("a \n b"), normalizedBodyTextHash("  a b "));

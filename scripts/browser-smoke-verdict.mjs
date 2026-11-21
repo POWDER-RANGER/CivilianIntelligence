@@ -33,6 +33,9 @@ export function parseSmokeArgs(argv, env = {}) {
       positional.push(arg);
     }
   }
+  if (positional.length > 2) {
+    return { error: "expected at most two positional arguments: URL and screenshot path" };
+  }
   return {
     url: positional[0] || "http://127.0.0.1:8080/",
     outPng: positional[1] || "/workspace/screenshots/app-builder-preview.png",
