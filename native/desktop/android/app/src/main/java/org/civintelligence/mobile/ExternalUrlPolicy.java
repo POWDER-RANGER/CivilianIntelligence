@@ -12,7 +12,7 @@ public final class ExternalUrlPolicy {
         if (raw == null || raw.isEmpty() || !raw.equals(raw.trim())) return false;
         for (int i = 0; i < raw.length(); i++) {
             char ch = raw.charAt(i);
-            if (ch <= 0x20 || ch == 0x7f || ch == '\\') return false;
+            if (Character.isISOControl(ch) || Character.getType(ch) == Character.FORMAT || ch == '\\') return false;
         }
         try {
             URI uri = new URI(raw);

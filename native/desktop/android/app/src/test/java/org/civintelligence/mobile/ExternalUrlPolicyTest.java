@@ -16,7 +16,8 @@ public class ExternalUrlPolicyTest {
             "file:///etc/passwd", "data:text/html,test", "https://", "https://user:pass@example.org",
             "https://example.org\\@evil.org", " https://example.org", "https://example.org\n",
             "https://example.org:0/", "https://example.org:99999/", "https://example.org./",
-            "https://example.org:bad/", "https://exa mple.org"
+            "https://example.org:bad/", "https://exa mple.org",
+            "https://example.org/path" + "\u202e" + "spoof", "https://example.org/" + "\u200b" + "hidden"
         }) {
             assertFalse("Should reject: " + url, ExternalUrlPolicy.isSafeExternalHttps(url));
         }
