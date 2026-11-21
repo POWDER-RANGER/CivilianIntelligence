@@ -28,7 +28,7 @@ export function Workspace() {
     const controller=new AbortController();
     let attempt=0;
     let timer:ReturnType<typeof setTimeout>|undefined;
-    const probe=createConnectivityProbe({endpoint:API+"/robots.txt"});
+    const probe=createConnectivityProbe({endpoint:API+"/api/civint/sources",fetcher:async (url,opts)=>{const transport=await platformPublicApiTransport();return transport(url,opts);}});
     const check=async()=>{
       try{
         await probe(controller.signal);

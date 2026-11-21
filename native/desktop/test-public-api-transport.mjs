@@ -31,3 +31,20 @@ test("browser transport remains CORS-enforced with no credentials",async()=>{
   assert.equal(seen.o.mode,"cors");
   assert.equal(seen.o.credentials,"omit");
 });
+
+test("native request rejects promptly on cancellation despite hung native plugin",async()=>{
+  const controller=new AbortController();
+  const fetcher=createPublicApiTransport({nativeHttp:{get:()=>new Promise(()=>{})}});
+  const pending=fetcher(root+"/api/civint/sources",{signal:controller.signal});
+  controller.abort();
+  await assert.rejects(pending,{name:"AbortError"});
+});
+test("native late response cannot escape aborted lifecycle",async()=>{
+  let finish;
+  const controller=new AbortController();
+  const fetcher=createPublicApiTransport({nativeHttp:{get:()=>new Promise(resolve=>{finish=resolve;})}});
+  const pending=fetcher(root+"/api/civint/sources",{signal:controller.signal});
+  controller.abort();
+  finish({status:200,data:{sources:[]}});
+  await assert.rejects(pending,{name:"AbortError"});
+});

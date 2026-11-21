@@ -18,7 +18,29 @@ export function createPublicApiTransport({browserFetch=fetch, nativeHttp=null}={
     if(options.credentials && options.credentials !== "omit") throw new Error("Credentials forbidden");
     if(options.signal?.aborted) throw new DOMException("Cancelled","AbortError");
     if(!nativeHttp) return browserFetch(url,{...options,method:"GET",credentials:"omit"});
-    const result=await nativeHttp.get({url,headers:{Accept:"application/json"},connectTimeout:6500,readTimeout:10000});
+    // CapacitorHttp cannot be cancelled at the native layer. Bound the JS lifecycle,
+    // ignore late results, and retain native connection/read timeouts as backstops.
+    const deadlineMs=10000;
+    let timer;
+    let cancel;
+    const cancelled=new Promise((_,reject)=>{
+      cancel=()=>reject(new DOMException("Cancelled","AbortError"));
+      options.signal?.addEventListener("abort",cancel,{once:true});
+    });
+    const deadline=new Promise((_,reject)=>{
+      timer=setTimeout(()=>reject(new DOMException("Native request timed out","TimeoutError")),deadlineMs);
+    });
+    let result;
+    try {
+      result=await Promise.race([
+        nativeHttp.get({url,headers:{Accept:"application/json"},connectTimeout:6500,readTimeout:10000}),
+        cancelled,
+        deadline
+      ]);
+    } finally {
+      clearTimeout(timer);
+      options.signal?.removeEventListener("abort",cancel);
+    }
     if(options.signal?.aborted) throw new DOMException("Cancelled","AbortError");
     const data=typeof result.data==="string"?JSON.parse(result.data):result.data;
     return {ok:result.status>=200 && result.status<300,status:result.status,json:async()=>data};
