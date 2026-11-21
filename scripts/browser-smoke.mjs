@@ -59,7 +59,11 @@ if (baselineRequested) {
   }
 }
 
-const timeoutMs = Number(process.env.BROWSER_SMOKE_TIMEOUT_MS || 45000);
+const timeoutMs = Number(process.env.BROWSER_SMOKE_TIMEOUT_MS ?? 45000);
+if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) {
+  console.error("BROWSER_SMOKE_TIMEOUT_MS must be a positive safe integer in milliseconds");
+  process.exit(1);
+}
 
 const VIEWPORTS = [
   { name: "desktop", width: 1280, height: 800, screenshot: outPng },
