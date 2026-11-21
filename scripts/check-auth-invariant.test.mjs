@@ -39,8 +39,21 @@ test("reads the value a live dev server resolved", async () => {
   );
 });
 
-test("a server started without the flag reads as sign-in on", async () => {
-  assert.equal(await probeDevAuthEnabled("http://127.0.0.1:8080", appEnvFetch({})), true);
+test("a response missing the flag is indeterminate, not assumed enabled", async () => {
+  for (const payload of [{}, [], { VITE_AUTH_ENABLED: null }, { VITE_AUTH_ENABLED: false }]) {
+    assert.equal(await probeDevAuthEnabled("http://127.0.0.1:8080", appEnvFetch(payload)), null);
+  }
+});
+
+test("the dev probe accepts only own string flags", async () => {
+  const inherited = Object.create({ VITE_AUTH_ENABLED: "false" });
+  assert.equal(await probeDevAuthEnabled("http://127.0.0.1:8080", appEnvFetch(inherited)), null);
+  for (const flag of ["false", "true", "FALSE", ""]) {
+    assert.equal(
+      await probeDevAuthEnabled("http://127.0.0.1:8080", appEnvFetch({ VITE_AUTH_ENABLED: flag })),
+      flag !== "false",
+    );
+  }
 });
 
 test("agreement passes", () => {

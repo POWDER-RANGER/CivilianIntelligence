@@ -74,7 +74,13 @@ export async function probeDevAuthEnabled(devUrl, fetchImpl = fetch) {
   } catch {
     return null;
   }
-  if (env === null || typeof env !== "object") return null;
+  if (
+    env === null ||
+    typeof env !== "object" ||
+    Array.isArray(env) ||
+    !Object.hasOwn(env, "VITE_AUTH_ENABLED") ||
+    typeof env.VITE_AUTH_ENABLED !== "string"
+  ) return null;
   return authEnabledFromEnvValue(env.VITE_AUTH_ENABLED);
 }
 

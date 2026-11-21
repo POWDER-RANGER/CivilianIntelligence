@@ -1,4 +1,3 @@
-import { genericOAuthClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import { runPreSignInSignOut, runSignOut } from "../../../scripts/sign-out-plan.mjs";
 import { GROK_PROVIDERS } from "./providers";
@@ -18,7 +17,6 @@ import { GROK_PROVIDERS } from "./providers";
  * the visitor stays signed in.
  */
 export const authClient = createAuthClient({
-  plugins: [genericOAuthClient()],
   fetchOptions: {
     onRequest(ctx) {
       const token = getBearerToken();
@@ -106,19 +104,27 @@ export async function signIn(
   // Open the popup SYNCHRONOUSLY on the user gesture — before any await
   // (including signOut). Awaiting first drops user-gesture privilege in some
   // browsers when the opener is a cross-origin live-preview iframe.
-  const popup = inLivePreview() ? openSignInPopup(providerId) : null;
+  const livePreview = inLivePreview();
+  const popup = livePreview ? openSignInPopup(providerId) : null;
+  // A blocked popup must not invalidate the currently authenticated session.
+  if (livePreview && !popup) throw new Error("Pop-up blocked - allow pop-ups for sign-in");
 
   // Clear any prior session so switching providers actually switches identity.
   // Bounded because the popup is already open — a request that never settles
   // would leave it hanging — but bounded PER ENVIRONMENT: only the server can
   // end a deployed session, so cutting it short at the preview's 1.5s would
   // start OAuth with the old session still live.
-  await runPreSignInSignOut({
-    livePreview: inLivePreview(),
-    hasBearer: Boolean(getBearerToken()),
-    requestSignOut: () => authClient.signOut(),
-    clearToken: () => setBearerToken(null),
-  });
+  try {
+    await runPreSignInSignOut({
+      livePreview: inLivePreview(),
+      hasBearer: Boolean(getBearerToken()),
+      requestSignOut: () => authClient.signOut(),
+      clearToken: () => setBearerToken(null),
+    });
+  } catch (error) {
+    popup?.close();
+    throw error;
+  }
 
   if (inLivePreview()) {
     if (!popup) throw new Error("Pop-up blocked — allow pop-ups for sign-in");
@@ -143,8 +149,8 @@ export async function signIn(
     return;
   }
 
-  const { data, error } = await authClient.signIn.oauth2({
-    providerId,
+  const { data, error } = await authClient.signIn.social({
+    provider: providerId,
     callbackURL,
     errorCallbackURL,
   });
