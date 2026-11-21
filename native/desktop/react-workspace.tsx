@@ -14,14 +14,20 @@ function useConnectivity() {
   return online;
 }
 function Workspace() {
-  const [route,setRoute]=useState(()=>location.hash.slice(1)||"watchtower");
+  const routes=[{id:"watchtower",name:"Watchtower",path:"/"},{id:"records",name:"Public records",path:"/records"},{id:"oversight",name:"Oversight",path:"/oversight"},{id:"globe",name:"Global view",path:"/globe"},{id:"sources",name:"Sources",path:"/sources"}];
+  const readRoute=()=>routes.some(r=>r.id===location.hash.slice(1))?location.hash.slice(1):"watchtower";
+  const [route,setRoute]=useState(readRoute);
+  useEffect(()=>{const hash=()=>setRoute(readRoute());window.addEventListener("hashchange",hash);return ()=>window.removeEventListener("hashchange",hash);},[]);
+  const [connection,setConnection]=useState("Checking service availability");
+  const [connectionRetry,setConnectionRetry]=useState(0);
   useEffect(()=>{
-    const update=(event:Event)=>setRoute((event as CustomEvent<string>).detail||"watchtower");
-    const hash=()=>setRoute(location.hash.slice(1)||"watchtower");
-    window.addEventListener("civint:route",update);
-    window.addEventListener("hashchange",hash);
-    return ()=>{window.removeEventListener("civint:route",update);window.removeEventListener("hashchange",hash);};
-  },[]);
+    const abort=new AbortController();const timer=setTimeout(()=>abort.abort(),6500);
+    fetch(API+"/robots.txt",{method:"GET",mode:"cors",credentials:"omit",cache:"no-store",signal:abort.signal})
+      .then(r=>{if(!r.ok)throw Error("service");setConnection("Service reachable. Native sign-in is not enabled.");})
+      .catch(()=>{if(!abort.signal.aborted)setConnection(navigator.onLine?"Service unverified; local workspace available.":"Offline; local workspace available.");})
+      .finally(()=>clearTimeout(timer));
+    return ()=>{clearTimeout(timer);abort.abort();};
+  },[connectionRetry]);
   const online=useConnectivity();
   const [sources,setSources]=useState<Source[]>([]);
   const [status,setStatus]=useState<Status>("loading");
@@ -95,7 +101,11 @@ function Workspace() {
     return ()=>{abort.abort();clearTimeout(timeout);};
   },[online,refresh]);
   const filtered=useMemo(()=>sources.filter(s=>[s.name,s.category,s.attribution].some(v=>v.toLowerCase().includes(filter.trim().toLowerCase()))),[sources,filter]);
-  return <section aria-label="Native intelligence overview" className="react-workspace">
+  return <div className="native-app">
+    <nav id="navigation" aria-label="Primary navigation">{routes.map(r=><a key={r.id} href={"#"+r.id} aria-current={route===r.id?"page":undefined}>{r.name}</a>)}</nav>
+    <div className="native-content"><p className="eyebrow">CIVWATCH / FIELD OPERATIONS</p><h1>{routes.find(r=>r.id===route)?.name}</h1>
+    <p className="lead">Locally bundled public intelligence workspace.</p>
+    <section aria-label="Native intelligence overview" className="react-workspace">
     <div className="workspace-heading"><div><p className="eyebrow">LOCAL INTELLIGENCE DESK</p><h2>{route==="records"?"Public record discovery":route==="sources"?"Public source network":route==="oversight"?"Public oversight desk":route==="globe"?"Geographic intelligence":"Operational overview"}</h2></div><button type="button" onClick={()=>setRefresh(v=>v+1)}>Refresh intelligence</button></div>
     {route==="watchtower"&&<div className="workspace-metrics" role="group" aria-label="Workspace metrics">
       <div><strong>{sources.length}</strong><span>Bundled public sources</span></div>
@@ -129,7 +139,10 @@ function Workspace() {
         {saved.length===0?<p>No recent saved searches. Use Public records to search and save results.</p>:<div className="workspace-scroll">{saved.map(s=><article className="source-card" key={s.query}><h4>{s.query}</h4><p>{s.records.length} public records · Saved {new Date(s.savedAt).toLocaleString()}</p>{s.records.slice(0,3).map((r,i)=><p key={i}>{allowed(r.sourceUrl)?<a href={r.sourceUrl} target="_blank" rel="noopener noreferrer">{r.title}</a>:r.title}</p>)}</article>)}</div>}
       </section>}
     </div>
-  </section>;
+  </section>
+    <section className="panel" aria-labelledby="connection-heading"><div className="panel-head"><h2 id="connection-heading">Service connection</h2><button type="button" onClick={()=>setConnectionRetry(v=>v+1)}>Retry</button></div><p role="status" aria-live="polite">{connection}</p></section>
+    <section className="panel" aria-labelledby="workspace-heading"><h2 id="workspace-heading">Web workspace</h2><p>Advanced interactive capabilities remain available in the public browser workspace. Authentication and privileged native access are not enabled.</p><a className="action" href={API+(routes.find(r=>r.id===route)?.path||"/")} target="_blank" rel="noopener noreferrer">Open full web workspace in browser</a></section>
+    </div></div>;
 }
 const mount=document.getElementById("react-workspace");
 if(mount)createRoot(mount).render(<Workspace/>);

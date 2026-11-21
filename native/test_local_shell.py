@@ -17,14 +17,17 @@ class LocalShellTests(unittest.TestCase):
 
     def test_shell_has_local_navigation_and_external_web_fallback(self):
         html = (self.shell / "index.html").read_text(encoding="utf-8")
-        script = (self.shell / "native.js").read_text(encoding="utf-8")
+        source = (ROOT / "react-workspace.tsx").read_text(encoding="utf-8")
         self.assertIn('href="./native.css"', html)
-        self.assertIn('src="./native.js"', html)
+        self.assertIn('src="./react-workspace.js"', html)
+        self.assertNotIn('src="./native.js"', html)
+        self.assertIn('id="react-workspace"', html)
         for section in ("watchtower", "records", "oversight", "globe", "sources"):
-            self.assertIn('data-route="' + section + '"', html)
-            self.assertIn(section + ":", script)
-        self.assertIn('credentials: "omit"', script)
-        self.assertNotIn("innerHTML", script)
+            self.assertIn('id:"' + section + '"', source)
+        self.assertIn('aria-current={route===r.id?"page":undefined}', source)
+        self.assertIn('credentials:"omit"', source)
+        self.assertIn('rel="noopener noreferrer"', source)
+        self.assertNotIn("innerHTML", source)
 
     def test_release_remains_blocked_without_signing_and_oauth(self):
         issues = assess(self.mobile, self.desktop, (self.shell / "index.html").read_text(encoding="utf-8"))
