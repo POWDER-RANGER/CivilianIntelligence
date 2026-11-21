@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { allowedAuthority, makeServer, PORT } from "./emulator_https_proxy.mjs";
+import { allowedAuthority, makeServer } from "./emulator_https_proxy.mjs";
 
 test("only expected public HTTPS origins are permitted", () => {
   assert.equal(allowedAuthority("civintelligence.onrender.com:443"), "civintelligence.onrender.com");
