@@ -87,6 +87,11 @@ test("security headers include CSP, framing, sniffing, referrer, permissions; HS
   assert.ok(securityHeaders({ https: true, cspReportOnly: true })["Content-Security-Policy-Report-Only"]);
   assert.match(CONTENT_SECURITY_POLICY, /frame-ancestors 'none'/);
   assert.match(CONTENT_SECURITY_POLICY, /object-src 'none'/);
+  const directives = Object.fromEntries(
+    CONTENT_SECURITY_POLICY.split("; ").map((directive) => [directive.split(" ")[0], directive]),
+  );
+  assert.equal(directives["frame-src"], "frame-src 'self' https://civintelligence-gods-eye-view.onrender.com");
+  assert.equal(directives["child-src"], "child-src 'self' blob:");
 });
 
 test("withHeaders keeps existing values and works on immutable responses", () => {
