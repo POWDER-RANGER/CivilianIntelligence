@@ -105,7 +105,8 @@ export function apiContractResponse(pathname: string, method: string): Response 
  * Content-Security-Policy for documents. Origins come from the app's real
  * outbound calls: Google Fonts (`__root.tsx`), OpenStreetMap raster tiles and
  * the DeFlock vector tiles (`alpr-atlas.tsx`, `alpr-providers.ts`). MapLibre
- * runs its worker from a blob URL. TanStack Start emits inline hydration
+ * runs its worker from a blob URL. The embedded 3D viewer is permitted
+ * only at its dedicated Render origin. TanStack Start emits inline hydration
  * scripts, so `script-src` keeps 'unsafe-inline' until nonce support lands.
  */
 export const CONTENT_SECURITY_POLICY = [
@@ -117,6 +118,7 @@ export const CONTENT_SECURITY_POLICY = [
   "script-src 'self' 'unsafe-inline'",
   "worker-src 'self' blob:",
   "child-src 'self' blob:",
+  "frame-src 'self' https://civintelligence-gods-eye-view.onrender.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://avatars.githubusercontent.com",
