@@ -15,6 +15,7 @@ export const API_ROUTE_METHODS: Readonly<Record<string, readonly string[]>> = {
   "/api/civint/alpr/data": ["GET"],
   "/api/civint/place/dossier": ["GET"],
   "/api/civint/records/search": ["GET", "POST"],
+  "/api/civint/live/earthquakes": ["GET"],
   "/api/civint/records/$id": ["GET"],
   "/api/civint/finance/federal": ["POST"],
   "/api/civint/finance/sec": ["GET"],
@@ -35,6 +36,7 @@ export const UPSTREAM_ROUTES: ReadonlySet<string> = new Set([
   "/api/civint/github/repository",
   "/api/civint/oversight/foia",
   "/api/civint/legislation/congress",
+  "/api/civint/live/earthquakes",
 ]);
 
 /** Paths owned by other handlers (Better Auth) that this layer must not reinterpret. */

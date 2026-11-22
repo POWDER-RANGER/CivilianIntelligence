@@ -33,6 +33,7 @@ import { Route as ApiCivintFinanceFederalRouteImport } from './routes/api/civint
 import { Route as ApiCivintFinanceSecRouteImport } from './routes/api/civint/finance/sec'
 import { Route as ApiCivintGithubRepositoryRouteImport } from './routes/api/civint/github/repository'
 import { Route as ApiCivintLegislationCongressRouteImport } from './routes/api/civint/legislation/congress'
+import { Route as ApiCivintLiveEarthquakesRouteImport } from './routes/api/civint/live/earthquakes'
 import { Route as ApiCivintLocationContextRouteImport } from './routes/api/civint/location/context'
 import { Route as ApiCivintOversightFoiaRouteImport } from './routes/api/civint/oversight/foia'
 import { Route as ApiCivintPlaceDossierRouteImport } from './routes/api/civint/place/dossier'
@@ -161,6 +162,12 @@ const ApiCivintLegislationCongressRoute =
     path: '/api/civint/legislation/congress',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiCivintLiveEarthquakesRoute =
+  ApiCivintLiveEarthquakesRouteImport.update({
+    id: '/api/civint/live/earthquakes',
+    path: '/api/civint/live/earthquakes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiCivintLocationContextRoute =
   ApiCivintLocationContextRouteImport.update({
     id: '/api/civint/location/context',
@@ -213,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/api/civint/finance/sec': typeof ApiCivintFinanceSecRoute
   '/api/civint/github/repository': typeof ApiCivintGithubRepositoryRoute
   '/api/civint/legislation/congress': typeof ApiCivintLegislationCongressRoute
+  '/api/civint/live/earthquakes': typeof ApiCivintLiveEarthquakesRoute
   '/api/civint/location/context': typeof ApiCivintLocationContextRoute
   '/api/civint/oversight/foia': typeof ApiCivintOversightFoiaRoute
   '/api/civint/place/dossier': typeof ApiCivintPlaceDossierRoute
@@ -244,6 +252,7 @@ export interface FileRoutesByTo {
   '/api/civint/finance/sec': typeof ApiCivintFinanceSecRoute
   '/api/civint/github/repository': typeof ApiCivintGithubRepositoryRoute
   '/api/civint/legislation/congress': typeof ApiCivintLegislationCongressRoute
+  '/api/civint/live/earthquakes': typeof ApiCivintLiveEarthquakesRoute
   '/api/civint/location/context': typeof ApiCivintLocationContextRoute
   '/api/civint/oversight/foia': typeof ApiCivintOversightFoiaRoute
   '/api/civint/place/dossier': typeof ApiCivintPlaceDossierRoute
@@ -276,6 +285,7 @@ export interface FileRoutesById {
   '/api/civint/finance/sec': typeof ApiCivintFinanceSecRoute
   '/api/civint/github/repository': typeof ApiCivintGithubRepositoryRoute
   '/api/civint/legislation/congress': typeof ApiCivintLegislationCongressRoute
+  '/api/civint/live/earthquakes': typeof ApiCivintLiveEarthquakesRoute
   '/api/civint/location/context': typeof ApiCivintLocationContextRoute
   '/api/civint/oversight/foia': typeof ApiCivintOversightFoiaRoute
   '/api/civint/place/dossier': typeof ApiCivintPlaceDossierRoute
@@ -309,6 +319,7 @@ export interface FileRouteTypes {
     | '/api/civint/finance/sec'
     | '/api/civint/github/repository'
     | '/api/civint/legislation/congress'
+    | '/api/civint/live/earthquakes'
     | '/api/civint/location/context'
     | '/api/civint/oversight/foia'
     | '/api/civint/place/dossier'
@@ -340,6 +351,7 @@ export interface FileRouteTypes {
     | '/api/civint/finance/sec'
     | '/api/civint/github/repository'
     | '/api/civint/legislation/congress'
+    | '/api/civint/live/earthquakes'
     | '/api/civint/location/context'
     | '/api/civint/oversight/foia'
     | '/api/civint/place/dossier'
@@ -371,6 +383,7 @@ export interface FileRouteTypes {
     | '/api/civint/finance/sec'
     | '/api/civint/github/repository'
     | '/api/civint/legislation/congress'
+    | '/api/civint/live/earthquakes'
     | '/api/civint/location/context'
     | '/api/civint/oversight/foia'
     | '/api/civint/place/dossier'
@@ -402,6 +415,7 @@ export interface RootRouteChildren {
   ApiCivintFinanceSecRoute: typeof ApiCivintFinanceSecRoute
   ApiCivintGithubRepositoryRoute: typeof ApiCivintGithubRepositoryRoute
   ApiCivintLegislationCongressRoute: typeof ApiCivintLegislationCongressRoute
+  ApiCivintLiveEarthquakesRoute: typeof ApiCivintLiveEarthquakesRoute
   ApiCivintLocationContextRoute: typeof ApiCivintLocationContextRoute
   ApiCivintOversightFoiaRoute: typeof ApiCivintOversightFoiaRoute
   ApiCivintPlaceDossierRoute: typeof ApiCivintPlaceDossierRoute
@@ -579,6 +593,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCivintLegislationCongressRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/civint/live/earthquakes': {
+      id: '/api/civint/live/earthquakes'
+      path: '/api/civint/live/earthquakes'
+      fullPath: '/api/civint/live/earthquakes'
+      preLoaderRoute: typeof ApiCivintLiveEarthquakesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/civint/location/context': {
       id: '/api/civint/location/context'
       path: '/api/civint/location/context'
@@ -652,6 +673,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCivintFinanceSecRoute: ApiCivintFinanceSecRoute,
   ApiCivintGithubRepositoryRoute: ApiCivintGithubRepositoryRoute,
   ApiCivintLegislationCongressRoute: ApiCivintLegislationCongressRoute,
+  ApiCivintLiveEarthquakesRoute: ApiCivintLiveEarthquakesRoute,
   ApiCivintLocationContextRoute: ApiCivintLocationContextRoute,
   ApiCivintOversightFoiaRoute: ApiCivintOversightFoiaRoute,
   ApiCivintPlaceDossierRoute: ApiCivintPlaceDossierRoute,
