@@ -10,6 +10,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
+import { UsgsEarthquakes } from "@/components/watchtower/usgs-earthquakes";
 import {
   DEFAULT_GLOBE_CAMERA,
   DEFAULT_TOOLS_MODE,
@@ -156,6 +157,13 @@ function CameraFeedPortal() {
             </p>
           </div>
         </div>
+
+        <UsgsEarthquakes onLocate={(latitude, longitude) => {
+          setActiveView("globe");
+          setCamera({ lat: latitude, lon: longitude, alt: 120000 });
+          setViewerRequested(true);
+          setLoaded(false);
+        }} />
 
         <div className="border-b border-border bg-background px-3 py-2">
           <div className="mx-auto grid max-w-[1800px] grid-cols-2 gap-2" role="group" aria-label="Choose map view">

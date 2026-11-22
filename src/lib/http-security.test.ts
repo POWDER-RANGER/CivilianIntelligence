@@ -105,6 +105,7 @@ test("upstream-calling routes and writes get the tighter rate limit", () => {
   assert.equal(rateLimitRule("/api/civint/finance/federal", "POST")?.limit, 30);
   assert.equal(rateLimitRule("/api/civint/records/search", "POST")?.limit, 30);
   assert.equal(rateLimitRule("/api/civint/records/search", "GET")?.limit, 120);
+  assert.equal(rateLimitRule("/api/civint/live/earthquakes", "GET")?.limit, 30);
   assert.equal(rateLimitRule("/api/auth/sign-in", "POST"), null);
 });
 
